@@ -1,15 +1,15 @@
 # Global components
 
-Vetur support define global components.
+CoffeeSense support define global components.
 You can register template interpolation for that components anywhere in the project.
 
-Please add `projects.globalComponents` in `vetur.config.js`.
+Please add `projects.globalComponents` in `coffeesense.config.js`.
 
 ## Example
 When your project isn't a monorepo and `package.json/(ts|js)config.json` at project root.
 ```javascript
-// vetur.config.js
-/** @type {import('vls').VeturConfig} */
+// coffeesense.config.js
+/** @type {import('vls').CoffeeSenseConfig} */
 module.exports = {
   projects: [
     {

@@ -23,3 +23,5 @@ server/dist-test/
 coverage.lcov
 
 **/*.tsbuildinfo
+
+.history

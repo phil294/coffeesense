@@ -1,4 +1,4 @@
-import { VLS } from './services/vls';
+import { LSP } from './services/lsp';
 
-export { VLS };
-export { VeturConfig } from './config';
+export { LSP };
+export { CoffeeSenseConfig } from './config';

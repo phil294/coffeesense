@@ -9,13 +9,7 @@ export class ModuleResolutionCache {
 
   getCache(moduleName: string, containingFile: string): ts.ResolvedModule | undefined {
     if (!this._cache[containingFile]) {
-      if (containingFile.endsWith('.vue')) {
-        this._cache[containingFile] = this._cache[containingFile + '.template'] = {};
-      } else if (containingFile.endsWith('.vue.template')) {
-        this._cache[containingFile.slice(0, -'.template'.length)] = this._cache[containingFile] = {};
-      } else {
-        this._cache[containingFile] = {};
-      }
+      this._cache[containingFile] = {};
       return undefined;
     }
 
@@ -24,13 +18,7 @@ export class ModuleResolutionCache {
 
   setCache(moduleName: string, containingFile: string, cache: ts.ResolvedModule) {
     if (!this._cache[containingFile]) {
-      if (containingFile.endsWith('.vue')) {
-        this._cache[containingFile] = this._cache[containingFile + '.template'] = {};
-      } else if (containingFile.endsWith('.vue.template')) {
-        this._cache[containingFile.slice(0, -'.template'.length)] = this._cache[containingFile] = {};
-      } else {
-        this._cache[containingFile] = {};
-      }
+      this._cache[containingFile] = {};
       return undefined;
     }
 

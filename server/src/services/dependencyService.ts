@@ -7,12 +7,6 @@ import { logger } from '../log';
 import { getPathDepth } from '../utils/paths';
 // dependencies
 import ts from 'typescript';
-import prettier from 'prettier';
-import prettyHTML from '@starptech/prettyhtml';
-import prettierEslint from 'prettier-eslint';
-import * as prettierTslint from 'prettier-tslint';
-import stylusSupremacy from 'stylus-supremacy';
-import * as prettierPluginPug from '@prettier/plugin-pug';
 
 const readFileAsync = util.promisify(fs.readFile);
 const accessFileAsync = util.promisify(fs.access);
@@ -83,12 +77,6 @@ interface Dependency<M> {
 
 export interface RuntimeLibrary {
   typescript: typeof ts;
-  prettier: typeof prettier;
-  '@starptech/prettyhtml': typeof prettyHTML;
-  'prettier-eslint': typeof prettierEslint;
-  'prettier-tslint': typeof prettierTslint;
-  'stylus-supremacy': typeof stylusSupremacy;
-  '@prettier/plugin-pug': typeof prettierPluginPug;
 }
 
 export interface DependencyService {
@@ -99,13 +87,7 @@ export interface DependencyService {
 }
 
 const bundledModules = {
-  typescript: ts,
-  prettier,
-  '@starptech/prettyhtml': prettyHTML,
-  'prettier-eslint': prettierEslint,
-  'prettier-tslint': prettierTslint,
-  'stylus-supremacy': stylusSupremacy,
-  '@prettier/plugin-pug': prettierPluginPug
+  typescript: ts
 };
 
 export const createDependencyService = async (
@@ -215,13 +197,7 @@ export const createDependencyService = async (
 
   if (!process.versions.pnp) {
     loaded = {
-      typescript: await loadTypeScript(),
-      prettier: await loadCommonDep('prettier', bundledModules['prettier']),
-      '@starptech/prettyhtml': await loadCommonDep('@starptech/prettyhtml', bundledModules['@starptech/prettyhtml']),
-      'prettier-eslint': await loadCommonDep('prettier-eslint', bundledModules['prettier-eslint']),
-      'prettier-tslint': await loadCommonDep('prettier-tslint', bundledModules['prettier-tslint']),
-      'stylus-supremacy': await loadCommonDep('stylus-supremacy', bundledModules['stylus-supremacy']),
-      '@prettier/plugin-pug': await loadCommonDep('@prettier/plugin-pug', bundledModules['@prettier/plugin-pug'])
+      typescript: await loadTypeScript()
     };
   }
 

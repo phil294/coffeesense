@@ -17,37 +17,8 @@ export interface BaseCodeActionData {
   textRange: { pos: number; end: number };
 }
 
-export interface RefactorActionData extends BaseCodeActionData {
-  kind: CodeActionDataKind.RefactorAction;
-  refactorName: string;
-  actionName: string;
-  description: string;
-  notApplicableReason?: string;
-}
-
-export interface CombinedFixActionData extends BaseCodeActionData {
-  kind: CodeActionDataKind.CombinedCodeFix;
-  fixId: {};
-}
-
 export interface OrganizeImportsActionData extends BaseCodeActionData {
   kind: CodeActionDataKind.OrganizeImports;
 }
 
-export type CodeActionData = RefactorActionData | CombinedFixActionData | OrganizeImportsActionData;
-
-interface SemanticTokenClassification {
-  classificationType: number;
-  modifierSet: number;
-}
-
-export interface SemanticTokenData extends SemanticTokenClassification {
-  line: number;
-  character: number;
-  length: number;
-}
-
-export interface SemanticTokenOffsetData extends SemanticTokenClassification {
-  start: number;
-  length: number;
-}
+export type CodeActionData = OrganizeImportsActionData;

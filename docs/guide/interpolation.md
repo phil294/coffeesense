@@ -12,12 +12,12 @@ Vue template allows JavaScript-esque expression in four constructs:
 
 Other than the [filter syntax](https://vuejs.org/v2/guide/filters.html), the expression is 100% JavaScript expression.
 
-Vetur now offers completion, diagnostics, hover, jump to definition, find references for these JavaScript snippets.
+CoffeeSense now offers completion, diagnostics, hover, jump to definition, find references for these JavaScript snippets.
 
 ## Generic Language Features
 
 ::: warning
-These features are experimental and you need to set `vetur.experimental.templateInterpolationService: true` to enable them. You can also only disable template diagnostics with `vetur.validation.interpolation: false`.
+These features are experimental and you need to set `coffeesense.experimental.templateInterpolationService: true` to enable them. You can also only disable template diagnostics with `coffeesense.validation.interpolation: false`.
 :::
 
 Currently diagnostics, hover, jump to definition and find references are implemented in this way:
@@ -28,11 +28,11 @@ Currently diagnostics, hover, jump to definition and find references are impleme
 - Map results back to original `.vue` file
 
 :::tip
-Use the command "Vetur: Show corresponding virtual file and sourcemap" to understand how the
-templates are represented in Vetur. Useful for bug filing too.
+Use the command "CoffeeSense: Show corresponding virtual file and sourcemap" to understand how the
+templates are represented in CoffeeSense. Useful for bug filing too.
 :::
 
-If you do find bugs, please [fill an issue](https://github.com/vuejs/vetur/issues).
+If you do find bugs, please [fill an issue](https://github.com/phil294/coffeesense/issues).
 
 If you want more details as to how this feature is implemented, I wrote a blog post: [Generic Vue Template Interpolation Language Features
 ](https://blog.matsu.io/generic-vue-template-interpolation-language-features).
@@ -88,9 +88,9 @@ export default {
 
 ## Prop Validation
 
-*You can turn on/off this feature with `vetur.validation.templateProps`.*
+*You can turn on/off this feature with `coffeesense.validation.templateProps`.*
 
-Vetur will now validate HTML templates that uses child components. For example, given two children:
+CoffeeSense will now validate HTML templates that uses child components. For example, given two children:
 
 `Simple.vue`:
 
@@ -117,7 +117,7 @@ export default {
 </script>
 ```
 
-Vetur will show a warning for `<simple>` and an error for `<complex>`.
+CoffeeSense will show a warning for `<simple>` and an error for `<complex>`.
 
 The rules are:
 
@@ -126,9 +126,9 @@ The rules are:
 
 ## Prop Type Validation
 
-*You can turn on/off this feature with `vetur.validation.templateProps`.*
+*You can turn on/off this feature with `coffeesense.validation.templateProps`.*
 
-Vetur will now validate that the interpolation expression you pass to child component's props match the props signature. Consider this simple case:
+CoffeeSense will now validate that the interpolation expression you pass to child component's props match the props signature. Consider this simple case:
 
 `Child.vue`:
 
@@ -165,11 +165,11 @@ export default {
 </script>
 ```
 
-Vetur will generate a diagnostic error on `str` in `Parent.vue` template `:str="num"`, with a message that `type 'number' is not assignable to type 'string'`.
+CoffeeSense will generate a diagnostic error on `str` in `Parent.vue` template `:str="num"`, with a message that `type 'number' is not assignable to type 'string'`.
 
 Supported:
 
 - JS file with `export default {...}`
 - TS file with `defineComponent` in Vue 3 or `Vue.extend` in Vue 2
 - Prop Type: `foo: String`, `foo: { type: String }` or `foo: String as PropType<string>` or `foo: String as Vue.PropType<string>`
-  - This is useful in the case of `foo: Array`. If you are using JS, there's no way to say `foo is a string array`, however with TS you can use `foo: Array as PropType<string[]>`. Vetur will then check that the provided expression matches `string[]`.
+  - This is useful in the case of `foo: Array`. If you are using JS, there's no way to say `foo is a string array`, however with TS you can use `foo: Array as PropType<string[]>`. CoffeeSense will then check that the provided expression matches `string[]`.

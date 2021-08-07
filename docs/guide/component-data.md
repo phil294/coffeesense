@@ -2,17 +2,17 @@
 
 Vue libraries or frameworks can define custom components used in `<template>` region. For example, [`vue-router`](https://router.vuejs.org/) provides [`<router-link>`](https://router.vuejs.org/api/#router-link) component that could have attributes such as `to` and `replace`. Of course, you can define custom components as well.
 
-Component Data is JSON files that describe the components' tags / attributes declaratively. Vetur is able to load these JSON files to provide auto-completion, hover information and other language features for the Vue components.
+Component Data is JSON files that describe the components' tags / attributes declaratively. CoffeeSense is able to load these JSON files to provide auto-completion, hover information and other language features for the Vue components.
 
 The two main ways of utilizing Component Data are:
-- Install a [supported framework](#supported-frameworks). Vetur will load its Component Data automatically to provide auto-completion and other features.
-- [Workspace Component Data](#workspace-component-data). Vetur can load Component Data defined in your workspace and provide language features for your custom components.
+- Install a [supported framework](#supported-frameworks). CoffeeSense will load its Component Data automatically to provide auto-completion and other features.
+- [Workspace Component Data](#workspace-component-data). CoffeeSense can load Component Data defined in your workspace and provide language features for your custom components.
 
 🚧 The data format is not specified yet. 🚧
 
 ## Supported Frameworks
 
-Vetur currently bundles Component Data for the following vue libraries:
+CoffeeSense currently bundles Component Data for the following vue libraries:
 
 - [Vue Router](https://router.vuejs.org/)
 - [Nuxt](https://nuxtjs.org/)
@@ -25,11 +25,11 @@ Vetur currently bundles Component Data for the following vue libraries:
 - [Gridsome](https://gridsome.org/)
 - [Ionic Framework](https://ionicframework.com/)
 
-Vetur reads the `package.json` **in your project root** to determine if it should offer tags & attributes completions. Here are the exact `dependencies`/`devDependencies` used to determine which Component Data to load.
+CoffeeSense reads the `package.json` **in your project root** to determine if it should offer tags & attributes completions. Here are the exact `dependencies`/`devDependencies` used to determine which Component Data to load.
 
 | `dependency` | `devDependency` | Source |
 |---|---|---|
-| `vue-router` | `vue-router` | [Vetur](https://github.com/vuejs/vetur/blob/master/server/src/modes/template/tagProviders/routerTags.ts) |
+| `vue-router` | `vue-router` | [CoffeeSense](https://github.com/phil294/coffeesense/blob/master/server/src/modes/template/tagProviders/routerTags.ts) |
 | `element-ui` | `elment-ui` | [element-helper-json](https://github.com/ElementUI/element-helper-json) |
 | `vue-onsenui` | `vue-onsenui` | [vue-onsenui-helper-json](https://www.npmjs.com/package/vue-onsenui-helper-json) |
 | `bootstrap-vue` | `bootstrap-vue` | Bundled in [BootstrapVue v2.1+](https://www.npmjs.com/package/bootstrap-vue). Pre v2.1 uses [bootstrap-vue-helper-json](https://github.com/bootstrap-vue/bootstrap-vue-helper-json) |
@@ -45,13 +45,13 @@ Getting `element-ui`'s completions is as easy as running `yarn add element-ui` a
 
 ### Other frameworks
 
-If a package listed in `dependencies` has a `vetur` key in its `package.json`, then Vetur will try to read the tags / attributes specified by that key.
+If a package listed in `dependencies` has a `coffeesense` key in its `package.json`, then CoffeeSense will try to read the tags / attributes specified by that key.
 
 ```json
 {
-  "vetur": {
-    "tags": "dist/vetur/tags.json",
-    "attributes": "dist/vetur/attributes.json"
+  "coffeesense": {
+    "tags": "dist/coffeesense/tags.json",
+    "attributes": "dist/coffeesense/attributes.json"
   }
 }
 ```
@@ -60,7 +60,7 @@ By bundling the tags / attributes definitions together with the framework librar
 
 ## Workspace Component Data
 
-You can define custom tags/attributes for your workspace by specifying a `vetur` key in package.json. For example, to get auto completion for tag `<foo-tag>` and it's attribute `foo-attr`, all you need to do is:
+You can define custom tags/attributes for your workspace by specifying a `coffeesense` key in package.json. For example, to get auto completion for tag `<foo-tag>` and it's attribute `foo-attr`, all you need to do is:
 
 - Create a file `tags.json` with:
 
@@ -78,7 +78,7 @@ You can define custom tags/attributes for your workspace by specifying a `vetur`
 
   ```json
   {
-    "vetur": { "tags": "./tags.json", "attributes": "./attributes.json" }
+    "coffeesense": { "tags": "./tags.json", "attributes": "./attributes.json" }
   }
   ```
 
@@ -88,9 +88,9 @@ You can define custom tags/attributes for your workspace by specifying a `vetur`
 
 ## Adding a Framework
 
-If your Vue UI framework has a lot of users, we might consider bundling its support in Vetur.
+If your Vue UI framework has a lot of users, we might consider bundling its support in CoffeeSense.
 
-You should first consider adding `vetur` key to your `package.json` and publishing the tags / attributes together with your package (just as you would do for `d.ts` files). If you automate the process of generating the Component Data JSON from your source code, then users can always enjoy up-to-date support for your framework.
+You should first consider adding `coffeesense` key to your `package.json` and publishing the tags / attributes together with your package (just as you would do for `d.ts` files). If you automate the process of generating the Component Data JSON from your source code, then users can always enjoy up-to-date support for your framework.
 
-Here is an example of [Nuxt.js](https://nuxtjs.org/) adding Component Data support: https://github.com/vuejs/vetur/pull/1921.
+Here is an example of [Nuxt.js](https://nuxtjs.org/) adding Component Data support: https://github.com/phil294/coffeesense/pull/1921.
 

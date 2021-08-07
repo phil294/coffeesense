@@ -1,22 +1,20 @@
 import { createConnection, InitializeParams, InitializeResult } from 'vscode-languageserver/node';
-import { VLS } from './services/vls';
+import { LSP } from './services/lsp';
 
 const connection = process.argv.length <= 2 ? createConnection(process.stdin, process.stdout) : createConnection();
 
 console.log = (...args: any[]) => connection.console.log(args.join(' '));
 console.error = (...args: any[]) => connection.console.error(args.join(' '));
 
-const vls = new VLS(connection);
-connection.onInitialize(
-  async (params: InitializeParams): Promise<InitializeResult> => {
-    await vls.init(params);
+const cls = new LSP(connection);
+connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
+  await cls.init(params);
 
-    console.log('Vetur initialized');
+  console.log('CoffeeSense initialized');
 
-    return {
-      capabilities: vls.capabilities
-    };
-  }
-);
+  return {
+    capabilities: cls.capabilities
+  };
+});
 
-vls.listen();
+cls.listen();

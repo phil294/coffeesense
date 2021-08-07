@@ -10,7 +10,7 @@ cd .vuepress/dist
 git init
 git add -A
 git commit -m '[vuepress] update docs'
-git push -f git@github.com:vuejs/vetur.git master:gh-pages
+git push -f git@github.com:phil294/coffeesense.git master:gh-pages
 
 # Cleanup
 cd ../..

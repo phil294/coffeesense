@@ -9,58 +9,40 @@ import {
 
 import {
   DidChangeConfigurationParams,
-  DocumentColorParams,
-  DocumentFormattingParams,
-  DocumentLinkParams,
   FileChangeType,
   Connection,
   TextDocumentPositionParams,
-  ColorPresentationParams,
   InitializeParams,
   ServerCapabilities,
   TextDocumentSyncKind,
-  DocumentFormattingRequest,
   Disposable,
   DocumentSymbolParams,
   CodeActionParams,
   CompletionParams,
   ExecuteCommandParams,
-  FoldingRangeParams,
-  RenameFilesParams,
-  SemanticTokensParams,
-  SemanticTokens,
-  SemanticTokensRangeParams,
-  SemanticTokensRequest,
-  SemanticTokensRangeRequest
+  RenameFilesParams
 } from 'vscode-languageserver';
 import {
-  ColorInformation,
   CompletionItem,
   CompletionList,
   Definition,
   DocumentHighlight,
-  DocumentLink,
   Hover,
   Location,
   SignatureHelp,
   SymbolInformation,
-  TextEdit,
-  ColorPresentation,
-  FoldingRange,
   DocumentUri,
   CodeAction,
-  CodeActionKind,
-  TextDocumentIdentifier
+  CodeActionKind
 } from 'vscode-languageserver-types';
-import type { Range, TextDocument } from 'vscode-languageserver-textdocument';
+import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { NULL_COMPLETION, NULL_HOVER, NULL_SIGNATURE } from '../modes/nullMode';
 import { createDependencyService, createNodeModulesPaths } from './dependencyService';
 import _ from 'lodash';
 import { DocumentService } from './documentService';
-import { VueHTMLMode } from '../modes/template';
 import { logger } from '../log';
-import { getDefaultVLSConfig, VLSFullConfig, getVeturFullConfig, VeturFullConfig, BasicComponentInfo } from '../config';
+import { getDefaultLSPConfig, LSPFullConfig, getCoffeeSenseFullConfig, CoffeeSenseFullConfig } from '../config';
 import { VCancellationToken, VCancellationTokenSource } from '../utils/cancellationToken';
 import { findConfigFile, requireUncached } from '../utils/workspace';
 import { createProjectService, ProjectService } from './projectService';
@@ -69,36 +51,29 @@ import { getVueVersionKey } from '../utils/vueVersion';
 import { accessSync, constants, existsSync } from 'fs';
 import { sleep } from '../utils/sleep';
 import { URI } from 'vscode-uri';
-import { getSemanticTokenLegends } from '../modes/script/semanticToken';
-import { createRefTokensService } from './RefTokenService';
 
 interface ProjectConfig {
-  vlsFullConfig: VLSFullConfig;
-  isExistVeturConfig: boolean;
+  lspFullConfig: LSPFullConfig;
+  isExistCoffeeSenseConfig: boolean;
   rootPathForConfig: string;
   workspaceFsPath: string;
   rootFsPath: string;
   tsconfigPath: string | undefined;
   packagePath: string | undefined;
-  snippetFolder: string;
-  globalComponents: BasicComponentInfo[];
 }
 
-export class VLS {
+export class LSP {
   private workspaces: Map<
     string,
-    VeturFullConfig & { name: string; workspaceFsPath: string; isExistVeturConfig: boolean }
+    CoffeeSenseFullConfig & { name: string; workspaceFsPath: string; isExistCoffeeSenseConfig: boolean }
   >;
   private nodeModulesMap: Map<string, string[]>;
   private documentService: DocumentService;
-  private globalSnippetDir: string;
   private loadingProjects: string[];
   private projects: Map<string, ProjectService>;
   private pendingValidationRequests: { [uri: string]: NodeJS.Timer } = {};
   private cancellationTokenValidationRequests: { [uri: string]: VCancellationTokenSource } = {};
   private validationDelayMs = 200;
-
-  private documentFormatterRegistration: Disposable | undefined;
 
   private workspaceConfig: unknown;
 
@@ -119,17 +94,15 @@ export class VLS {
         : [];
 
     if (workspaceFolders.length === 0) {
-      console.error('No workspace path found. Vetur initialization failed.');
+      console.error('No workspace path found. CoffeeSense initialization failed.');
       return {
         capabilities: {}
       };
     }
 
-    this.globalSnippetDir = params.initializationOptions?.globalSnippetDir;
-
     await Promise.all(workspaceFolders.map(workspace => this.addWorkspace(workspace)));
 
-    this.workspaceConfig = this.getVLSFullConfig({}, params.initializationOptions?.config);
+    this.workspaceConfig = this.getLSPFullConfig({}, params.initializationOptions?.config);
 
     if (params.capabilities.workspace?.workspaceFolders) {
       this.setupWorkspaceListeners();
@@ -148,8 +121,8 @@ export class VLS {
     this.lspConnection.listen();
   }
 
-  private getVLSFullConfig(settings: VeturFullConfig['settings'], config: any | undefined): VLSFullConfig {
-    const result = config ? _.merge(getDefaultVLSConfig(), config) : getDefaultVLSConfig();
+  private getLSPFullConfig(settings: CoffeeSenseFullConfig['settings'], config: any | undefined): LSPFullConfig {
+    const result = config ? _.merge(getDefaultLSPConfig(), config) : getDefaultLSPConfig();
     Object.keys(settings).forEach(key => {
       _.set(result, key, settings[key]);
     });
@@ -166,22 +139,22 @@ export class VLS {
       }
     }
 
-    let veturConfigPath = findConfigFile(workspace.fsPath, 'vetur.config.js');
-    if (!veturConfigPath) {
-      veturConfigPath = findConfigFile(workspace.fsPath, 'vetur.config.cjs');
+    let coffeesenseConfigPath = findConfigFile(workspace.fsPath, 'coffeesense.config.js');
+    if (!coffeesenseConfigPath) {
+      coffeesenseConfigPath = findConfigFile(workspace.fsPath, 'coffeesense.config.cjs');
     }
     const rootPathForConfig = normalizeFileNameToFsPath(
-      veturConfigPath ? path.dirname(veturConfigPath) : workspace.fsPath
+      coffeesenseConfigPath ? path.dirname(coffeesenseConfigPath) : workspace.fsPath
     );
     if (!this.workspaces.has(rootPathForConfig)) {
       this.workspaces.set(rootPathForConfig, {
         name: workspace.name,
-        ...(await getVeturFullConfig(
+        ...(await getCoffeeSenseFullConfig(
           rootPathForConfig,
           workspace.fsPath,
-          veturConfigPath ? requireUncached(veturConfigPath) : {}
+          coffeesenseConfigPath ? requireUncached(coffeesenseConfigPath) : {}
         )),
-        isExistVeturConfig: !!veturConfigPath,
+        isExistCoffeeSenseConfig: !!coffeesenseConfigPath,
         workspaceFsPath: workspace.fsPath
       });
     }
@@ -197,19 +170,16 @@ export class VLS {
 
   private setupConfigListeners() {
     this.lspConnection.onDidChangeConfiguration(async ({ settings }: DidChangeConfigurationParams) => {
-      this.workspaceConfig = this.getVLSFullConfig({}, settings);
-      let isFormatEnable = (this.workspaceConfig as VLSFullConfig)?.vetur?.format?.enable ?? false;
-      logger.setLevel((this.workspaceConfig as VLSFullConfig)?.vetur?.dev.logLevel);
+      this.workspaceConfig = this.getLSPFullConfig({}, settings);
+      logger.setLevel((this.workspaceConfig as LSPFullConfig)?.coffeesense?.dev.logLevel);
       this.projects.forEach(project => {
-        const veturConfig = this.workspaces.get(project.env.getRootPathForConfig());
-        if (!veturConfig) {
+        const coffeesenseConfig = this.workspaces.get(project.env.getRootPathForConfig());
+        if (!coffeesenseConfig) {
           return;
         }
-        const fullConfig = this.getVLSFullConfig(veturConfig.settings, this.workspaceConfig);
+        const fullConfig = this.getLSPFullConfig(coffeesenseConfig.settings, this.workspaceConfig);
         project.env.configure(fullConfig);
-        isFormatEnable = isFormatEnable || fullConfig.vetur.format.enable;
       });
-      this.setupDynamicFormatters(isFormatEnable);
     });
 
     this.documentService.getAllDocuments().forEach(this.triggerValidation);
@@ -217,32 +187,30 @@ export class VLS {
 
   private getAllProjectConfigs(): ProjectConfig[] {
     return _.flatten(
-      Array.from(this.workspaces.entries()).map(([rootPathForConfig, veturConfig]) =>
-        veturConfig.projects.map(project => ({
+      Array.from(this.workspaces.entries()).map(([rootPathForConfig, coffeesenseConfig]) =>
+        coffeesenseConfig.projects.map(project => ({
           ...project,
           rootPathForConfig,
-          vlsFullConfig: this.getVLSFullConfig(veturConfig.settings, this.workspaceConfig),
-          workspaceFsPath: veturConfig.workspaceFsPath,
-          isExistVeturConfig: veturConfig.isExistVeturConfig
+          lspFullConfig: this.getLSPFullConfig(coffeesenseConfig.settings, this.workspaceConfig),
+          workspaceFsPath: coffeesenseConfig.workspaceFsPath,
+          isExistCoffeeSenseConfig: coffeesenseConfig.isExistCoffeeSenseConfig
         }))
       )
     )
       .map(project => ({
-        vlsFullConfig: project.vlsFullConfig,
-        isExistVeturConfig: project.isExistVeturConfig,
+        lspFullConfig: project.lspFullConfig,
+        isExistCoffeeSenseConfig: project.isExistCoffeeSenseConfig,
         rootPathForConfig: project.rootPathForConfig,
         workspaceFsPath: project.workspaceFsPath,
         rootFsPath: project.root,
         tsconfigPath: project.tsconfig,
-        packagePath: project.package,
-        snippetFolder: project.snippetFolder,
-        globalComponents: project.globalComponents
+        packagePath: project.package
       }))
       .sort((a, b) => getPathDepth(b.rootFsPath, '/') - getPathDepth(a.rootFsPath, '/'));
   }
 
   private warnProjectIfNeed(projectConfig: ProjectConfig) {
-    if (projectConfig.vlsFullConfig.vetur.ignoreProjectWarning) {
+    if (projectConfig.lspFullConfig.coffeesense.ignoreProjectWarning) {
       return;
     }
 
@@ -255,7 +223,7 @@ export class VLS {
       }
     };
     const showErrorIfCantAccess = (name: string, fsPath: string) => {
-      this.lspConnection.window.showErrorMessage(`Vetur can't access ${fsPath} for ${name}.`);
+      this.lspConnection.window.showErrorMessage(`CoffeeSense can't access ${fsPath} for ${name}.`);
     };
 
     const showWarningAndLearnMore = (message: string, url: string) => {
@@ -267,25 +235,25 @@ export class VLS {
     };
 
     const getCantFindMessage = (fileNames: string[]) =>
-      `Vetur can't find ${fileNames.map(el => `\`${el}\``).join(' or ')} in ${projectConfig.rootFsPath}.`;
+      `CoffeeSense can't find ${fileNames.map(el => `\`${el}\``).join(' or ')} in ${projectConfig.rootFsPath}.`;
     if (!projectConfig.tsconfigPath) {
       showWarningAndLearnMore(
         getCantFindMessage(['tsconfig.json', 'jsconfig.json']),
-        'https://vuejs.github.io/vetur/guide/FAQ.html#vetur-can-t-find-tsconfig-json-jsconfig-json-in-xxxx-xxxxxx'
+        'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-can-t-find-tsconfig-json-jsconfig-json-in-xxxx-xxxxxx'
       );
     } else if (!isFileCanAccess(projectConfig.tsconfigPath)) {
       showErrorIfCantAccess('ts/js config', projectConfig.tsconfigPath);
     } else {
       if (
-        !projectConfig.isExistVeturConfig &&
+        !projectConfig.isExistCoffeeSenseConfig &&
         ![
           normalizeFileNameResolve(projectConfig.rootFsPath, 'tsconfig.json'),
           normalizeFileNameResolve(projectConfig.rootFsPath, 'jsconfig.json')
         ].includes(projectConfig.tsconfigPath ?? '')
       ) {
         showWarningAndLearnMore(
-          `Vetur found \`tsconfig.json\`/\`jsconfig.json\`, but they aren\'t in the project root.`,
-          'https://vuejs.github.io/vetur/guide/FAQ.html#vetur-found-xxx-but-they-aren-t-in-the-project-root'
+          `CoffeeSense found \`tsconfig.json\`/\`jsconfig.json\`, but they aren\'t in the project root.`,
+          'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
         );
       }
     }
@@ -293,18 +261,18 @@ export class VLS {
     if (!projectConfig.packagePath) {
       showWarningAndLearnMore(
         getCantFindMessage(['package.json']),
-        'https://vuejs.github.io/vetur/guide/FAQ.html#vetur-can-t-find-package-json-in-xxxx-xxxxxx'
+        'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-can-t-find-package-json-in-xxxx-xxxxxx'
       );
     } else if (!isFileCanAccess(projectConfig.packagePath)) {
       showErrorIfCantAccess('ts/js config', projectConfig.packagePath);
     } else {
       if (
-        !projectConfig.isExistVeturConfig &&
+        !projectConfig.isExistCoffeeSenseConfig &&
         normalizeFileNameResolve(projectConfig.rootFsPath, 'package.json') !== projectConfig.packagePath
       ) {
         showWarningAndLearnMore(
-          `Vetur found \`package.json\`/, but it isn\'t in the project root.`,
-          'https://vuejs.github.io/vetur/guide/FAQ.html#vetur-found-xxx-but-they-aren-t-in-the-project-root'
+          `CoffeeSense found \`package.json\`/, but it isn\'t in the project root.`,
+          'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
         );
       }
     }
@@ -352,9 +320,9 @@ export class VLS {
     const dependencyService = await createDependencyService(
       projectConfig.rootPathForConfig,
       projectConfig.workspaceFsPath,
-      projectConfig.vlsFullConfig.vetur.useWorkspaceDependencies,
+      projectConfig.lspFullConfig.coffeesense.useWorkspaceDependencies,
       nodeModulePaths,
-      projectConfig.vlsFullConfig.typescript.tsdk
+      projectConfig.lspFullConfig.typescript.tsdk
     );
     this.warnProjectIfNeed(projectConfig);
     const project = await createProjectService(
@@ -363,14 +331,10 @@ export class VLS {
         projectConfig.rootFsPath,
         projectConfig.tsconfigPath,
         projectConfig.packagePath,
-        projectConfig.snippetFolder,
-        projectConfig.globalComponents,
-        projectConfig.vlsFullConfig
+        projectConfig.lspFullConfig
       ),
       this.documentService,
-      this.globalSnippetDir,
-      dependencyService,
-      createRefTokensService(this.lspConnection)
+      dependencyService
     );
     this.projects.set(projectConfig.rootFsPath, project);
     workDoneProgress.done();
@@ -382,22 +346,14 @@ export class VLS {
     this.lspConnection.onCompletionResolve(this.onCompletionResolve.bind(this));
 
     this.lspConnection.onDefinition(this.onDefinition.bind(this));
-    this.lspConnection.onDocumentFormatting(this.onDocumentFormatting.bind(this));
     this.lspConnection.onDocumentHighlight(this.onDocumentHighlight.bind(this));
-    this.lspConnection.onDocumentLinks(this.onDocumentLinks.bind(this));
     this.lspConnection.onDocumentSymbol(this.onDocumentSymbol.bind(this));
     this.lspConnection.onHover(this.onHover.bind(this));
     this.lspConnection.onReferences(this.onReferences.bind(this));
     this.lspConnection.onSignatureHelp(this.onSignatureHelp.bind(this));
-    this.lspConnection.onFoldingRanges(this.onFoldingRanges.bind(this));
     this.lspConnection.onCodeAction(this.onCodeAction.bind(this));
     this.lspConnection.onCodeActionResolve(this.onCodeActionResolve.bind(this));
     this.lspConnection.workspace.onWillRenameFiles(this.onWillRenameFiles.bind(this));
-    this.lspConnection.languages.semanticTokens.on(this.onSemanticToken.bind(this));
-    this.lspConnection.languages.semanticTokens.onRange(this.onSemanticToken.bind(this));
-
-    this.lspConnection.onDocumentColor(this.onDocumentColors.bind(this));
-    this.lspConnection.onColorPresentation(this.onColorPresentations.bind(this));
 
     this.lspConnection.onExecuteCommand(this.executeCommand.bind(this));
   }
@@ -410,7 +366,7 @@ export class VLS {
 
       return JSON.stringify(
         {
-          name: 'Vetur doctor info',
+          name: 'CoffeeSense doctor info',
           fileName,
           currentProject: {
             vueVersion: project ? getVueVersionKey(project?.env.getVueVersion()) : null,
@@ -425,11 +381,6 @@ export class VLS {
       );
     });
 
-    this.lspConnection.onRequest('$/queryVirtualFileInfo', async ({ fileName, currFileText }) => {
-      const project = await this.getProjectService(getFsPathToUri(fileName));
-      return (project?.languageModes.getMode('vue-html') as VueHTMLMode).queryVirtualFileInfo(fileName, currFileText);
-    });
-
     this.lspConnection.onRequest('$/getDiagnostics', async params => {
       const doc = this.documentService.getDocument(params.uri);
       if (doc) {
@@ -438,20 +389,6 @@ export class VLS {
       }
       return [];
     });
-  }
-
-  private async setupDynamicFormatters(enable: boolean) {
-    if (enable) {
-      if (!this.documentFormatterRegistration) {
-        this.documentFormatterRegistration = await this.lspConnection.client.register(DocumentFormattingRequest.type, {
-          documentSelector: [{ language: 'vue' }]
-        });
-      }
-    } else {
-      if (this.documentFormatterRegistration) {
-        this.documentFormatterRegistration.dispose();
-      }
-    }
   }
 
   private setupFileChangeListeners() {
@@ -467,9 +404,9 @@ export class VLS {
         if (c.type === FileChangeType.Changed) {
           const fsPath = getFileFsPath(c.uri);
 
-          // when `vetur.config.js` changed
+          // when `coffeesense.config.js` changed
           if (this.workspaces.has(fsPath)) {
-            logger.logInfo(`refresh vetur config when ${fsPath} changed.`);
+            logger.logInfo(`refresh coffeesense config when ${fsPath} changed.`);
             const name = this.workspaces.get(fsPath)?.name ?? '';
             this.workspaces.delete(fsPath);
             await this.addWorkspace({ name, fsPath });
@@ -507,12 +444,6 @@ export class VLS {
   /**
    * Language Features
    */
-
-  async onDocumentFormatting(params: DocumentFormattingParams): Promise<TextEdit[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onDocumentFormatting(params) ?? [];
-  }
 
   async onCompletion(params: CompletionParams): Promise<CompletionList> {
     const project = await this.getProjectService(params.textDocument.uri);
@@ -553,40 +484,16 @@ export class VLS {
     return project?.onReferences(params) ?? [];
   }
 
-  async onDocumentLinks(params: DocumentLinkParams): Promise<DocumentLink[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onDocumentLinks(params) ?? [];
-  }
-
   async onDocumentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
     const project = await this.getProjectService(params.textDocument.uri);
 
     return project?.onDocumentSymbol(params) ?? [];
   }
 
-  async onDocumentColors(params: DocumentColorParams): Promise<ColorInformation[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onDocumentColors(params) ?? [];
-  }
-
-  async onColorPresentations(params: ColorPresentationParams): Promise<ColorPresentation[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onColorPresentations(params) ?? [];
-  }
-
   async onSignatureHelp(params: TextDocumentPositionParams): Promise<SignatureHelp | null> {
     const project = await this.getProjectService(params.textDocument.uri);
 
     return project?.onSignatureHelp(params) ?? NULL_SIGNATURE;
-  }
-
-  async onFoldingRanges(params: FoldingRangeParams): Promise<FoldingRange[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onFoldingRanges(params) ?? [];
   }
 
   async onCodeAction(params: CodeActionParams) {
@@ -629,12 +536,6 @@ export class VLS {
     return {
       documentChanges
     };
-  }
-
-  async onSemanticToken(params: SemanticTokensParams | SemanticTokensRangeParams): Promise<SemanticTokens> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onSemanticTokens(params) ?? { data: [] as number[] };
   }
 
   private triggerValidation(textDocument: TextDocument): void {
@@ -708,33 +609,15 @@ export class VLS {
       documentFormattingProvider: false,
       hoverProvider: true,
       documentHighlightProvider: true,
-      documentLinkProvider: {
-        resolveProvider: false
-      },
       documentSymbolProvider: true,
       definitionProvider: true,
       referencesProvider: true,
       codeActionProvider: {
-        codeActionKinds: [
-          CodeActionKind.QuickFix,
-          CodeActionKind.Refactor,
-          CodeActionKind.RefactorExtract,
-          CodeActionKind.RefactorInline,
-          CodeActionKind.RefactorRewrite,
-          CodeActionKind.Source,
-          CodeActionKind.SourceOrganizeImports
-        ],
+        codeActionKinds: [CodeActionKind.SourceOrganizeImports],
         resolveProvider: true
       },
-      colorProvider: true,
       executeCommandProvider: {
         commands: []
-      },
-      foldingRangeProvider: true,
-      semanticTokensProvider: {
-        range: true,
-        full: true,
-        legend: getSemanticTokenLegends()
       }
     };
   }

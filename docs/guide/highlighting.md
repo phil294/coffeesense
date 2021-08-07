@@ -1,6 +1,6 @@
 # Syntax Highlighting
 
-Vetur supports syntax highlighting for the following languages:
+CoffeeSense supports syntax highlighting for the following languages:
 
 | syntax                   | lang      | required extension                                                                                                                                                 |
 | ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -22,12 +22,12 @@ Vetur supports syntax highlighting for the following languages:
 | `<script lang="coffee">` | `coffee`  |
 
 ::: v-pre
-Vetur supports syntax highlighting for vue directives (e.g. `v-if` or `:attribute=`) and vue interpolations (e.g. `{{variable}}`).
+CoffeeSense supports syntax highlighting for vue directives (e.g. `v-if` or `:attribute=`) and vue interpolations (e.g. `{{variable}}`).
 :::
 The supported attribute string literals are `'` and `"`.
-Vetur does not support the `` ` `` backtick literal, as it makes things more complex and there is no observed benefit of using it.
+CoffeeSense does not support the `` ` `` backtick literal, as it makes things more complex and there is no observed benefit of using it.
 
-Vetur does not support explicitly adding the default language:
+CoffeeSense does not support explicitly adding the default language:
 
 ```vue
 <template lang="html"></template>
@@ -42,10 +42,10 @@ Preprocessors are also not languages, so `<script lang="babel">` would be invali
 
 ## Custom Block
 
-Vetur provides a setting `vetur.grammar.customBlocks` that defaults to:
+CoffeeSense provides a setting `coffeesense.grammar.customBlocks` that defaults to:
 
 ```json
-  "vetur.grammar.customBlocks": {
+  "coffeesense.grammar.customBlocks": {
     "docs": "md",
     "i18n": "json"
   }
@@ -53,10 +53,10 @@ Vetur provides a setting `vetur.grammar.customBlocks` that defaults to:
 
 You can
 
-- Change `vetur.grammar.customBlocks`, for example:
+- Change `coffeesense.grammar.customBlocks`, for example:
 
   ```json
-  "vetur.grammar.customBlocks": {
+  "coffeesense.grammar.customBlocks": {
     "docs": "md",
     "i18n": "json",
     "page-query": "graphql",
@@ -64,7 +64,7 @@ You can
   }
   ```
 
-- Run the command "Vetur: Generate grammar from `vetur.grammar.customBlocks`
+- Run the command "CoffeeSense: Generate grammar from `coffeesense.grammar.customBlocks`
 - **Restart VS Code** to get syntax highlighting for custom blocks.
 
 Valid language value for custom blocks:

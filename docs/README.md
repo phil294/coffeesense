@@ -4,20 +4,20 @@ actionText: Get Started →
 actionLink: /guide/
 ---
 
-# Vetur
+# CoffeeSense
 
-[![](https://vsmarketplacebadge.apphb.com/version-short/octref.vetur.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
-[![](https://vsmarketplacebadge.apphb.com/installs-short/octref.vetur.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
-[![](https://vsmarketplacebadge.apphb.com/rating-short/octref.vetur.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.vetur)
+[![](https://vsmarketplacebadge.apphb.com/version-short/octref.coffeesense.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.coffeesense)
+[![](https://vsmarketplacebadge.apphb.com/installs-short/octref.coffeesense.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.coffeesense)
+[![](https://vsmarketplacebadge.apphb.com/rating-short/octref.coffeesense.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=octref.coffeesense)
 
-Vue tooling for VS Code, powered by [vls](https://github.com/vuejs/vetur/tree/master/server).
+Vue tooling for VS Code, powered by [vls](https://github.com/phil294/coffeesense/tree/master/server).
 
-Try it out with [Veturpack](https://github.com/octref/veturpack)!
+Try it out with [CoffeeSensepack](https://github.com/octref/coffeesensepack)!
 
 🎉 VueConf 2017 [Slide](https://www.dropbox.com/sh/eb4w8k3orh0j391/AAB3HaJexbGLa2tCP14BI8oJa?dl=0) & [Video](https://www.youtube.com/watch?v=05tNXJ-Kric) 🎉
 
 This extension is under heavy development.
-You can [open an issue](https://github.com/vuejs/vetur/issues/new) for bugs or feature requests.
+You can [open an issue](https://github.com/phil294/coffeesense/issues/new) for bugs or feature requests.
 
 ## Features
 
@@ -36,14 +36,14 @@ You can [open an issue](https://github.com/vuejs/vetur/issues/new) for bugs or f
 
 ## Quick Start
 
-- Install [Vetur](https://marketplace.visualstudio.com/items?itemName=octref.vetur).
-- Try it with [Veturpack](https://github.com/octref/veturpack), a pre-configured Vue boilerplate based on [Vuepack](https://github.com/egoist/vuepack).
+- Install [CoffeeSense](https://marketplace.visualstudio.com/items?itemName=octref.coffeesense).
+- Try it with [CoffeeSensepack](https://github.com/octref/coffeesensepack), a pre-configured Vue boilerplate based on [Vuepack](https://github.com/egoist/vuepack).
 - Refer to [setup](/guide/setup.md) page for setting up.
 - Refer to each feature's own page for setting up specific features.
 
 ## Contributing
 
-[Contribution Guide](https://github.com/vuejs/vetur/blob/master/.github/CONTRIBUTING.md).
+[Contribution Guide](https://github.com/phil294/coffeesense/blob/master/.github/CONTRIBUTING.md).
 
 ## License
 

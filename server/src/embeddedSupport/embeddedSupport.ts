@@ -2,20 +2,7 @@ import { Position, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { parseVueDocumentRegions, EmbeddedRegion } from './vueDocumentRegionParser';
 
-export type LanguageId =
-  | 'vue'
-  | 'vue-html'
-  | 'pug'
-  | 'css'
-  | 'postcss'
-  | 'scss'
-  | 'sass'
-  | 'less'
-  | 'stylus'
-  | 'javascript'
-  | 'typescript'
-  | 'tsx'
-  | 'unknown';
+export type LanguageId = 'vue' | 'javascript' | 'typescript' | 'unknown';
 
 export interface LanguageRange extends Range {
   languageId: LanguageId;
@@ -53,12 +40,10 @@ export interface VueDocumentRegions {
   getImportedScripts(): string[];
 }
 
-type RegionType = 'template' | 'script' | 'style' | 'custom';
+type RegionType = 'script' | 'custom';
 
 const defaultLanguageIdForBlockTypes: { [type: string]: string } = {
-  template: 'vue-html',
-  script: 'javascript',
-  style: 'css'
+  script: 'javascript'
 };
 
 export function getVueDocumentRegions(document: TextDocument): VueDocumentRegions {

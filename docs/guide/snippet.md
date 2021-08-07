@@ -1,6 +1,6 @@
 # Snippet
 
-Vetur lets you use snippets for each embedded languages.
+CoffeeSense lets you use snippets for each embedded languages.
 
 For example, snippet defined for TypeScript will be available in the TypeScript region:
 ```html
@@ -24,7 +24,7 @@ Two exceptions:
 
 ## Customizable Scaffold Snippets
 
-Vetur provides scaffolding snippets for quickly defining regions.  
+CoffeeSense provides scaffolding snippets for quickly defining regions.  
 They are `vue` snippets and can be used outside language regions.
 
 To start using them, type:
@@ -34,18 +34,18 @@ To start using them, type:
 - `<style` for style scaffolding snippets
 - `<script` for script scaffolding snippets
 
-Three sources supplement Vetur with scaffold snippets:
+Three sources supplement CoffeeSense with scaffold snippets:
 
 ![Snippet Main](../images/snippet-main.png)
 
-- 💼 Workspace. Located at `<WORKSPACE>/.vscode/vetur/snippets`. These scaffold snippets are only available in the workspace.
-- 🗒️ User data directory. You can open the folder with the command `Vetur: Open user scaffold snippet folder`. These scaffold snippets are available in all workspaces.
-- ✌ Vetur. Vetur offers a few scaffold snippets out of the box.
+- 💼 Workspace. Located at `<WORKSPACE>/.vscode/coffeesense/snippets`. These scaffold snippets are only available in the workspace.
+- 🗒️ User data directory. You can open the folder with the command `CoffeeSense: Open user scaffold snippet folder`. These scaffold snippets are available in all workspaces.
+- ✌ CoffeeSense. CoffeeSense offers a few scaffold snippets out of the box.
 
-The workspace/user Vetur snippet folders share the same structure:
+The workspace/user CoffeeSense snippet folders share the same structure:
 
 ```
-vetur/snippets/
+coffeesense/snippets/
 ├── docs/
 │   │   // Completed as `<docs>`. Will have default completion icon.
 │   └── docs.vue
@@ -56,15 +56,15 @@ vetur/snippets/
 └── vue-class-component.vue // Top level files will be completed as `<vue>`
 ```
 
-Completions of scaffold snippets are sorted by their categories. Workspace > User > Vetur.
+Completions of scaffold snippets are sorted by their categories. Workspace > User > CoffeeSense.
 
-You can customize the suffix and turn sources on/off with `vetur.completion.scaffoldSnippetSources`:
+You can customize the suffix and turn sources on/off with `coffeesense.completion.scaffoldSnippetSources`:
 
 ```json
-"vetur.completion.scaffoldSnippetSources": {
+"coffeesense.completion.scaffoldSnippetSources": {
   "workspace": "💼", // Suffix workspace snippets with `💼`
   "user": "(️User)", // Suffix workspace snippets with `(User)`
-  "vetur": "" // Disable Vetur's builtin scaffold snippets
+  "coffeesense": "" // Disable CoffeeSense's builtin scaffold snippets
 }
 ```
 

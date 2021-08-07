@@ -1,31 +1,30 @@
 {
-  "name": "vetur",
-  "displayName": "Vetur",
-  "description": "Vue tooling for VS Code",
-  "author": "Pine Wu <octref@gmail.com>",
-  "icon": "asset/vue.png",
-  "version": "0.34.1",
-  "publisher": "octref",
+	"name": "coffeesense",
+  "displayName": "CoffeeSense",
+	"description": "IntelliSense for CoffeeScript based on its compiled JavaScript output",
+	"author": "phil294",
+	"license": "MIT",
+	"version": "0.0.1",
+  "icon": "asset/TODO.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/phil294/coffeescript-intellisense"
+	},
+	"publisher": "vscode",
+	"keywords": [
+		"CoffeeScript",
+		"IntelliSense",
+		"Autocomplete",
+		"Go To Definition",
+		"Diagnostics",
+		"(TODO)"
+	],
   "scripts": {
     "postinstall": "run-s install:*",
     "install:server": "cd server && yarn",
-    "install:vti": "cd vti && yarn",
-    "build:grammar": "ts-node --project scripts/tsconfig.json scripts/build_grammar",
     "compile": "rollup -c rollup.config.js",
     "watch": "rollup -c rollup.config.js -w",
     "lint": "tslint -c tslint.json client/**/*.ts server/**/*.ts scripts/**/*.ts",
-    "build:test": "tsc -p test/tsconfig.json",
-    "pretest": "yarn build:test",
-    "test:server": "cd server && yarn test",
-    "test:e2e": "node ./dist-test/test/codeTestRunner.js",
-    "test:grammar": "node ./dist-test/test/codeTestRunner.js grammar",
-    "test:lsp": "node ./dist-test/test/codeTestRunner.js lsp",
-    "test:int": "node ./dist-test/test/codeTestRunner.js interpolation",
-    "test:vue3": "node ./dist-test/test/codeTestRunner.js vue3",
-    "test:componentData": "node ./dist-test/test/codeTestRunner.js componentData",
-    "test:monorepo": "node ./dist-test/test/codeTestRunner.js monorepo",
-    "test": "run-s test:server test:e2e",
-    "docs": "bash ./build/update-docs.sh",
     "prepare-publish": "./build/release-cleanup.sh",
     "prepare": "husky install"
   },
@@ -42,16 +41,6 @@
       "prettier --write"
     ]
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/vuejs/vetur.git"
-  },
-  "keywords": [
-    "vetur",
-    "Vue",
-    "vue",
-    "vuejs"
-  ],
   "categories": [
     "Programming Languages"
   ],
@@ -65,33 +54,18 @@
   "contributes": {
     "commands": [
       {
-        "command": "vetur.restartVLS",
-        "category": "Vetur",
-        "title": "Restart VLS (Vue Language Server)"
+        "command": "coffeesense.restartLSP",
+        "category": "CoffeeSense",
+        "title": "Restart LSP (CoffeeSense Language Server)"
       },
       {
-        "command": "vetur.generateGrammar",
-        "category": "Vetur",
-        "title": "Generate grammar from `vetur.grammar.customBlocks`"
-      },
-      {
-        "command": "vetur.showCorrespondingVirtualFile",
-        "category": "Vetur",
-        "title": "Show corresponding virtual file and sourcemap"
-      },
-      {
-        "command": "vetur.openUserScaffoldSnippetFolder",
-        "category": "Vetur",
-        "title": "Open user scaffold snippet folder"
-      },
-      {
-        "command": "vetur.showOutputChannel",
-        "category": "Vetur",
+        "command": "coffeesense.showOutputChannel",
+        "category": "CoffeeSense",
         "title": "Show Output Channel"
       },
       {
-        "command": "vetur.showDoctorInfo",
-        "category": "Vetur",
+        "command": "coffeesense.showDoctorInfo",
+        "category": "CoffeeSense",
         "title": "Show Doctor info"
       }
     ],
@@ -111,432 +85,44 @@
           ".vue"
         ],
         "configuration": "./languages/vue-language-configuration.json"
-      },
-      {
-        "id": "vue-html",
-        "aliases": [
-          "Vue-html"
-        ],
-        "configuration": "./languages/vue-html-language-configuration.json"
-      },
-      {
-        "id": "vue-postcss",
-        "aliases": [
-          "Vue-PostCSS",
-          "Vue-POSTCSS",
-          "vue-postcss"
-        ],
-        "configuration": "./languages/vue-postcss-language-configuration.json"
-      },
-      {
-        "id": "vue-sugarss",
-        "aliases": [
-          "Vue-SugarSS",
-          "Vue-SUGARSS",
-          "vue-sugarss"
-        ],
-        "configuration": "./languages/vue-sugarss-language-configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "vue",
-        "scopeName": "source.vue",
-        "path": "./syntaxes/vue-generated.json",
-        "embeddedLanguages": {
-          "text.html.basic": "html",
-          "text.html.vue-html": "vue-html",
-          "text.jade.slm": "slm",
-          "text.pug": "jade",
-          "text.haml": "haml",
-          "text.slim": "slim",
-          "text.html.liquid": "liquid",
-          "source.css": "css",
-          "source.css.scss": "scss",
-          "source.css.less": "less",
-          "source.css.postcss": "vue-postcss",
-          "source.css.sugarss": "vue-sugarss",
-          "source.sass": "sass",
-          "source.stylus": "stylus",
-          "source.js": "javascript",
-          "source.ts": "typescript",
-          "source.coffee": "coffeescript",
-          "text.html.markdown": "md",
-          "source.yaml": "yaml",
-          "source.json": "json",
-          "source.php": "php",
-          "source.graphql": "graphql"
-        }
-      },
-      {
-        "language": "vue-postcss",
-        "scopeName": "source.css.postcss",
-        "path": "./syntaxes/vue-postcss.json"
-      },
-      {
-        "language": "vue-sugarss",
-        "scopeName": "source.css.sugarss",
-        "path": "./syntaxes/vue-sugarss.json"
-      },
-      {
-        "language": "vue-html",
-        "scopeName": "text.html.vue-html",
-        "path": "./syntaxes/vue-html.tmLanguage.json",
-        "embeddedLanguages": {
-          "source.js": "javascript"
-        }
-      },
-      {
-        "path": "./syntaxes/pug/directives.tmLanguage.json",
-        "scopeName": "vue.pug.directives",
-        "injectTo": [
-          "source.vue"
-        ]
-      },
-      {
-        "path": "./syntaxes/pug/interpolations.tmLanguage.json",
-        "scopeName": "vue.pug.interpolations",
-        "injectTo": [
-          "source.vue"
-        ]
-      },
-      {
-        "scopeName": "markdown.vue.codeblock",
-        "path": "./syntaxes/markdown-vue.json",
-        "injectTo": [
-          "text.html.markdown"
-        ],
-        "embeddedLanguages": {
-          "meta.embedded.block.vue": "vue"
-        }
       }
     ],
     "configuration": {
-      "title": "Vetur",
+      "title": "CoffeeSense",
       "properties": {
-        "vetur.ignoreProjectWarning": {
+        "coffeesense.ignoreProjectWarning": {
           "type": "boolean",
           "default": false,
-          "description": "Vetur will warn about not setup correctly for the project. You can disable it.",
+          "description": "CoffeeSense will warn about not setup correctly for the project. You can disable it.",
           "scope": "application"
         },
-        "vetur.useWorkspaceDependencies": {
+        "coffeesense.useWorkspaceDependencies": {
           "type": "boolean",
           "default": false,
           "description": "Use dependencies from workspace. Currently only for TypeScript.",
           "scope": "application"
         },
-        "vetur.completion.autoImport": {
+        "coffeesense.completion.autoImport": {
           "type": "boolean",
           "default": true,
           "description": "Include completion for module export and auto import them"
         },
-        "vetur.completion.scaffoldSnippetSources": {
-          "type": "object",
-          "default": {
-            "workspace": "💼",
-            "user": "🗒️",
-            "vetur": "✌"
-          },
-          "properties": {
-            "workspace": {
-              "type": "string",
-              "default": "💼",
-              "description": "Show Scaffold Snippets from `<WORKSPACE>/.vscode/vetur/snippets`."
-            },
-            "user": {
-              "type": "string",
-              "default": "🗒️",
-              "description": "Show Scaffold Snippets from `<USER-DATA-DIR>/User/snippets/vetur`."
-            },
-            "vetur": {
-              "type": "string",
-              "default": "✌",
-              "description": "Show Scaffold Snippets bundled in Vetur."
-            }
-          },
-          "description": "Where Vetur source Scaffold Snippets from and how to indicate them. Set a source to \"\" to disable it.\n\n- workspace: `<WORKSPACE>/.vscode/vetur/snippets`.\n- user: `<USER-DATA-DIR>/User/snippets/vetur`.\n- vetur: Bundled in Vetur.\n\nThe default is:\n```\n\"vetur.completion.scaffoldSnippetSources\": {\n  \"workspace\": \"💼\",\n  \"user\": \"🗒️\",\n  \"vetur\": \"✌\"\n}\n```\n\nAlternatively, you can do:\n\n```\n\"vetur.completion.scaffoldSnippetSources\": {\n  \"workspace\": \"(W)\",\n  \"user\": \"(U)\",\n  \"vetur\": \"(V)\"\n}\n```\n\nRead more: https://vuejs.github.io/vetur/snippet.html."
-        },
-        "vetur.completion.tagCasing": {
-          "type": "string",
-          "default": "kebab",
-          "enum": [
-            "initial",
-            "kebab"
-          ],
-          "enumDescriptions": [
-            "use the key in `components: {...}` as is for tag completion and do not force any casing",
-            "kebab-case completion for <my-tag>"
-          ],
-          "description": "Casing conversion for tag completion"
-        },
-        "vetur.grammar.customBlocks": {
-          "type": "object",
-          "default": {
-            "docs": "md",
-            "i18n": "json"
-          },
-          "description": "Mapping from custom block tag name to language name. Used for generating grammar to support syntax highlighting for custom blocks."
-        },
-        "vetur.validation.template": {
-          "type": "boolean",
-          "default": true,
-          "description": "Validate vue-html in <template> using eslint-plugin-vue"
-        },
-        "vetur.validation.templateProps": {
-          "type": "boolean",
-          "default": false,
-          "description": "Validate props usage in <template> region. Show error/warning for not passing declared props to child components and show error for passing wrongly typed interpolation expressions"
-        },
-        "vetur.validation.interpolation": {
-          "type": "boolean",
-          "default": true,
-          "description": "Validate interpolations in <template> region using TypeScript language service"
-        },
-        "vetur.validation.style": {
-          "type": "boolean",
-          "default": true,
-          "description": "Validate css/scss/less/postcss in <style>"
-        },
-        "vetur.validation.script": {
+        "coffeesense.validation.script": {
           "type": "boolean",
           "default": true,
           "description": "Validate js/ts in <script>"
         },
-        "vetur.format.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable/disable the Vetur document formatter."
-        },
-        "vetur.format.options.tabSize": {
-          "type": "number",
-          "default": 2,
-          "description": "Number of spaces per indentation level. Inherited by all formatters."
-        },
-        "vetur.format.options.useTabs": {
-          "type": "boolean",
-          "default": false,
-          "description": "Use tabs for indentation. Inherited by all formatters."
-        },
-        "vetur.format.defaultFormatter.html": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettyhtml",
-            "js-beautify-html",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "🚧 [DEPRECATED] prettyhtml",
-            "html formatter of js-beautify",
-            "prettier"
-          ],
-          "description": "Default formatter for <template> region"
-        },
-        "vetur.format.defaultFormatter.pug": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "prettier"
-          ],
-          "description": "Default formatter for <template lang='pug'> region"
-        },
-        "vetur.format.defaultFormatter.css": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "css formatter using css parser from prettier"
-          ],
-          "description": "Default formatter for <style> region"
-        },
-        "vetur.format.defaultFormatter.postcss": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "postcss formatter using css parser from prettier"
-          ],
-          "description": "Default formatter for <style lang='postcss'> region"
-        },
-        "vetur.format.defaultFormatter.scss": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "scss formatter using scss parser from prettier"
-          ],
-          "description": "Default formatter for <style lang='scss'> region"
-        },
-        "vetur.format.defaultFormatter.sass": {
-          "type": "string",
-          "default": "sass-formatter",
-          "enum": [
-            "none",
-            "sass-formatter"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "sass formatter"
-          ],
-          "description": "Default formatter for <style lang='sass'> region"
-        },
-        "vetur.format.defaultFormatter.less": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "less formatter using postcss parser from prettier"
-          ],
-          "description": "Default formatter for <style lang='less'> region"
-        },
-        "vetur.format.defaultFormatter.stylus": {
-          "type": "string",
-          "default": "stylus-supremacy",
-          "enum": [
-            "none",
-            "stylus-supremacy"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "stylus formatter from stylus-supremacy"
-          ],
-          "description": "Default formatter for <style lang='stylus'> region"
-        },
-        "vetur.format.defaultFormatter.js": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier",
-            "prettier-eslint",
-            "vscode-typescript"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "js formatter from prettier",
-            "prettier-eslint",
-            "js formatter from TypeScript"
-          ],
-          "description": "Default formatter for <script> region"
-        },
-        "vetur.format.defaultFormatter.ts": {
-          "type": "string",
-          "default": "prettier",
-          "enum": [
-            "none",
-            "prettier",
-            "prettier-tslint",
-            "vscode-typescript"
-          ],
-          "enumDescriptions": [
-            "disable formatting",
-            "ts formatter using typescript parser from prettier",
-            "ts formatter from TypeScript"
-          ],
-          "description": "Default formatter for <script> region"
-        },
-        "vetur.format.defaultFormatterOptions": {
-          "type": "object",
-          "properties": {
-            "prettier": {
-              "type": "object",
-              "description": "Global prettier config used by prettier formatter. Used by `prettier` and `prettier-eslint`.\n\nVetur will prefer a prettier config file at home directory if one exists.",
-              "properties": {}
-            },
-            "prettyhtml": {
-              "type": "object",
-              "description": "Options for prettyhtml",
-              "properties": {
-                "printWidth": {
-                  "type": "number",
-                  "default": 100,
-                  "description": "Maximum amount of characters allowed per line"
-                },
-                "singleQuote": {
-                  "type": "boolean",
-                  "default": false,
-                  "description": "Whether to use single quotes by default"
-                },
-                "wrapAttributes": {
-                  "type": "boolean",
-                  "default": false,
-                  "description": "Whether to wrap attributes"
-                },
-                "sortAttributes": {
-                  "type": "boolean",
-                  "default": false,
-                  "description": "Whether to sort attributes"
-                }
-              }
-            },
-            "js-beautify-html": {
-              "type": "object",
-              "description": "Options for js-beautify"
-            }
-          },
-          "default": {
-            "js-beautify-html": {
-              "wrap_attributes": "force-expand-multiline"
-            },
-            "prettyhtml": {
-              "printWidth": 100,
-              "singleQuote": false,
-              "wrapAttributes": false,
-              "sortAttributes": false
-            }
-          },
-          "description": "Options for all default formatters"
-        },
-        "vetur.format.styleInitialIndent": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to have initial indent for <style> region"
-        },
-        "vetur.format.scriptInitialIndent": {
-          "type": "boolean",
-          "default": false,
-          "description": "Whether to have initial indent for <script> region"
-        },
-        "vetur.languageFeatures.codeActions": {
+        "coffeesense.languageFeatures.codeActions": {
           "type": "boolean",
           "default": true,
           "description": "Whether to enable codeActions"
         },
-        "vetur.languageFeatures.updateImportOnFileMove": {
+        "coffeesense.languageFeatures.updateImportOnFileMove": {
           "type": "boolean",
           "default": true,
           "description": "Whether to automatic updating import path when rename or move a file"
         },
-        "vetur.languageFeatures.semanticTokens": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to enable semantic highlighting. Currently only works for typescript"
-        },
-        "vetur.trace.server": {
+        "coffeesense.trace.server": {
           "type": "string",
           "enum": [
             "off",
@@ -544,19 +130,19 @@
             "verbose"
           ],
           "default": "off",
-          "description": "Traces the communication between VS Code and Vue Language Server."
+          "description": "Traces the communication between VS Code and CoffeeSense Language Server."
         },
-        "vetur.dev.vlsPath": {
+        "coffeesense.dev.vlsPath": {
           "type": "string",
-          "description": "Path to vls for Vetur developers. There are two ways of using it. \n\n1. Clone vuejs/vetur from GitHub, build it and point it to the ABSOLUTE path of `/server`.\n2. `yarn global add vls` and point Vetur to the installed location (`yarn global dir` + node_modules/vls)",
+          "description": "Path to vls for CoffeeSense developers. There are two ways of using it. \n\n1. Clone phil294/coffeesense from GitHub, build it and point it to the ABSOLUTE path of `/server`.\n2. `yarn global add vls` and point CoffeeSense to the installed location (`yarn global dir` + node_modules/vls)",
           "scope": "machine"
         },
-        "vetur.dev.vlsPort": {
+        "coffeesense.dev.vlsPort": {
           "type": "number",
           "description": "The port that VLS listens to. Can be used for attaching to the VLS Node process for debugging / profiling.",
           "default": -1
         },
-        "vetur.dev.logLevel": {
+        "coffeesense.dev.logLevel": {
           "type": "string",
           "description": "Log level for VLS",
           "default": "INFO",
@@ -568,28 +154,9 @@
             "Only log info messages. This is the default.",
             "Log info and debug messages."
           ]
-        },
-        "vetur.experimental.templateInterpolationService": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable template interpolation service that offers hover / definition / references in Vue interpolations."
-        },
-        "vetur.underline.refValue": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable underline `.value` when using composition API."
         }
       }
-    },
-    "semanticTokenScopes": [
-      {
-        "scopes": {
-          "property.refValue": [
-            "entity.name.function"
-          ]
-        }
-      }
-    ]
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^18.0.0",
@@ -600,7 +167,6 @@
     "@types/js-yaml": "^4.0.1",
     "@types/lodash": "^4.14.170",
     "@types/minimist": "^1.2.1",
-    "@types/mocha": "^8.2.2",
     "@types/node": "^15.12.4",
     "@types/shelljs": "^0.8.8",
     "@types/vscode": "^1.52.0",
@@ -611,7 +177,6 @@
     "js-yaml": "^4.1.0",
     "lint-staged": "^11.0.0",
     "minimist": "^1.2.5",
-    "mocha": "^9.0.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.0",
     "rollup": "^2.52.2",
@@ -624,7 +189,6 @@
     "tslint": "^6.1.3",
     "typescript": "^4.3.2",
     "vscode-languageclient": "^7.0.0",
-    "vscode-languageserver-types": "^3.16.0",
-    "vscode-test": "^1.5.2"
+    "vscode-languageserver-types": "^3.16.0"
   }
 }

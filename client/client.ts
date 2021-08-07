@@ -10,7 +10,7 @@ import {
 import { resolve } from 'path';
 import { existsSync } from 'fs';
 
-export function initializeLanguageClient(vlsModulePath: string, globalSnippetDir: string): LanguageClient {
+export function initializeLanguageClient(lspModulePath: string): LanguageClient {
   const debugOptions = { execArgv: ['--nolazy', '--inspect=6005'] };
 
   const documentSelector: DocumentFilter[] = [{ language: 'vue', scheme: 'file' }];
@@ -18,18 +18,18 @@ export function initializeLanguageClient(vlsModulePath: string, globalSnippetDir
 
   let serverPath;
 
-  const devVlsPackagePath = config.get('vetur.dev.vlsPath', '');
-  if (devVlsPackagePath && devVlsPackagePath !== '' && existsSync(devVlsPackagePath)) {
-    serverPath = resolve(devVlsPackagePath, 'dist/vueServerMain.js');
+  const devLspPackagePath = config.get('coffeesense.dev.lspPath', '');
+  if (devLspPackagePath && devLspPackagePath !== '' && existsSync(devLspPackagePath)) {
+    serverPath = resolve(devLspPackagePath, 'dist/vueServerMain.js');
   } else {
-    serverPath = vlsModulePath;
+    serverPath = lspModulePath;
   }
 
   const runExecArgv: string[] = [];
-  const vlsPort = config.get('vetur.dev.vlsPort');
-  if (vlsPort !== -1) {
-    runExecArgv.push(`--inspect=${vlsPort}`);
-    console.log(`Will launch VLS in port: ${vlsPort}`);
+  const lspPort = config.get('coffeesense.dev.lspPort');
+  if (lspPort !== -1) {
+    runExecArgv.push(`--inspect=${lspPort}`);
+    console.log(`Will launch LSP in port: ${lspPort}`);
   }
 
   const serverOptions: ServerOptions = {
@@ -40,25 +40,14 @@ export function initializeLanguageClient(vlsModulePath: string, globalSnippetDir
   const clientOptions: LanguageClientOptions = {
     documentSelector,
     synchronize: {
-      configurationSection: [
-        'vetur',
-        'sass',
-        'emmet',
-        'html',
-        'css',
-        'javascript',
-        'typescript',
-        'prettier',
-        'stylusSupremacy'
-      ],
+      configurationSection: ['coffeesense', 'javascript', 'typescript'],
       fileEvents: vscode.workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
     },
     initializationOptions: {
-      config,
-      globalSnippetDir
+      config
     },
     revealOutputChannelOn: RevealOutputChannelOn.Never
   };
 
-  return new LanguageClient('vetur', 'Vue Language Server', serverOptions, clientOptions);
+  return new LanguageClient('coffeesense', 'CoffeeSense Language Server', serverOptions, clientOptions);
 }

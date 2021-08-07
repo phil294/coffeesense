@@ -1,8 +1,8 @@
 # Formatting
 
-Vetur has support for formatting embedded `html/pug/css/scss/less/postcss/stylus/js/ts`.
+CoffeeSense has support for formatting embedded `html/pug/css/scss/less/postcss/stylus/js/ts`.
 
-**Vetur only has a "whole document formatter" and cannot format arbitrary ranges.**  
+**CoffeeSense only has a "whole document formatter" and cannot format arbitrary ranges.**  
 **As a result, only the `Format Document` command is available.**  
 **The `Format Selection` command does not work.**
 
@@ -18,50 +18,50 @@ These formatters are available:
 - [`sass-formatter`](https://github.com/TheRealSyler/sass-formatter): For the .sass section of the files.
 - ~~[`prettyhtml`](https://github.com/Prettyhtml/prettyhtml): 🚧 [DEPRECATED] For html.~~
 
-Vetur bundles all the above formatters. When Vetur observes a local install of the formatter, it'll prefer to use the local version.
+CoffeeSense bundles all the above formatters. When CoffeeSense observes a local install of the formatter, it'll prefer to use the local version.
 
-You can choose each language's default formatter in VS Code config, `vetur.format.defaultFormatter`.
+You can choose each language's default formatter in VS Code config, `coffeesense.format.defaultFormatter`.
 **Setting a language's formatter to `none` disables formatter for that language.**
 
 Current default:
 
 ```json
 {
-  "vetur.format.defaultFormatter.html": "prettier",
-  "vetur.format.defaultFormatter.pug": "prettier",
-  "vetur.format.defaultFormatter.css": "prettier",
-  "vetur.format.defaultFormatter.postcss": "prettier",
-  "vetur.format.defaultFormatter.scss": "prettier",
-  "vetur.format.defaultFormatter.less": "prettier",
-  "vetur.format.defaultFormatter.stylus": "stylus-supremacy",
-  "vetur.format.defaultFormatter.js": "prettier",
-  "vetur.format.defaultFormatter.ts": "prettier",
-  "vetur.format.defaultFormatter.sass": "sass-formatter"
+  "coffeesense.format.defaultFormatter.html": "prettier",
+  "coffeesense.format.defaultFormatter.pug": "prettier",
+  "coffeesense.format.defaultFormatter.css": "prettier",
+  "coffeesense.format.defaultFormatter.postcss": "prettier",
+  "coffeesense.format.defaultFormatter.scss": "prettier",
+  "coffeesense.format.defaultFormatter.less": "prettier",
+  "coffeesense.format.defaultFormatter.stylus": "stylus-supremacy",
+  "coffeesense.format.defaultFormatter.js": "prettier",
+  "coffeesense.format.defaultFormatter.ts": "prettier",
+  "coffeesense.format.defaultFormatter.sass": "sass-formatter"
 }
 ```
 
 ## Settings
 
-A global switch `vetur.format.enable` toggles Vetur formatter on and off. This is useful if you want to let Prettier handle `*.vue` file formatting completely.
+A global switch `coffeesense.format.enable` toggles CoffeeSense formatter on and off. This is useful if you want to let Prettier handle `*.vue` file formatting completely.
 
 - The benefits of using Prettier: CLI support, one single formatter.
 - The downsides: No Stylus support, can't use `js-beautify`, `prettyhtml` or TypeScript formatter.
 
-### Vetur Formatter Config
+### CoffeeSense Formatter Config
 
 These two settings are inherited by all formatters:
 
 ```json
 {
-  "vetur.format.options.tabSize": 2,
-  "vetur.format.options.useTabs": false
+  "coffeesense.format.options.tabSize": 2,
+  "coffeesense.format.options.useTabs": false
 }
 ```
 
-However, when a local config (such as `.prettierrc`) is found, Vetur will prefer it. For example:
+However, when a local config (such as `.prettierrc`) is found, CoffeeSense will prefer it. For example:
 
-- `.prettierrc` is present but does not set `tabWidth` explicitly: Vetur uses `vetur.format.options.tabSize` as the `tabWidth` for prettier.
-- `.prettierrc` is present and sets `tabWidth` explicitly: Vetur ignores `vetur.format.options.tabSize`, always using the value in `.prettierrc`.
+- `.prettierrc` is present but does not set `tabWidth` explicitly: CoffeeSense uses `coffeesense.format.options.tabSize` as the `tabWidth` for prettier.
+- `.prettierrc` is present and sets `tabWidth` explicitly: CoffeeSense ignores `coffeesense.format.options.tabSize`, always using the value in `.prettierrc`.
 
 `useTabs` works the same way.
 
@@ -75,7 +75,7 @@ If you want to set global prettier setting, either:
 - Use the below config and do NOT include a `.prettierrc` in your home directory
 
   ```json
-  "vetur.format.defaultFormatterOptions": {
+  "coffeesense.format.defaultFormatterOptions": {
     "prettier": {
       // Prettier option here
       "semi": false
@@ -96,7 +96,7 @@ Global config: Same as `prettier` global config.
 Settings include:
 
 ```json
-"vetur.format.defaultFormatterOptions": {
+"coffeesense.format.defaultFormatterOptions": {
   "prettyhtml": {
     "printWidth": 100, // No line exceeds 100 characters
     "singleQuote": false // Prefer double quotes over single quotes
@@ -116,10 +116,10 @@ Settings are read from `javascript.format.*` and `typescript.format.*`.
 
 Alternative html formatter.
 
-Default settings are [here](https://github.com/vuejs/vetur/blob/master/server/src/modes/template/services/htmlFormat.ts). You can override them by setting `vetur.format.defaultFormatterOptions.js-beautify-html`.
+Default settings are [here](https://github.com/phil294/coffeesense/blob/master/server/src/modes/template/services/htmlFormat.ts). You can override them by setting `coffeesense.format.defaultFormatterOptions.js-beautify-html`.
 
 ```json
-"vetur.format.defaultFormatterOptions": {
+"coffeesense.format.defaultFormatterOptions": {
   "js-beautify-html": {
     // js-beautify-html settings here
   }
@@ -128,7 +128,7 @@ Default settings are [here](https://github.com/vuejs/vetur/blob/master/server/sr
 
 #### [stylus-supremacy](https://thisismanta.github.io/stylus-supremacy/)
 
-Other settings are read from `stylusSupremacy.*`. You can install [Stylus Supremacy extension](https://marketplace.visualstudio.com/items?itemName=thisismanta.stylus-supremacy) to get IntelliSense for settings, but Vetur will work without it. A useful default:
+Other settings are read from `stylusSupremacy.*`. You can install [Stylus Supremacy extension](https://marketplace.visualstudio.com/items?itemName=thisismanta.stylus-supremacy) to get IntelliSense for settings, but CoffeeSense will work without it. A useful default:
 
 ```json
 {
@@ -140,7 +140,7 @@ Other settings are read from `stylusSupremacy.*`. You can install [Stylus Suprem
 
 #### [sass-formatter](https://github.com/TheRealSyler/sass-formatter)
 
-Settings are read from `sass.format.*`. You can install [Sass extension](https://marketplace.visualstudio.com/items?itemName=Syler.sass-indented) to get IntelliSense for settings, but Vetur will work without it. A useful default:
+Settings are read from `sass.format.*`. You can install [Sass extension](https://marketplace.visualstudio.com/items?itemName=Syler.sass-indented) to get IntelliSense for settings, but CoffeeSense will work without it. A useful default:
 
 ```json
 {

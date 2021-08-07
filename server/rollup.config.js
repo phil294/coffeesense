@@ -3,69 +3,41 @@ const path = require('path');
 const fg = require('fast-glob');
 const { getRootPath, clearDist, external, onwarn, createPlugins } = require('../build/rollup-common-config');
 const {
-  linkVlsInCLI,
-  bundleVlsWithEsbuild,
-  watchVlsChange,
-  generateTypingsVls
+  linkLspInCLI,
+  bundleLspWithEsbuild,
+  watchLspChange,
+  generateTypingsLsp
 } = require('../build/rollup-plugins.js');
-const vlsPkg = require('./package.json');
+const lspPkg = require('./package.json');
 const dts = require('rollup-plugin-dts').default;
 
-const getVLSPath = getRootPath('server');
+const getLSPPath = getRootPath('server');
 
-clearDist(getVLSPath('dist'));
-
-function copySnippets() {
-  return {
-    name: 'copy-snippets',
-    buildEnd() {
-      fs.copySync(getVLSPath('src/modes/vue/veturSnippets'), getVLSPath('dist/veturSnippets'), {
-        overwrite: true,
-        recursive: true
-      });
-    }
-  };
-}
-
-function copyTSDefaultLibs() {
-  return {
-    name: 'copy-ts-default-libs',
-    buildEnd() {
-      const files = fg.sync('node_modules/typescript/lib/lib*.d.ts', {
-        cwd: getVLSPath(''),
-        unique: true,
-        absolute: true
-      });
-      files.forEach(file => fs.copySync(file, getVLSPath('dist/' + path.basename(file)), { overwrite: true }));
-    }
-  };
-}
+clearDist(getLSPPath('dist'));
 
 module.exports = [
   // vueServerMain
   {
-    input: getVLSPath('src/vueServerMain.ts'),
-    output: { file: getVLSPath('dist/vueServerMain.js'), name: vlsPkg.name, format: 'cjs', sourcemap: true },
+    input: getLSPPath('src/vueServerMain.ts'),
+    output: { file: getLSPPath('dist/vueServerMain.js'), name: lspPkg.name, format: 'cjs', sourcemap: true },
     external,
     onwarn,
     watch: {
-      include: getVLSPath('**')
+      include: getLSPPath('**')
     },
     plugins: [
-      watchVlsChange(),
-      generateTypingsVls(),
-      bundleVlsWithEsbuild(),
-      copySnippets(),
-      // copyTSDefaultLibs(),
-      linkVlsInCLI(),
-      ...createPlugins(getVLSPath('tsconfig.json'))
+      watchLspChange(),
+      generateTypingsLsp(),
+      bundleLspWithEsbuild(),
+      linkLspInCLI(),
+      ...createPlugins(getLSPPath('tsconfig.json'))
     ]
   },
   // bundle typings
   {
-    input: getVLSPath('typings/main.d.ts'),
+    input: getLSPPath('typings/main.d.ts'),
     output: {
-      file: getVLSPath('dist/vls.d.ts'),
+      file: getLSPPath('dist/lsp.d.ts'),
       format: 'es'
     },
     onwarn,

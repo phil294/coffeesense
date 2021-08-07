@@ -3,7 +3,7 @@ import { isAbsolute, resolve } from 'path';
 import { URI } from 'vscode-uri';
 
 /**
- * Vetur mainly deals with paths / uris from two objects
+ * CoffeeSense mainly deals with paths / uris from two objects
  *
  * - `TextDocument` from `vscode-languageserver`
  * - `SourceFile` from `typescript`

@@ -1,4 +1,3 @@
-import { VLSFormatConfig } from '../config';
 import { MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { basename } from 'path';
 import { RuntimeLibrary } from '../services/dependencyService';
@@ -35,24 +34,6 @@ const CR = '\r'.charCodeAt(0);
 const NL = '\n'.charCodeAt(0);
 function isNewlineCharacter(charCode: number) {
   return charCode === CR || charCode === NL;
-}
-
-const nonEmptyLineRE = /^(?!$)/gm;
-/**
- *  wrap text in section tags like <template>, <style>
- *  add leading and trailing newline and optional indentation
- */
-export function indentSection(text: string, options: VLSFormatConfig): string {
-  const initialIndent = generateIndent(options);
-  return text.replace(nonEmptyLineRE, initialIndent);
-}
-
-function generateIndent(options: VLSFormatConfig) {
-  if (!options.options.useTabs) {
-    return ' '.repeat(options.options.tabSize);
-  } else {
-    return '\t';
-  }
 }
 
 export function toMarkupContent(value: string | MarkupContent | undefined) {

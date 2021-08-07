@@ -20,7 +20,7 @@
 
 ## Project Setup
 
-- At project root exist `package.json` file, Vetur use it for infer vue version and get component date.
+- At project root exist `package.json` file, CoffeeSense use it for infer vue version and get component date.
 - At project root create a `jsconfig.json` or `tsconfig.json` that `include` all vue files and files that they import from, for example:
 
 - `jsconfig.json`
@@ -60,7 +60,7 @@
 
 ### Path mapping
 
-If you are using [Webpack's alias](https://webpack.js.org/configuration/resolve/) or [TypeScript's path mapping](https://www.typescriptlang.org/docs/handbook/module-resolution.html) to resolve components, you need to update Vetur's `tsconfig.json` or `jsconfig.json`.
+If you are using [Webpack's alias](https://webpack.js.org/configuration/resolve/) or [TypeScript's path mapping](https://www.typescriptlang.org/docs/handbook/module-resolution.html) to resolve components, you need to update CoffeeSense's `tsconfig.json` or `jsconfig.json`.
 
 For example:
 
@@ -120,19 +120,19 @@ declare module '*.vue' {
 
 
 ## Advanced
-If you use monorepo or VTI or `package.json` and `tsconfig.json/jsconfig.json` do not exist at project root, you can use `vetur.config.js` for advanced setting.
+If you use monorepo or VTI or `package.json` and `tsconfig.json/jsconfig.json` do not exist at project root, you can use `coffeesense.config.js` for advanced setting.
 
-Please add `vetur.config.js` at project root or monorepo project root.
+Please add `coffeesense.config.js` at project root or monorepo project root.
 ```javascript
-// vetur.config.js
-/** @type {import('vls').VeturConfig} */
+// coffeesense.config.js
+/** @type {import('vls').CoffeeSenseConfig} */
 module.exports = {
   // **optional** default: `{}`
   // override vscode settings
-  // Notice: It only affects the settings used by Vetur.
+  // Notice: It only affects the settings used by CoffeeSense.
   settings: {
-    "vetur.useWorkspaceDependencies": true,
-    "vetur.experimental.templateInterpolationService": true
+    "coffeesense.useWorkspaceDependencies": true,
+    "coffeesense.experimental.templateInterpolationService": true
   },
   // **optional** default: `[{ root: './' }]`
   // support monorepos
@@ -141,7 +141,7 @@ module.exports = {
     {
       // **required**
       // Where is your project?
-      // It is relative to `vetur.config.js`.
+      // It is relative to `coffeesense.config.js`.
       root: './packages/repo1',
       // **optional** default: `'package.json'`
       // Where is `package.json` in the project?
@@ -152,9 +152,9 @@ module.exports = {
       // Where is TypeScript config file in the project?
       // It is relative to root property.
       tsconfig: './tsconfig.json',
-      // **optional** default: `'./.vscode/vetur/snippets'`
-      // Where is vetur custom snippets folders?
-      snippetFolder: './.vscode/vetur/snippets',
+      // **optional** default: `'./.vscode/coffeesense/snippets'`
+      // Where is coffeesense custom snippets folders?
+      snippetFolder: './.vscode/coffeesense/snippets',
       // **optional** default: `[]`
       // Register globally Vue component glob.
       // If you set it, you can get completion by that components.
@@ -168,11 +168,11 @@ module.exports = {
 }
 ```
 
-- [Read more `vetur.config.js` reference](/reference/).
-- [Read RFC](https://github.com/vuejs/vetur/blob/master/rfcs/001-vetur-config-file.md).
+- [Read more `coffeesense.config.js` reference](/reference/).
+- [Read RFC](https://github.com/phil294/coffeesense/blob/master/rfcs/001-coffeesense-config-file.md).
 
 ## Yarn PnP
-Vetur supports this feature now, but has some limits.
+CoffeeSense supports this feature now, but has some limits.
 
 - Don't mix common project and pnp project in multi-root/monorepo
 - Prettier doesn't support Yarn PnP, so can't load plugin automatically.

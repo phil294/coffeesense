@@ -1,21 +1,21 @@
 module.exports = {
-  title: 'Vetur',
+  title: 'CoffeeSense',
   description: 'Vue tooling for VS Code.',
-  base: '/vetur/',
+  base: '/coffeesense/',
   markdown: {
     linkify: true
   },
   themeConfig: {
-    repo: 'vuejs/vetur',
+    repo: 'phil294/coffeesense',
     editLinks: true,
     docsDir: 'docs',
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'Reference', link: '/reference/' },
       { text: 'FAQ', link: '/guide/FAQ' },
-      { text: 'Roadmap', link: 'https://github.com/vuejs/vetur/issues/873' },
+      { text: 'Roadmap', link: 'https://github.com/phil294/coffeesense/issues/873' },
       { text: 'Credits', link: '/credits' },
-      { text: 'Contribution Guide', link: 'https://github.com/vuejs/vetur/wiki#contribution-guide' }
+      { text: 'Contribution Guide', link: 'https://github.com/phil294/coffeesense/wiki#contribution-guide' }
     ],
     sidebar: {
       '/guide/': [

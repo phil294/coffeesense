@@ -1,2 +1,2 @@
-# Use LF for now to work around https://github.com/vuejs/vetur/issues/1319
+# Use LF for now to work around https://github.com/phil294/coffeesense/issues/1319
 * text=auto eol=lf

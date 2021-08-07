@@ -1,19 +1,19 @@
-# `vetur.config.js`
+# `coffeesense.config.js`
 
-A new configuration file for Vetur and VTI
+A new configuration file for CoffeeSense and VTI
 
 ## Example
 
 ```javascript
-// vetur.config.js
-/** @type {import('vls').VeturConfig} */
+// coffeesense.config.js
+/** @type {import('vls').CoffeeSenseConfig} */
 module.exports = {
   // **optional** default: `{}`
   // override vscode settings part
-  // Notice: It only affects the settings used by Vetur.
+  // Notice: It only affects the settings used by CoffeeSense.
   settings: {
-    "vetur.useWorkspaceDependencies": true,
-    "vetur.experimental.templateInterpolationService": true
+    "coffeesense.useWorkspaceDependencies": true,
+    "coffeesense.experimental.templateInterpolationService": true
   },
   // **optional** default: `[{ root: './' }]`
   // support monorepos
@@ -22,7 +22,7 @@ module.exports = {
     {
       // **required**
       // Where is your project?
-      // It is relative to `vetur.config.js`.
+      // It is relative to `coffeesense.config.js`.
       root: './packages/repo1',
       // **optional** default: `'package.json'`
       // Where is `package.json` in the project?
@@ -33,9 +33,9 @@ module.exports = {
       // Where is TypeScript config file in the project?
       // It is relative to root property.
       tsconfig: './tsconfig.json',
-      // **optional** default: `'./.vscode/vetur/snippets'`
-      // Where is vetur custom snippets folders?
-      snippetFolder: './.vscode/vetur/snippets',
+      // **optional** default: `'./.vscode/coffeesense/snippets'`
+      // Where is coffeesense custom snippets folders?
+      snippetFolder: './.vscode/coffeesense/snippets',
       // **optional** default: `[]`
       // Register globally Vue component glob.
       // If you set it, you can get completion by that components.
@@ -50,7 +50,7 @@ module.exports = {
 ```
 
 ## Noun
-- Vetur: a VSCode extension for Vue support.
+- CoffeeSense: a VSCode extension for Vue support.
 - VTI: a CLI for Vue file type-check, diagnostics or some feature.
 - VLS: vue language server, The core of everything. It is base on [language server protocol](https://microsoft.github.io/language-server-protocol/).
 
@@ -70,21 +70,21 @@ module.exports = {
 You can use it to override VTI default settings.
 ```bash
 vti `action`
-vti -c vetur.config.js `action`
-vti --config vetur.config.js `action`
+vti -c coffeesense.config.js `action`
+vti --config coffeesense.config.js `action`
 ```
 
-### Vetur
+### CoffeeSense
 This profile takes precedence over vscode setting.
-It will find it when Vetur initialization.
+It will find it when CoffeeSense initialization.
 If it isn't exist, It will use `{ settings: {}, projects: ['./'] }`.
 This will ensure consistency with past behavior.
 
-### How to find `vetur.config.js`
+### How to find `coffeesense.config.js`
 - Start from the root and work your way up until the file is found.
 - The root is set `process.cwd()` value in VTI and you can set file path in CLI params.
 
-PS. Each root can have its own vetur.config.js in VSCode Multi root feature.
+PS. Each root can have its own coffeesense.config.js in VSCode Multi root feature.
 
 ## Detail
 
@@ -92,7 +92,7 @@ PS. Each root can have its own vetur.config.js in VSCode Multi root feature.
 ```typescript
 type Glob = string
 
-export interface VeturConfig {
+export interface CoffeeSenseConfig {
   settings?: { [key: string]: boolean | string | Enum },
   projects?: Array<string | {
     root: string,
@@ -107,7 +107,7 @@ export interface VeturConfig {
 ### `settings`
 Incoming to vue language server config.
 
-In VLS, it will merge (vscode setting or VTL default config) and vetur.config.js `settings`.
+In VLS, it will merge (vscode setting or VTL default config) and coffeesense.config.js `settings`.
 ```typescript
 import _ from 'lodash'
 
@@ -116,16 +116,16 @@ const config: VLSFullConfig = params.initializationOptions?.config
   ? _.merge(getDefaultVLSConfig(), params.initializationOptions.config)
   : getDefaultVLSConfig();
 
-// From vetur.config.js
-const veturConfig = getVeturConfigInWorkspace()
-// Merge vetur.config.js
-Object.keys(veturConfig.setting).forEach((key) => {
-  _.set(config, key, veturConfig.setting[key])
+// From coffeesense.config.js
+const coffeesenseConfig = getCoffeeSenseConfigInWorkspace()
+// Merge coffeesense.config.js
+Object.keys(coffeesenseConfig.setting).forEach((key) => {
+  _.set(config, key, coffeesenseConfig.setting[key])
 })
 ```
 
-Notice: It only affects the settings used by Vetur.
-For example, we use `typescript.preferences.quoteStyle` in Vetur. so you can set it.
+Notice: It only affects the settings used by CoffeeSense.
+For example, we use `typescript.preferences.quoteStyle` in CoffeeSense. so you can set it.
 But it don't affect original TypeScript support in VSCode.
 
 ### `projects`
@@ -135,14 +135,14 @@ But both are used for node and typescript projects.
 We're likely to waste unnecessary resources on things we don't need.
 So I figured the best way to do it was through the setup.
 
-For detailed discussion, see this [RFC](https://github.com/vuejs/vetur/pull/2377).
+For detailed discussion, see this [RFC](https://github.com/phil294/coffeesense/pull/2377).
 
 if `projects[]` is only a string, It is a shorthand when you only need to define `root`.
 
 ### `projects[].root`
 All runtime dependencies is base on value of this property.
 Like `typescript`, `prettier`, `@prettier/pug`.
-Also Vetur find `./package.json` and `./tsconfig.js` by default.
+Also CoffeeSense find `./package.json` and `./tsconfig.js` by default.
 
 ### `projects[].package`
 We can get the project name or dependency info from here.
@@ -167,7 +167,7 @@ It can reduce development and maintenance costs.
 PS. `jsconfig.json` is also supported.
 
 ### `projects[].snippetFolder`
-Vetur Custom snippets folder path
+CoffeeSense Custom snippets folder path
 
 ### `projects[].globalComponents`
 We have some amazing features, Like `template interpolation`.
@@ -188,14 +188,14 @@ You can support `template interpolation` for that components anywhere in the pro
 
 This property allow two type values in array.
 - Glob (`string`) [format](https://github.com/mrmlnc/fast-glob#pattern-syntax)
-  Vetur will call glob lib with `projects[].root` for loading component when value is string.
+  CoffeeSense will call glob lib with `projects[].root` for loading component when value is string.
   It use `path.basename(fileName, path.extname(fileName))` as component name.
 - Object (`{ name: string, path: string }`)
-  Vetur use this data directly.
+  CoffeeSense use this data directly.
   It's the most flexible way.
   If this is a relative path, It is based on `projects[].root`.
 
 Notice: It won't actually do it. You need to use `require.context` and `Vue.component` in your project. [more](https://vuejs.org/v2/guide/components-registration.html#Automatic-Global-Registration-of-Base-Components)
 
 
-- [Read RFC](https://github.com/vuejs/vetur/blob/master/rfcs/001-vetur-config-file.md).
+- [Read RFC](https://github.com/phil294/coffeesense/blob/master/rfcs/001-coffeesense-config-file.md).

@@ -2,12 +2,12 @@ const { build } = require('esbuild');
 const path = require('path');
 const { spawn } = require('child_process');
 
-function linkVlsInCLI() {
+function linkLspInCLI() {
   return {
-    name: 'link-vls-in-cli',
+    name: 'link-lsp-in-cli',
     resolveId(source) {
-      if (source === './services/vls') {
-        return { id: './vls.js', external: true };
+      if (source === './services/lsp') {
+        return { id: './lsp.js', external: true };
       }
       return null;
     }
@@ -16,7 +16,7 @@ function linkVlsInCLI() {
 
 const getServerPath = url => path.resolve(__dirname, '../server', url);
 
-function watchVlsChange() {
+function watchLspChange() {
   return {
     buildStart() {
       // watch src changed
@@ -25,9 +25,9 @@ function watchVlsChange() {
   };
 }
 
-function generateTypingsVls() {
+function generateTypingsLsp() {
   return {
-    name: 'generate-typings-vls',
+    name: 'generate-typings-lsp',
     buildStart() {
       return new Promise((resolve, reject) => {
         const tsc = spawn(
@@ -63,10 +63,10 @@ function generateTypingsVls() {
   };
 }
 
-function bundleVlsWithEsbuild() {
+function bundleLspWithEsbuild() {
   const options = {
     entryPoints: [getServerPath('src/main.ts')],
-    outfile: getServerPath('dist/vls.js'),
+    outfile: getServerPath('dist/lsp.js'),
     /**
      * No minify when watch
      * reason: https://github.com/microsoft/vscode/issues/12066
@@ -86,28 +86,7 @@ function bundleVlsWithEsbuild() {
        */
       'process.env.STYLUS_COV': 'false'
     },
-    external: [
-      /**
-       * The `require.resolve` function is used in eslint config.
-       */
-      'eslint-plugin-vue',
-      /**
-       * The VLS is crash when bundle it.
-       */
-      'eslint',
-      /**
-       * prettier-eslint and prettier-tslint need it.
-       */
-      'prettier',
-      /**
-       * prettier-tslint need it.
-       */
-      'tslint',
-      /**
-       * tslint need it.
-       */
-      'typescript'
-    ],
+    external: ['typescript'],
     format: 'cjs',
     tsconfig: getServerPath('tsconfig.json'),
     color: true,
@@ -115,7 +94,7 @@ function bundleVlsWithEsbuild() {
   };
 
   return {
-    name: 'bundle-vls-with-esbuild',
+    name: 'bundle-lsp-with-esbuild',
     async buildStart() {
       console.log(`bundles ${getServerPath('src/main.ts')} with esbuild`);
       build(options);
@@ -124,4 +103,4 @@ function bundleVlsWithEsbuild() {
   };
 }
 
-module.exports = { linkVlsInCLI, bundleVlsWithEsbuild, generateTypingsVls, watchVlsChange };
+module.exports = { linkLspInCLI, bundleLspWithEsbuild, generateTypingsLsp, watchLspChange };
