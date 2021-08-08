@@ -31,7 +31,7 @@ import {
 } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LanguageMode } from '../../embeddedSupport/languageModes';
-import { VueDocumentRegions, LanguageRange, LanguageId } from '../../embeddedSupport/embeddedSupport';
+import { CoffeescriptDocumentRegions, LanguageRange, LanguageId } from '../../embeddedSupport/embeddedSupport';
 import { getFileFsPath, getFilePath } from '../../utils/paths';
 
 import { URI } from 'vscode-uri';
@@ -42,12 +42,12 @@ import { nullMode, NULL_SIGNATURE } from '../nullMode';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
-import { isVueFile, toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
+import { isCoffeescriptFile, toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import * as Previewer from './previewer';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import { getCodeActionKind } from './CodeActionKindConverter';
 import { FileRename } from 'vscode-languageserver';
+import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
 
 // Todo: After upgrading to LS server 4.0, use CompletionContext for filtering trigger chars
 // https://microsoft.github.io/language-server-protocol/specification#completion-request-leftwards_arrow_with_hook
@@ -58,23 +58,23 @@ const SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT = 80000;
 export async function getJavascriptMode(
   serviceHost: IServiceHost,
   env: EnvironmentService,
-  documentRegions: LanguageModelCache<VueDocumentRegions>,
+  documentRegions: LanguageModelCache<CoffeescriptDocumentRegions>,
   dependencyService: DependencyService
 ): Promise<LanguageMode> {
   const jsDocuments = getLanguageModelCache(10, 60, document => {
-    const vueDocument = documentRegions.refreshAndGet(document);
-    return vueDocument.getSingleTypeDocument('script');
+    const coffeescriptDocument = documentRegions.refreshAndGet(document);
+    return coffeescriptDocument.getSingleTypeDocument('script');
   });
 
   const firstScriptRegion = getLanguageModelCache(10, 60, document => {
-    const vueDocument = documentRegions.refreshAndGet(document);
-    const scriptRegions = vueDocument.getLanguageRangesOfType('script');
+    const coffeescriptDocument = documentRegions.refreshAndGet(document);
+    const scriptRegions = coffeescriptDocument.getLanguageRangesOfType('script');
     return scriptRegions.length > 0 ? scriptRegions[0] : undefined;
   });
 
   const tsModule: RuntimeLibrary['typescript'] = dependencyService.get('typescript').module;
 
-  const { updateCurrentVueTextDocument } = serviceHost;
+  const { updateCurrentCoffeescriptTextDocument } = serviceHost;
   let supportedCodeFixCodes: Set<number>;
 
   function getUserPreferences(scriptDoc: TextDocument): ts.UserPreferences {
@@ -125,7 +125,7 @@ export async function getJavascriptMode(
       if (await isVCancellationRequested(cancellationToken)) {
         return [];
       }
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -177,7 +177,7 @@ export async function getJavascriptMode(
       });
     },
     doComplete(doc: TextDocument, position: Position): CompletionList {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return { isIncomplete: false, items: [] };
       }
@@ -260,9 +260,9 @@ export async function getJavascriptMode(
               detail: entry.name + entry.kindModifiers
             };
           } else {
-            if (entry.name.endsWith('.vue')) {
+            if (entry.name.endsWith(`.${FILE_EXTENSION}`)) {
               return {
-                label: entry.name.slice(0, -'.vue'.length),
+                label: entry.name.slice(0, -`.${FILE_EXTENSION}`.length),
                 detail: entry.name
               };
             }
@@ -276,7 +276,7 @@ export async function getJavascriptMode(
       }
     },
     doResolve(doc: TextDocument, item: CompletionItem): CompletionItem {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return item;
       }
@@ -327,7 +327,7 @@ export async function getJavascriptMode(
       return item;
     },
     doHover(doc: TextDocument, position: Position): Hover {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return { contents: [] };
       }
@@ -365,7 +365,7 @@ export async function getJavascriptMode(
       return { contents: [] };
     },
     doSignatureHelp(doc: TextDocument, position: Position): SignatureHelp | null {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return NULL_SIGNATURE;
       }
@@ -423,7 +423,7 @@ export async function getJavascriptMode(
       };
     },
     findDocumentHighlight(doc: TextDocument, position: Position): DocumentHighlight[] {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -441,7 +441,7 @@ export async function getJavascriptMode(
       return [];
     },
     findDocumentSymbols(doc: TextDocument): SymbolInformation[] {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -481,7 +481,7 @@ export async function getJavascriptMode(
       return result;
     },
     findDefinition(doc: TextDocument, position: Position): Definition {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -507,7 +507,7 @@ export async function getJavascriptMode(
       return definitionResults;
     },
     findReferences(doc: TextDocument, position: Position): Location[] {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -535,7 +535,7 @@ export async function getJavascriptMode(
       return referenceResults;
     },
     getCodeActions(doc: TextDocument, range: Range, context: CodeActionContext) {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       const fileName = getFileFsPath(scriptDoc.uri);
       const start = scriptDoc.offsetAt(range.start);
       const end = scriptDoc.offsetAt(range.end);
@@ -556,7 +556,7 @@ export async function getJavascriptMode(
       return result;
     },
     doCodeActionResolve(doc, action) {
-      const { scriptDoc, service } = updateCurrentVueTextDocument(doc);
+      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return action;
       }
@@ -595,7 +595,7 @@ export async function getJavascriptMode(
         return [];
       }
 
-      const oldFileIsVue = isVueFile(oldPath);
+      const oldFileIsCoffeescript = isCoffeescriptFile(oldPath);
       const preferences = getUserPreferencesByLanguageId(
         (sourceFile as any).scriptKind === tsModule.ScriptKind.JS ? 'javascript' : 'typescript'
       );
@@ -609,8 +609,8 @@ export async function getJavascriptMode(
       for (const edit of edits) {
         const fileName = edit.fileName;
         const doc = getSourceDoc(fileName, program);
-        const bothNotVueFile = !oldFileIsVue && !isVueFile(fileName);
-        if (bothNotVueFile) {
+        const bothNotCoffeescriptFile = !oldFileIsCoffeescript && !isCoffeescriptFile(fileName);
+        if (bothNotCoffeescriptFile) {
           continue;
         }
         const docIdentifier = VersionedTextDocumentIdentifier.create(URI.file(doc.uri).toString(), 0);
@@ -677,7 +677,7 @@ function createUriMappingForEdits(changes: ts.FileTextChanges[], service: ts.Lan
 
 function getSourceDoc(fileName: string, program: ts.Program): TextDocument {
   const sourceFile = program.getSourceFile(fileName)!;
-  return TextDocument.create(fileName, 'vue', 0, sourceFile.getFullText());
+  return TextDocument.create(fileName, LANGUAGE_ID, 0, sourceFile.getFullText());
 }
 
 export function languageServiceIncludesFile(ls: ts.LanguageService, documentUri: string): boolean {

@@ -25,6 +25,7 @@ import { VCancellationToken } from '../utils/cancellationToken';
 import { DependencyService } from './dependencyService';
 import { DocumentService } from './documentService';
 import { EnvironmentService } from './EnvironmentService';
+import { LANGUAGE_ID } from '../language';
 
 export interface ProjectService {
   env: EnvironmentService;
@@ -184,7 +185,7 @@ export async function createProjectService(
     },
     async doValidate(doc: TextDocument, cancellationToken?: VCancellationToken) {
       const diagnostics: Diagnostic[] = [];
-      if (doc.languageId === 'vue') {
+      if (doc.languageId === LANGUAGE_ID) {
         const validationFlags = getValidationFlags();
         for (const lmr of languageModes.getAllLanguageModeRangesInDocument(doc)) {
           if (lmr.mode.doValidation) {

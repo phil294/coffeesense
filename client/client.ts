@@ -13,14 +13,14 @@ import { existsSync } from 'fs';
 export function initializeLanguageClient(lspModulePath: string): LanguageClient {
   const debugOptions = { execArgv: ['--nolazy', '--inspect=6005'] };
 
-  const documentSelector: DocumentFilter[] = [{ language: 'vue', scheme: 'file' }];
+  const documentSelector: DocumentFilter[] = [{ language: 'coffeescript', scheme: 'file' }];
   const config = vscode.workspace.getConfiguration();
 
   let serverPath;
 
   const devLspPackagePath = config.get('coffeesense.dev.lspPath', '');
   if (devLspPackagePath && devLspPackagePath !== '' && existsSync(devLspPackagePath)) {
-    serverPath = resolve(devLspPackagePath, 'dist/vueServerMain.js');
+    serverPath = resolve(devLspPackagePath, 'dist/coffeescriptServerMain.js');
   } else {
     serverPath = lspModulePath;
   }

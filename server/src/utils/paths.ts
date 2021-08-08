@@ -13,13 +13,13 @@ import { URI } from 'vscode-uri';
  *
  * ## `TextDocument.uri`
  *
- * - macOS / Linux: file:///foo/bar.vue
- * - Windows: file:///c%3A/foo/bar.vue (%3A is `:`)
+ * - macOS / Linux: file:///foo/bar.coffee
+ * - Windows: file:///c%3A/foo/bar.coffee (%3A is `:`)
  *
  * ## `SourceFile.fileName`
  *
- * - macOS / Linux: /foo/bar.vue
- * - Windows: c:/foo/bar.vue
+ * - macOS / Linux: /foo/bar.coffee
+ * - Windows: c:/foo/bar.coffee
  *
  * ## vscode-uri
  *
@@ -30,17 +30,17 @@ import { URI } from 'vscode-uri';
  *
  * - macOS / Linux:
  * ```
- * > Uri.parse('file:///foo/bar.vue').fsPath
- * '/foo/bar.vue'
- * > Uri.parse('file:///foo/bar.vue').path
- * '/foo/bar.vue'
+ * > Uri.parse('file:///foo/bar.coffee').fsPath
+ * '/foo/bar.coffee'
+ * > Uri.parse('file:///foo/bar.coffee').path
+ * '/foo/bar.coffee'
  * ```
  * - Windows
  * ```
- * > Uri.parse('file:///c%3A/foo/bar.vue').fsPath
- * 'c:\\foo\\bar.vue' (\\ escapes to \)
- * > Uri.parse('file:///c%3A/foo/bar.vue').path
- * '/c:/foo/bar.vue'
+ * > Uri.parse('file:///c%3A/foo/bar.coffee').fsPath
+ * 'c:\\foo\\bar.coffee' (\\ escapes to \)
+ * > Uri.parse('file:///c%3A/foo/bar.coffee').path
+ * '/c:/foo/bar.coffee'
  * ```
  */
 

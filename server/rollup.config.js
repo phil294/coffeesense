@@ -16,10 +16,10 @@ const getLSPPath = getRootPath('server');
 clearDist(getLSPPath('dist'));
 
 module.exports = [
-  // vueServerMain
+  // coffeescriptServerMain
   {
-    input: getLSPPath('src/vueServerMain.ts'),
-    output: { file: getLSPPath('dist/vueServerMain.js'), name: lspPkg.name, format: 'cjs', sourcemap: true },
+    input: getLSPPath('src/coffeescriptServerMain.ts'),
+    output: { file: getLSPPath('dist/coffeescriptServerMain.js'), name: lspPkg.name, format: 'cjs', sourcemap: true },
     external,
     onwarn,
     watch: {

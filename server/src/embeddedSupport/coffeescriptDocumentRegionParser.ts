@@ -10,7 +10,7 @@ export interface EmbeddedRegion {
   type: RegionType;
 }
 
-export function parseVueDocumentRegions(document: TextDocument) {
+export function parseCoffeescriptDocumentRegions(document: TextDocument) {
   const text = document.getText();
   const regions: EmbeddedRegion[] = [
     {

@@ -4,15 +4,16 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import parseGitIgnore from 'parse-gitignore';
 
 import { LanguageModelCache } from '../../embeddedSupport/languageModelCache';
-import { parseVueScript } from './preprocess';
+import { parseCoffeescriptScript } from './preprocess';
 import { getFileFsPath, getFilePath, normalizeFileNameToFsPath } from '../../utils/paths';
-import { getVueSys } from './vueSys';
-import { isVueFile } from './util';
+import { getCoffeescriptSys } from './coffeescriptSys';
+import { isCoffeescriptFile } from './util';
 import { logger } from '../../log';
 import { ModuleResolutionCache } from './moduleResolutionCache';
 import { RuntimeLibrary } from '../dependencyService';
 import { EnvironmentService } from '../EnvironmentService';
 import { dirname } from 'path';
+import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
 
 const NEWLINE = process.platform === 'win32' ? '\r\n' : '\n';
 
@@ -33,7 +34,7 @@ function getDefaultCompilerOptions(tsModule: RuntimeLibrary['typescript']) {
 }
 
 export interface IServiceHost {
-  updateCurrentVueTextDocument(doc: TextDocument): {
+  updateCurrentCoffeescriptTextDocument(doc: TextDocument): {
     service: ts.LanguageService;
     scriptDoc: TextDocument;
   };
@@ -47,9 +48,9 @@ export interface IServiceHost {
 /**
  * Manges 4 set of files
  *
- * - `vue` files in workspace
+ * - `LANGUAGE_ID` files in workspace
  * - `js/ts` files in workspace
- * - `vue` files in `node_modules`
+ * - `LANGUAGE_ID` files in `node_modules`
  * - `js/ts` files in `node_modules`
  */
 export function getServiceHost(
@@ -59,8 +60,6 @@ export function getServiceHost(
 ): IServiceHost {
   let currentScriptDoc: TextDocument;
 
-  // host variable
-  let vueVersion = env.getVueVersion();
   let projectVersion = 1;
   let versions = new Map<string, number>();
   let localScriptRegionDocuments = new Map<string, TextDocument>();
@@ -71,7 +70,7 @@ export function getServiceHost(
   let parsedConfig: ts.ParsedCommandLine;
   let scriptFileNameSet: Set<string>;
 
-  let vueSys: ts.System;
+  let coffeescriptSys: ts.System;
   let compilerOptions: ts.CompilerOptions;
 
   let jsHost: ts.LanguageServiceHost;
@@ -90,7 +89,6 @@ export function getServiceHost(
   }
 
   function init() {
-    vueVersion = env.getVueVersion();
     projectVersion = 1;
     versions = new Map<string, number>();
     localScriptRegionDocuments = new Map<string, TextDocument>();
@@ -104,7 +102,7 @@ export function getServiceHost(
       `Initializing ServiceHost with ${initialProjectFiles.length} files: ${JSON.stringify(initialProjectFiles)}`
     );
     scriptFileNameSet = new Set(initialProjectFiles);
-    vueSys = getVueSys(tsModule, scriptFileNameSet);
+    coffeescriptSys = getCoffeescriptSys(tsModule, scriptFileNameSet);
     compilerOptions = getCompilerOptions();
 
     jsHost = createLanguageServiceHost(compilerOptions);
@@ -112,12 +110,12 @@ export function getServiceHost(
     jsLanguageService = tsModule.createLanguageService(jsHost, registry);
   }
 
-  function updateCurrentVueTextDocument(doc: TextDocument) {
+  function updateCurrentCoffeescriptTextDocument(doc: TextDocument) {
     const fileFsPath = getFileFsPath(doc.uri);
     const filePath = getFilePath(doc.uri);
     // When file is not in language service, add it
     if (!localScriptRegionDocuments.has(fileFsPath)) {
-      if (fileFsPath.endsWith('.vue')) {
+      if (fileFsPath.endsWith(`.${FILE_EXTENSION}`)) {
         scriptFileNameSet.add(filePath);
       }
     }
@@ -141,10 +139,10 @@ export function getServiceHost(
     };
   }
 
-  // External Documents: JS/TS, non Vue documents
+  // External Documents: JS/TS, non Coffeescript documents
   function updateExternalDocument(fileFsPath: string) {
-    // reload `tsconfig.json` or vue version changed
-    if (fileFsPath === env.getTsConfigPath() || vueVersion !== env.getVueVersion()) {
+    // reloaded `tsconfig.json`
+    if (fileFsPath === env.getTsConfigPath()) {
       logger.logInfo(`refresh ts language service when ${fileFsPath} changed.`);
       init();
       return;
@@ -196,13 +194,13 @@ export function getServiceHost(
           return (tsModule as any).getScriptKindFromFileName(fileName);
         }
 
-        if (isVueFile(fileName)) {
+        if (isCoffeescriptFile(fileName)) {
           const uri = URI.file(fileName);
           const fileFsPath = normalizeFileNameToFsPath(fileName);
           let doc = localScriptRegionDocuments.get(fileFsPath);
           if (!doc) {
             doc = updatedScriptRegionDocuments.refreshAndGet(
-              TextDocument.create(uri.toString(), 'vue', 0, tsModule.sys.readFile(fileName) || '')
+              TextDocument.create(uri.toString(), LANGUAGE_ID, 0, tsModule.sys.readFile(fileName) || '')
             );
             localScriptRegionDocuments.set(fileFsPath, doc);
             scriptFileNameSet.add(fileName);
@@ -214,10 +212,10 @@ export function getServiceHost(
         }
       },
 
-      getDirectories: vueSys.getDirectories,
-      directoryExists: vueSys.directoryExists,
-      fileExists: vueSys.fileExists,
-      readFile: vueSys.readFile,
+      getDirectories: coffeescriptSys.getDirectories,
+      directoryExists: coffeescriptSys.directoryExists,
+      fileExists: coffeescriptSys.fileExists,
+      readFile: coffeescriptSys.readFile,
       readDirectory(
         path: string,
         extensions?: ReadonlyArray<string>,
@@ -225,20 +223,20 @@ export function getServiceHost(
         include?: ReadonlyArray<string>,
         depth?: number
       ): string[] {
-        const allExtensions = extensions ? extensions.concat(['.vue']) : extensions;
-        return vueSys.readDirectory(path, allExtensions, exclude, include, depth);
+        const allExtensions = extensions ? extensions.concat([`.${FILE_EXTENSION}`]) : extensions;
+        return coffeescriptSys.readDirectory(path, allExtensions, exclude, include, depth);
       },
 
       resolveModuleNames(moduleNames: string[], containingFile: string): (ts.ResolvedModule | undefined)[] {
         // in the normal case, delegate to ts.resolveModuleName
-        // in the relative-imported.vue case, manually build a resolved filename
+        // in the relative-imported.LANGUAGE_ID case, manually build a resolved filename
         const result: (ts.ResolvedModule | undefined)[] = moduleNames.map(name => {
           const cachedResolvedModule = moduleResolutionCache.getCache(name, containingFile);
           if (cachedResolvedModule) {
             return cachedResolvedModule;
           }
 
-          if (!isVueFile(name)) {
+          if (!isCoffeescriptFile(name)) {
             const tsResolvedModule = tsModule.resolveModuleName(
               name,
               containingFile,
@@ -253,20 +251,25 @@ export function getServiceHost(
             return tsResolvedModule;
           }
 
-          const tsResolvedModule = tsModule.resolveModuleName(name, containingFile, options, vueSys).resolvedModule;
+          const tsResolvedModule = tsModule.resolveModuleName(
+            name,
+            containingFile,
+            options,
+            coffeescriptSys
+          ).resolvedModule;
           if (!tsResolvedModule) {
             return undefined;
           }
 
-          if (tsResolvedModule.resolvedFileName.endsWith('.vue.ts')) {
+          if (tsResolvedModule.resolvedFileName.endsWith(`.${FILE_EXTENSION}.ts`)) {
             const resolvedFileName = tsResolvedModule.resolvedFileName.slice(0, -'.ts'.length);
             const uri = URI.file(resolvedFileName);
             const resolvedFileFsPath = normalizeFileNameToFsPath(resolvedFileName);
             let doc = localScriptRegionDocuments.get(resolvedFileFsPath);
-            // Vue file not created yet
+            // Coffeescript file not created yet
             if (!doc) {
               doc = updatedScriptRegionDocuments.refreshAndGet(
-                TextDocument.create(uri.toString(), 'vue', 0, tsModule.sys.readFile(resolvedFileName) || '')
+                TextDocument.create(uri.toString(), LANGUAGE_ID, 0, tsModule.sys.readFile(resolvedFileName) || '')
               );
               localScriptRegionDocuments.set(resolvedFileFsPath, doc);
               scriptFileNameSet.add(resolvedFileName);
@@ -274,9 +277,9 @@ export function getServiceHost(
 
             const extension = doc.languageId === 'typescript' ? tsModule.Extension.Ts : tsModule.Extension.Js;
 
-            const tsResolvedVueModule = { resolvedFileName, extension };
-            moduleResolutionCache.setCache(name, containingFile, tsResolvedVueModule);
-            return tsResolvedVueModule;
+            const tsResolvedCoffeescriptModule = { resolvedFileName, extension };
+            moduleResolutionCache.setCache(name, containingFile, tsResolvedCoffeescriptModule);
+            return tsResolvedCoffeescriptModule;
           } else {
             moduleResolutionCache.setCache(name, containingFile, tsResolvedModule);
             return tsResolvedModule;
@@ -303,7 +306,7 @@ export function getServiceHost(
         const fileFsPath = normalizeFileNameToFsPath(fileName);
 
         // js/ts files in workspace
-        if (!isVueFile(fileFsPath)) {
+        if (!isCoffeescriptFile(fileFsPath)) {
           if (projectFileSnapshots.has(fileFsPath)) {
             return projectFileSnapshots.get(fileFsPath);
           }
@@ -318,7 +321,7 @@ export function getServiceHost(
           return snapshot;
         }
 
-        // vue files in workspace
+        // LANGUAGE_ID files in workspace
         const doc = localScriptRegionDocuments.get(fileFsPath);
         let fileText = '';
         if (doc) {
@@ -326,9 +329,9 @@ export function getServiceHost(
           fileText = doc.getText();
         } else {
           // Note: This is required in addition to the parsing in embeddedSupport because
-          // this works for .vue files that aren't even loaded by VS Code yet.
-          const rawVueFileText = tsModule.sys.readFile(fileFsPath) || '';
-          fileText = parseVueScript(rawVueFileText);
+          // this works for .LANGUAGE_ID files that aren't even loaded by VS Code yet.
+          const rawCoffeescriptFileText = tsModule.sys.readFile(fileFsPath) || '';
+          fileText = parseCoffeescriptScript(rawCoffeescriptFileText);
         }
 
         return {
@@ -345,7 +348,7 @@ export function getServiceHost(
   }
 
   return {
-    updateCurrentVueTextDocument,
+    updateCurrentCoffeescriptTextDocument,
     updateExternalDocument,
     getFileNames,
     getComplierOptions: () => compilerOptions,
@@ -378,7 +381,7 @@ function getParsedConfig(
 ) {
   const currentProjectPath = tsconfigPath ? dirname(tsconfigPath) : projectRoot;
   const configJson = (tsconfigPath && tsModule.readConfigFile(tsconfigPath, tsModule.sys.readFile).config) || {
-    include: ['**/*.vue'],
+    include: [`**/*.${FILE_EXTENSION}`],
     exclude: defaultIgnorePatterns(tsModule, currentProjectPath)
   };
   // existingOptions should be empty since it always takes priority
@@ -391,9 +394,9 @@ function getParsedConfig(
     /*resolutionStack*/ undefined,
     [
       {
-        extension: 'vue',
+        extension: FILE_EXTENSION,
         isMixedContent: true,
-        // Note: in order for parsed config to include *.vue files, scriptKind must be set to Deferred.
+        // Note: in order for parsed config to include *.FILE_EXTENSION files, scriptKind must be set to Deferred.
         // tslint:disable-next-line max-line-length
         // See: https://github.com/microsoft/TypeScript/blob/2106b07f22d6d8f2affe34b9869767fa5bc7a4d9/src/compiler/utilities.ts#L6356
         scriptKind: tsModule.ScriptKind.Deferred

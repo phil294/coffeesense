@@ -2,6 +2,7 @@ import { MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { basename } from 'path';
 import { RuntimeLibrary } from '../services/dependencyService';
 import type ts from 'typescript';
+import { FILE_EXTENSION } from '../language';
 
 export function getWordAtText(text: string, offset: number, wordDefinition: RegExp): { start: number; length: number } {
   let lineStart = offset;
@@ -51,7 +52,7 @@ export function modulePathToValidIdentifier(
   modulePath: string,
   target: ts.ScriptTarget | undefined
 ): string {
-  const baseName = basename(modulePath, '.vue');
+  const baseName = basename(modulePath, `.${FILE_EXTENSION}`);
   let res = '';
   let lastCharWasValid = true;
   const firstCharCode = baseName.charCodeAt(0);

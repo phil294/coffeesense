@@ -1,9 +1,10 @@
-import { getVueDocumentRegions } from '../../embeddedSupport/embeddedSupport';
+import { getCoffeescriptDocumentRegions } from '../../embeddedSupport/embeddedSupport';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
 
-export function parseVueScript(text: string): string {
-  const doc = TextDocument.create('test://test/test.vue', 'vue', 0, text);
-  const regions = getVueDocumentRegions(doc);
+export function parseCoffeescriptScript(text: string): string {
+  const doc = TextDocument.create(`test://test/test.${FILE_EXTENSION}`, LANGUAGE_ID, 0, text);
+  const regions = getCoffeescriptDocumentRegions(doc);
   const script = regions.getSingleTypeDocument('script');
   return script.getText();
 }

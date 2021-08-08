@@ -1,15 +1,16 @@
 import { Position, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { parseVueDocumentRegions, EmbeddedRegion } from './vueDocumentRegionParser';
+import { parseCoffeescriptDocumentRegions, EmbeddedRegion } from './coffeescriptDocumentRegionParser';
+import { LANGUAGE_ID } from '../language';
 
-export type LanguageId = 'vue' | 'javascript' | 'typescript' | 'unknown';
+export type LanguageId = typeof LANGUAGE_ID | 'javascript' | 'typescript' | 'unknown';
 
 export interface LanguageRange extends Range {
   languageId: LanguageId;
   attributeValue?: boolean;
 }
 
-export interface VueDocumentRegions {
+export interface CoffeescriptDocumentRegions {
   /**
    * Get a document where all regions of `languageId` is preserved
    * Whereas other regions are replaced with whitespaces
@@ -46,8 +47,8 @@ const defaultLanguageIdForBlockTypes: { [type: string]: string } = {
   script: 'javascript'
 };
 
-export function getVueDocumentRegions(document: TextDocument): VueDocumentRegions {
-  const { regions, importedScripts } = parseVueDocumentRegions(document);
+export function getCoffeescriptDocumentRegions(document: TextDocument): CoffeescriptDocumentRegions {
+  const { regions, importedScripts } = parseCoffeescriptDocumentRegions(document);
 
   return {
     getSingleLanguageDocument: (languageId: LanguageId) => getSingleLanguageDocument(document, regions, languageId),
@@ -82,7 +83,7 @@ function getLanguageAtPosition(document: TextDocument, regions: EmbeddedRegion[]
       break;
     }
   }
-  return 'vue';
+  return LANGUAGE_ID;
 }
 
 export function getSingleLanguageDocument(

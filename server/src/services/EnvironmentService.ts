@@ -1,5 +1,4 @@
 import { LSPConfig, LSPFullConfig } from '../config';
-import { inferVueVersion, VueVersion } from '../utils/vueVersion';
 
 export interface EnvironmentService {
   configure(config: LSPFullConfig): void;
@@ -8,7 +7,6 @@ export interface EnvironmentService {
   getProjectRoot(): string;
   getTsConfigPath(): string | undefined;
   getPackagePath(): string | undefined;
-  getVueVersion(): VueVersion;
 }
 
 export function createEnvironmentService(
@@ -28,7 +26,6 @@ export function createEnvironmentService(
     getRootPathForConfig: () => rootPathForConfig,
     getProjectRoot: () => projectPath,
     getTsConfigPath: () => tsconfigPath,
-    getPackagePath: () => packagePath,
-    getVueVersion: () => inferVueVersion(packagePath)
+    getPackagePath: () => packagePath
   };
 }

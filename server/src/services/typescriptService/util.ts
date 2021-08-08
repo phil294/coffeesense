@@ -1,12 +1,13 @@
 import type ts from 'typescript';
 import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
+import { FILE_EXTENSION } from '../../language';
 
-export function isVueFile(path: string) {
-  return path.endsWith('.vue');
+export function isCoffeescriptFile(path: string) {
+  return path.endsWith(`.${FILE_EXTENSION}`);
 }
 
 /**
- * If the path ends with `.vue.ts`, it's a `.vue` file pre-processed by CoffeeSense
+ * If the path ends with `.FILE_EXTENSION.ts`, it's a `.FILE_EXTENSION` file pre-processed by CoffeeSense
  * to be used in TS Language Service
  *
  * Note: all files outside any node_modules folder are considered,
@@ -14,8 +15,11 @@ export function isVueFile(path: string) {
  *
  * See languageModelCache for notes about virtual
  */
-export function isVirtualVueFile(path: string, projectFiles: Set<string>) {
-  return path.endsWith('.vue.ts') && (!path.includes('node_modules') || projectFiles.has(path.slice(0, -'.ts'.length)));
+export function isVirtualCoffeescriptFile(path: string, projectFiles: Set<string>) {
+  return (
+    path.endsWith(`.${FILE_EXTENSION}.ts`) &&
+    (!path.includes('node_modules') || projectFiles.has(path.slice(0, -'.ts'.length)))
+  );
 }
 
 export function findNodeByOffset(root: ts.Node, offset: number): ts.Node | undefined {

@@ -47,10 +47,10 @@ import { VCancellationToken, VCancellationTokenSource } from '../utils/cancellat
 import { findConfigFile, requireUncached } from '../utils/workspace';
 import { createProjectService, ProjectService } from './projectService';
 import { createEnvironmentService } from './EnvironmentService';
-import { getVueVersionKey } from '../utils/vueVersion';
 import { accessSync, constants, existsSync } from 'fs';
 import { sleep } from '../utils/sleep';
 import { URI } from 'vscode-uri';
+import { FILE_EXTENSION } from '../language';
 
 interface ProjectConfig {
   lspFullConfig: LSPFullConfig;
@@ -369,7 +369,6 @@ export class LSP {
           name: 'CoffeeSense doctor info',
           fileName,
           currentProject: {
-            vueVersion: project ? getVueVersionKey(project?.env.getVueVersion()) : null,
             rootPathForConfig: project?.env.getRootPathForConfig() ?? null,
             projectRootFsPath: project?.env.getProjectRoot() ?? null
           },
@@ -602,7 +601,7 @@ export class LSP {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       workspace: {
         workspaceFolders: { supported: true, changeNotifications: true },
-        fileOperations: { willRename: { filters: [{ pattern: { glob: '**/*.{ts,js,vue}' } }] } }
+        fileOperations: { willRename: { filters: [{ pattern: { glob: `**/*.{ts,js,${FILE_EXTENSION}}` } }] } }
       },
       completionProvider: { resolveProvider: true, triggerCharacters: ['.', ':', '<', '"', "'", '/', '@', '*', ' '] },
       signatureHelpProvider: { triggerCharacters: ['('] },

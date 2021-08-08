@@ -48,9 +48,9 @@
     "vscode": "^1.52.0"
   },
   "activationEvents": [
-    "onLanguage:vue"
+    "onLanguage:coffeescript"
   ],
-  "main": "./dist/vueMain.js",
+  "main": "./dist/coffeescriptMain.js",
   "contributes": {
     "commands": [
       {
@@ -71,20 +71,7 @@
     ],
     "breakpoints": [
       {
-        "language": "vue"
-      }
-    ],
-    "languages": [
-      {
-        "id": "vue",
-        "aliases": [
-          "Vue",
-          "vue"
-        ],
-        "extensions": [
-          ".vue"
-        ],
-        "configuration": "./languages/vue-language-configuration.json"
+        "language": "coffeescript"
       }
     ],
     "configuration": {

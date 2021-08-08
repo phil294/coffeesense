@@ -17,7 +17,12 @@ import {
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
 import { getLanguageModelCache, LanguageModelCache } from './languageModelCache';
-import { getVueDocumentRegions, VueDocumentRegions, LanguageId, LanguageRange } from './embeddedSupport';
+import {
+  getCoffeescriptDocumentRegions,
+  CoffeescriptDocumentRegions,
+  LanguageId,
+  LanguageRange
+} from './embeddedSupport';
 import { getJavascriptMode } from '../modes/script/javascript';
 import { DependencyService } from '../services/dependencyService';
 import { nullMode } from '../modes/nullMode';
@@ -25,6 +30,7 @@ import { getServiceHost, IServiceHost } from '../services/typescriptService/serv
 import { VCancellationToken } from '../utils/cancellationToken';
 import { EnvironmentService } from '../services/EnvironmentService';
 import { FileRename } from 'vscode-languageserver';
+import { LANGUAGE_ID } from '../language';
 
 export interface LSPServices {
   dependencyService: DependencyService;
@@ -58,19 +64,19 @@ export interface LanguageModeRange extends LanguageRange {
 
 export class LanguageModes {
   private modes: { [k in LanguageId]: LanguageMode } = {
-    vue: nullMode,
+    [LANGUAGE_ID]: nullMode,
     javascript: nullMode,
     typescript: nullMode,
     unknown: nullMode
   };
 
-  private documentRegions: LanguageModelCache<VueDocumentRegions>;
+  private documentRegions: LanguageModelCache<CoffeescriptDocumentRegions>;
   private modelCaches: LanguageModelCache<any>[];
   private serviceHost: IServiceHost;
 
   constructor() {
-    this.documentRegions = getLanguageModelCache<VueDocumentRegions>(10, 60, document =>
-      getVueDocumentRegions(document)
+    this.documentRegions = getLanguageModelCache<CoffeescriptDocumentRegions>(10, 60, document =>
+      getCoffeescriptDocumentRegions(document)
     );
 
     this.modelCaches = [];
@@ -84,8 +90,8 @@ export class LanguageModes {
      * Documents where everything outside `<script>` is replaced with whitespace
      */
     const scriptRegionDocuments = getLanguageModelCache(10, 60, document => {
-      const vueDocument = this.documentRegions.refreshAndGet(document);
-      return vueDocument.getSingleTypeDocument('script');
+      const coffeescriptDocument = this.documentRegions.refreshAndGet(document);
+      return coffeescriptDocument.getSingleTypeDocument('script');
     });
     this.serviceHost = getServiceHost(tsModule, env, scriptRegionDocuments);
 
