@@ -24,8 +24,7 @@
     "install:server": "cd server && yarn",
     "compile": "rollup -c rollup.config.js",
     "watch": "rollup -c rollup.config.js -w",
-    "prepare-publish": "./build/release-cleanup.sh",
-    "prepare": "husky install"
+    "prepare-publish": "./build/release-cleanup.sh"
   },
   "categories": [
     "Programming Languages"
