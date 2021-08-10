@@ -2,6 +2,8 @@ import { Position, Range } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { parseCoffeescriptDocumentRegions, EmbeddedRegion } from './coffeescriptDocumentRegionParser';
 import { LANGUAGE_ID } from '../language';
+import transpile_service from '../services/transpileService';
+
 
 export type LanguageId = typeof LANGUAGE_ID | 'javascript' | 'typescript' | 'unknown';
 
@@ -11,12 +13,6 @@ export interface LanguageRange extends Range {
 }
 
 export interface CoffeescriptDocumentRegions {
-  /**
-   * Get a document where all regions of `languageId` is preserved
-   * Whereas other regions are replaced with whitespaces
-   */
-  getSingleLanguageDocument(languageId: LanguageId): TextDocument;
-
   /**
    * Get a document where all regions of `type` RegionType is preserved
    * Whereas other regions are replaced with whitespaces
@@ -51,7 +47,6 @@ export function getCoffeescriptDocumentRegions(document: TextDocument): Coffeesc
   const { regions, importedScripts } = parseCoffeescriptDocumentRegions(document);
 
   return {
-    getSingleLanguageDocument: (languageId: LanguageId) => getSingleLanguageDocument(document, regions, languageId),
     getSingleTypeDocument: (type: RegionType) => getSingleTypeDocument(document, regions, type),
 
     getLanguageRangesOfType: (type: RegionType) => getLanguageRangesOfType(document, regions, type),
@@ -86,26 +81,6 @@ function getLanguageAtPosition(document: TextDocument, regions: EmbeddedRegion[]
   return LANGUAGE_ID;
 }
 
-export function getSingleLanguageDocument(
-  document: TextDocument,
-  regions: EmbeddedRegion[],
-  languageId: LanguageId
-): TextDocument {
-  const oldContent = document.getText();
-  let newContent = oldContent
-    .split('\n')
-    .map(line => ' '.repeat(line.length))
-    .join('\n');
-
-  for (const r of regions) {
-    if (r.languageId === languageId) {
-      newContent = newContent.slice(0, r.start) + oldContent.slice(r.start, r.end) + newContent.slice(r.end);
-    }
-  }
-
-  return TextDocument.create(document.uri, languageId, document.version, newContent);
-}
-
 export function getSingleTypeDocument(
   document: TextDocument,
   regions: EmbeddedRegion[],
@@ -125,10 +100,10 @@ export function getSingleTypeDocument(
       langId = r.languageId;
     }
   }
+  // newContent is coffee
 
-  if (type === 'script' && newContent.trim().length === 0) {
-    newContent = 'export default {};';
-  }
+  newContent = transpile_service.transpile(document).js || ''
+  // now it's JS. source map etc are saved in transpileService to be retrievable in js language service methods
 
   return TextDocument.create(document.uri, langId, document.version, newContent);
 }

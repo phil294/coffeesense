@@ -18,12 +18,10 @@ import {
   DocumentHighlightKind,
   CompletionList,
   Position,
-  FormattingOptions,
   DiagnosticTag,
   MarkupContent,
   CodeAction,
   CodeActionKind,
-  FoldingRangeKind,
   CompletionItemTag,
   CodeActionContext,
   TextDocumentEdit,
@@ -38,7 +36,7 @@ import { URI } from 'vscode-uri';
 import type ts from 'typescript';
 import _ from 'lodash';
 
-import { nullMode, NULL_SIGNATURE } from '../nullMode';
+import { NULL_SIGNATURE } from '../nullMode';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
@@ -46,14 +44,9 @@ import { isCoffeescriptFile, toCompletionItemKind, toSymbolKind } from '../../se
 import * as Previewer from './previewer';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import { FileRename } from 'vscode-languageserver';
 import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
-
-// Todo: After upgrading to LS server 4.0, use CompletionContext for filtering trigger chars
-// https://microsoft.github.io/language-server-protocol/specification#completion-request-leftwards_arrow_with_hook
-const NON_SCRIPT_TRIGGERS = ['<', '*', ':'];
-
-const SEMANTIC_TOKEN_CONTENT_LENGTH_LIMIT = 80000;
+import transpile_service from '../../services/transpileService';
+import { LineMap } from 'coffeescript';
 
 export async function getJavascriptMode(
   serviceHost: IServiceHost,
@@ -133,6 +126,13 @@ export async function getJavascriptMode(
       if (await isVCancellationRequested(cancellationToken)) {
         return [];
       }
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+      if(transpilation.diagnostics)
+        return transpilation.diagnostics || []
+
       const fileFsPath = getFileFsPath(doc.uri);
       const program = service.getProgram();
       const sourceFile = program?.getSourceFile(fileFsPath);
@@ -164,47 +164,92 @@ export async function getJavascriptMode(
           tags.push(DiagnosticTag.Deprecated);
         }
 
+        let range = convertRange(scriptDoc, diag as ts.TextSpan)
+        if(transpilation.source_map)
+          range = transpile_service.map_range(transpilation.source_map, range)
+
         // syntactic/semantic diagnostic always has start and length
         // so we can safely cast diag to TextSpan
         return <Diagnostic>{
-          range: convertRange(scriptDoc, diag as ts.TextSpan),
+          range,
           severity: convertTSDiagnosticCategoryToDiagnosticSeverity(tsModule, diag.category),
           message: tsModule.flattenDiagnosticMessageText(diag.messageText, '\n'),
           tags,
           code: diag.code,
-          source: 'CoffeeSense'
+          source: 'CoffeeSense [TS]'
         };
       });
     },
-    doComplete(doc: TextDocument, position: Position): CompletionList {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doComplete(coffee_doc: TextDocument, coffee_position: Position): CompletionList {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return { isIncomplete: false, items: [] };
+      }
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
+      if(!transpilation?.source_map)
+        return { isIncomplete: false, items: [] }
+      
+      // For position reverse mapping, remove . char, and add again to result afterwards.
+      // Otherwise, the source map does not know what you're talking of
+      const coffee_last_char = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position) - 1]
+      const coffee_position_excl_trigger_char = {
+        line: coffee_position.line,
+        character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
+      }
+      const js_position = transpile_service.reverse_map_position(transpilation, coffee_position_excl_trigger_char)
+      if(!js_position)
+        return { isIncomplete: false, items: [] }
+      const position = {
+        line: js_position.line,
+        character: js_position.character + (coffee_last_char==='.'? 1 : 0)
       }
 
-      const fileFsPath = getFileFsPath(doc.uri);
-      const offset = scriptDoc.offsetAt(position);
-      const triggerChar = doc.getText()[offset - 1];
-      if (NON_SCRIPT_TRIGGERS.includes(triggerChar)) {
-        return { isIncomplete: false, items: [] };
+      let js_offset = js_doc.offsetAt(position);
+      if(position.character > 1000) // End of line (Number.MAX_VALUE)
+        js_offset--
+
+      const js_text = js_doc.getText()
+      const js_last_char = js_text[js_offset - 1]
+      const js_next_char = js_text[js_offset]
+      // When CS cursor is e.g. at `a('|`, completion does not work bc of bad source mapping,
+      // JS cursor is falsely `a(|')`. Fix this below:
+      const special_trigger_chars = ['"', "'"]
+      let char_offset = 0
+      for(const s of special_trigger_chars) {
+        if(coffee_last_char === s && js_last_char !== s && js_next_char === s) {
+          char_offset += 1
+          break
+        }
       }
-      const completions = service.getCompletionsAtPosition(fileFsPath, offset, {
-        ...getUserPreferences(scriptDoc),
-        triggerCharacter: getTsTriggerCharacter(triggerChar),
+      js_offset += char_offset
+      
+      const completions = service.getCompletionsAtPosition(fileFsPath, js_offset, {
+        ...getUserPreferences(js_doc),
+        triggerCharacter: getTsTriggerCharacter(coffee_last_char),
         includeCompletionsWithInsertText: true,
         includeCompletionsForModuleExports: env.getConfig().coffeesense.completion.autoImport
       });
+
       if (!completions) {
         return { isIncomplete: false, items: [] };
       }
       return {
         isIncomplete: false,
         items: completions.entries.map((entry, index) => {
-          const range = entry.replacementSpan && convertRange(scriptDoc, entry.replacementSpan);
+          let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
+          if(range) {
+            range = transpile_service.map_range(transpilation.source_map as LineMap[], range)
+            range.start.character += char_offset
+            range.end.character += char_offset
+            // Or maybe do not calculate range at all, just set to coffee_position? Should work too
+          }
+          
           const { label, detail } = calculateLabelAndDetailTextForPathImport(entry);
 
           const item: CompletionItem = {
-            uri: doc.uri,
+            uri: coffee_doc.uri,
             position,
             preselect: entry.isRecommended ? true : undefined,
             label,
@@ -216,9 +261,9 @@ export async function getJavascriptMode(
             insertText: entry.insertText,
             data: {
               // data used for resolving item details (see 'doResolve')
-              languageId: scriptDoc.languageId,
-              uri: doc.uri,
-              offset,
+              languageId: js_doc.languageId,
+              uri: coffee_doc.uri,
+              offset: js_offset,
               source: entry.source,
               tsData: entry.data
             }
@@ -285,7 +330,7 @@ export async function getJavascriptMode(
 
       const details = service.getCompletionEntryDetails(
         fileFsPath,
-        item.data.offset,
+        item.data.offset, // ?
         item.label,
         undefined,
         item.data.source,
@@ -331,9 +376,16 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return { contents: [] };
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation?.source_map)
+        return { contents: [] }
+
+      position = transpile_service.reverse_map_position(transpilation, position) || position
+
       const info = service.getQuickInfoAtPosition(fileFsPath, scriptDoc.offsetAt(position));
+
       if (info) {
         const display = tsModule.displayPartsToString(info.displayParts);
         const markedContents: MarkedString[] = [{ language: 'ts', value: display }];
@@ -357,8 +409,11 @@ export async function getJavascriptMode(
           markedContents.push(hoverMdDoc);
         }
 
+        let range = convertRange(scriptDoc, info.textSpan)
+        range = transpile_service.map_range(transpilation.source_map, range)
+
         return {
-          range: convertRange(scriptDoc, info.textSpan),
+          range,
           contents: markedContents
         };
       }
@@ -369,8 +424,14 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return NULL_SIGNATURE;
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation?.source_map)
+        return NULL_SIGNATURE
+
+      position = transpile_service.reverse_map_position(transpilation, position) || position
+
       const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
       if (!signatureHelpItems) {
         return NULL_SIGNATURE;
@@ -427,13 +488,24 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+
+      position = transpile_service.reverse_map_position(transpilation, position) || position
+
       const occurrences = service.getOccurrencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (occurrences) {
         return occurrences.map(entry => {
+          let range = convertRange(scriptDoc, entry.textSpan)
+          if(transpilation.source_map) {
+            range = transpile_service.map_range(transpilation.source_map, range)
+            range.end.character = range.start.character + entry.textSpan.length
+          }
           return {
-            range: convertRange(scriptDoc, entry.textSpan),
+            range,
             kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
           };
         });
@@ -445,8 +517,12 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+
       const items = service.getNavigationBarItems(fileFsPath);
       if (!items) {
         return [];
@@ -456,12 +532,15 @@ export async function getJavascriptMode(
       const collectSymbols = (item: ts.NavigationBarItem, containerLabel?: string) => {
         const sig = item.text + item.kind + item.spans[0].start;
         if (item.kind !== 'script' && !existing[sig]) {
+          let range = convertRange(scriptDoc, item.spans[0])
+          if(transpilation?.source_map)
+            range = transpile_service.map_range(transpilation.source_map, range)
           const symbol: SymbolInformation = {
             name: item.text,
             kind: toSymbolKind(item.kind),
             location: {
               uri: doc.uri,
-              range: convertRange(scriptDoc, item.spans[0])
+              range
             },
             containerName: containerLabel
           };
@@ -485,8 +564,14 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+
+      position = transpile_service.reverse_map_position(transpilation, position) || position
+
       const definitions = service.getDefinitionAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (!definitions) {
         return [];
@@ -499,9 +584,15 @@ export async function getJavascriptMode(
       }
       definitions.forEach(d => {
         const definitionTargetDoc = getSourceDoc(d.fileName, program);
+        let range = convertRange(definitionTargetDoc, d.textSpan)
+        const uri = URI.file(d.fileName).toString()
+        if(uri === doc.uri) {
+          if(transpilation.source_map)
+            range = transpile_service.map_range(transpilation.source_map, range)
+        }
         definitionResults.push({
-          uri: URI.file(d.fileName).toString(),
-          range: convertRange(definitionTargetDoc, d.textSpan)
+          uri,
+          range
         });
       });
       return definitionResults;
@@ -511,8 +602,14 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+
+      position = transpile_service.reverse_map_position(transpilation, position) || position
+
       const references = service.getReferencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (!references) {
         return [];
@@ -525,20 +622,34 @@ export async function getJavascriptMode(
       }
       references.forEach(r => {
         const referenceTargetDoc = getSourceDoc(r.fileName, program);
+
+        let range = convertRange(referenceTargetDoc, r.textSpan)
+        const uri = URI.file(r.fileName).toString()
+        if(uri === doc.uri) {
+          if(transpilation.source_map)
+            range = transpile_service.map_range(transpilation.source_map, range)
+        }
         if (referenceTargetDoc) {
           referenceResults.push({
-            uri: URI.file(r.fileName).toString(),
-            range: convertRange(referenceTargetDoc, r.textSpan)
+            uri,
+            range
           });
         }
       });
       return referenceResults;
     },
-    getCodeActions(doc: TextDocument, range: Range, context: CodeActionContext) {
+    getCodeActions(doc: TextDocument, coffee_range: Range, context: CodeActionContext) {
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return []
+      const js_range = transpile_service.reverse_map_range(transpilation, coffee_range)
+      if(!js_range)
+        return []
+
       const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
       const fileName = getFileFsPath(scriptDoc.uri);
-      const start = scriptDoc.offsetAt(range.start);
-      const end = scriptDoc.offsetAt(range.end);
+      const start = scriptDoc.offsetAt(js_range.start);
+      const end = scriptDoc.offsetAt(js_range.end);
       const textRange = { pos: start, end };
       const preferences = getUserPreferences(scriptDoc);
       if (!supportedCodeFixCodes) {
@@ -560,6 +671,9 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return action;
       }
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation?.source_map)
+        return action;
 
       const preferences = getUserPreferences(scriptDoc);
 
@@ -567,8 +681,23 @@ export async function getJavascriptMode(
       const data = action.data as CodeActionData;
 
       if (data.kind === CodeActionDataKind.OrganizeImports) {
+        const text_range_length = data.textRange.end - data.textRange.pos
+        const mapped_pos_start = transpile_service.reverse_map_position(transpilation, doc.positionAt(data.textRange.pos))
+        if(!mapped_pos_start)
+          return action
+        data.textRange.pos = doc.offsetAt(mapped_pos_start)
+        data.textRange.end = data.textRange.pos + text_range_length
+        
         const response = service.organizeImports({ type: 'file', fileName: fileFsPath }, {}, preferences);
         action.edit = { changes: createUriMappingForEdits(response.slice(), service) };
+        
+        const doc_changes = action.edit.changes?.[doc.uri] || []
+        for(const change of doc_changes) {
+          change.range = transpile_service.map_range(transpilation.source_map, change.range)
+          if(change.range.start.line === change.range.end.line && change.range.start.character === 0 && change.range.end.character === 0)
+            // Import removed; fix line range
+            change.range.end.line++
+        }
       }
 
       delete action.data;
@@ -579,50 +708,6 @@ export async function getJavascriptMode(
     },
     onDocumentChanged(filePath: string) {
       serviceHost.updateExternalDocument(filePath);
-    },
-    getRenameFileEdit(rename: FileRename): TextDocumentEdit[] {
-      const oldPath = getFileFsPath(rename.oldUri);
-      const newPath = getFileFsPath(rename.newUri);
-
-      const service = serviceHost.getLanguageService();
-      const program = service.getProgram();
-      if (!program) {
-        return [];
-      }
-
-      const sourceFile = program.getSourceFile(oldPath);
-      if (!sourceFile) {
-        return [];
-      }
-
-      const oldFileIsCoffeescript = isCoffeescriptFile(oldPath);
-      const preferences = getUserPreferencesByLanguageId(
-        (sourceFile as any).scriptKind === tsModule.ScriptKind.JS ? 'javascript' : 'typescript'
-      );
-
-      // typescript use the filename of the source file to check for update
-      // match it or it may not work on windows
-      const normalizedOldPath = sourceFile.fileName;
-      const edits = service.getEditsForFileRename(normalizedOldPath, newPath, {}, preferences);
-
-      const textDocumentEdit: TextDocumentEdit[] = [];
-      for (const edit of edits) {
-        const fileName = edit.fileName;
-        const doc = getSourceDoc(fileName, program);
-        const bothNotCoffeescriptFile = !oldFileIsCoffeescript && !isCoffeescriptFile(fileName);
-        if (bothNotCoffeescriptFile) {
-          continue;
-        }
-        const docIdentifier = VersionedTextDocumentIdentifier.create(URI.file(doc.uri).toString(), 0);
-        textDocumentEdit.push(
-          ...edit.textChanges.map(({ span, newText }) => {
-            const range = Range.create(doc.positionAt(span.start), doc.positionAt(span.start + span.length));
-            return TextDocumentEdit.create(docIdentifier, [TextEdit.replace(range, newText)]);
-          })
-        );
-      }
-
-      return textDocumentEdit;
     },
     dispose() {
       jsDocuments.dispose();
@@ -694,7 +779,7 @@ function convertRange(document: TextDocument, span: ts.TextSpan): Range {
 
 // Parameter must to be string, Otherwise I don't like it semantically.
 function getTsTriggerCharacter(triggerChar: string) {
-  const legalChars = ['@', '#', '.', '"', "'", '`', '/', '<'];
+  const legalChars = ['@', '#', '.', '"', "'", '`', '/', '<', ' '];
   if (legalChars.includes(triggerChar)) {
     return triggerChar as ts.CompletionsTriggerCharacter;
   }

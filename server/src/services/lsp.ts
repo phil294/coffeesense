@@ -20,7 +20,6 @@ import {
   CodeActionParams,
   CompletionParams,
   ExecuteCommandParams,
-  RenameFilesParams
 } from 'vscode-languageserver';
 import {
   CompletionItem,
@@ -353,7 +352,6 @@ export class LSP {
     this.lspConnection.onSignatureHelp(this.onSignatureHelp.bind(this));
     this.lspConnection.onCodeAction(this.onCodeAction.bind(this));
     this.lspConnection.onCodeActionResolve(this.onCodeActionResolve.bind(this));
-    this.lspConnection.workspace.onWillRenameFiles(this.onWillRenameFiles.bind(this));
 
     this.lspConnection.onExecuteCommand(this.executeCommand.bind(this));
   }
@@ -510,33 +508,6 @@ export class LSP {
     return project?.onCodeActionResolve(action) ?? action;
   }
 
-  async onWillRenameFiles({ files }: RenameFilesParams) {
-    const inTheSameProject = files.filter(file => {
-      const oldFileProject = this.getProjectRootPath(file.oldUri);
-      const newFileProject = this.getProjectRootPath(file.newUri);
-
-      return oldFileProject && newFileProject && oldFileProject === newFileProject;
-    });
-
-    const documentChanges = _.flatten(
-      await Promise.all(
-        inTheSameProject.map(async rename => {
-          const projectService = await this.getProjectService(rename.newUri);
-
-          return projectService?.onWillRenameFile(rename) ?? [];
-        })
-      )
-    );
-
-    if (!documentChanges.length) {
-      return null;
-    }
-
-    return {
-      documentChanges
-    };
-  }
-
   private triggerValidation(textDocument: TextDocument): void {
     if (textDocument.uri.includes('node_modules')) {
       return;
@@ -600,11 +571,10 @@ export class LSP {
     return {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       workspace: {
-        workspaceFolders: { supported: true, changeNotifications: true },
-        fileOperations: { willRename: { filters: [{ pattern: { glob: `**/*.{ts,js,${FILE_EXTENSION}}` } }] } }
+        workspaceFolders: { supported: true, changeNotifications: true }
       },
-      completionProvider: { resolveProvider: true, triggerCharacters: ['.', ':', '<', '"', "'", '/', '@', '*', ' '] },
-      signatureHelpProvider: { triggerCharacters: ['('] },
+      completionProvider: { resolveProvider: true, triggerCharacters: ['.', ':', '<', '"', "'", '/', '@', '*'] },
+      signatureHelpProvider: { triggerCharacters: ['(', ' '] },
       documentFormattingProvider: false,
       hoverProvider: true,
       documentHighlightProvider: true,

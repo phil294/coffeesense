@@ -22,17 +22,21 @@
   },
   "homepage": "https://github.com/phil294/coffeescript-intellisense/tree/master/server",
   "dependencies": {
-    "typescript": "^4.3.2"
+    "jshashes": "^1.0.8",
+    "typescript": "^4.3.2",
+    "volatile-map": "^1.0.2"
   },
   "resolutions": {
     "typescript": "^4.3.2"
   },
   "devDependencies": {
+    "@types/coffeescript": "^2.5.0",
     "@types/glob": "^7.1.3",
     "@types/lodash": "^4.14.170",
     "@types/node": "^15.12.4",
     "@types/read-pkg-up": "^6.0.0",
     "@types/resolve": "1.20.0",
+    "coffeescript": "^2.5.1",
     "core-js": "^3.15.1",
     "element-helper-json": "^2.0.6",
     "fast-glob": "^3.2.5",

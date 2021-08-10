@@ -8,7 +8,6 @@ import {
   Diagnostic,
   DocumentHighlight,
   DocumentSymbolParams,
-  FileRename,
   Hover,
   Location,
   SignatureHelp,
@@ -40,7 +39,6 @@ export interface ProjectService {
   onSignatureHelp(params: TextDocumentPositionParams): Promise<SignatureHelp | null>;
   onCodeAction(params: CodeActionParams): Promise<CodeAction[]>;
   onCodeActionResolve(action: CodeAction): Promise<CodeAction>;
-  onWillRenameFile(fileRename: FileRename): Promise<TextDocumentEdit[]>;
   doValidate(doc: TextDocument, cancellationToken?: VCancellationToken): Promise<Diagnostic[] | null>;
   dispose(): Promise<void>;
 }
@@ -173,15 +171,6 @@ export async function createProjectService(
       }
 
       return action;
-    },
-    async onWillRenameFile(fileRename: FileRename) {
-      if (!env.getConfig().coffeesense.languageFeatures.updateImportOnFileMove) {
-        return [];
-      }
-
-      const textDocumentEdit = languageModes.getMode('typescript')?.getRenameFileEdit?.(fileRename);
-
-      return textDocumentEdit ?? [];
     },
     async doValidate(doc: TextDocument, cancellationToken?: VCancellationToken) {
       const diagnostics: Diagnostic[] = [];

@@ -24,22 +24,8 @@
     "install:server": "cd server && yarn",
     "compile": "rollup -c rollup.config.js",
     "watch": "rollup -c rollup.config.js -w",
-    "lint": "tslint -c tslint.json client/**/*.ts server/**/*.ts scripts/**/*.ts",
     "prepare-publish": "./build/release-cleanup.sh",
     "prepare": "husky install"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.ts": [
-      "tslint --fix"
-    ],
-    "*.{js,ts,yaml}": [
-      "prettier --write"
-    ]
   },
   "categories": [
     "Programming Languages"
@@ -104,11 +90,6 @@
           "default": true,
           "description": "Whether to enable codeActions"
         },
-        "coffeesense.languageFeatures.updateImportOnFileMove": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to automatic updating import path when rename or move a file"
-        },
         "coffeesense.trace.server": {
           "type": "string",
           "enum": [
@@ -160,9 +141,7 @@
     "esbuild": "^0.12.5",
     "fs-extra": "^10.0.0",
     "glob": "^7.1.7",
-    "husky": "^6.0.0",
     "js-yaml": "^4.1.0",
-    "lint-staged": "^11.0.0",
     "minimist": "^1.2.5",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.3.0",
@@ -173,7 +152,6 @@
     "rollup-plugin-typescript2": "^0.30.0",
     "shelljs": "^0.8.4",
     "ts-node": "^10.0.0",
-    "tslint": "^6.1.3",
     "typescript": "^4.3.2",
     "vscode-languageclient": "^7.0.0",
     "vscode-languageserver-types": "^3.16.0"
