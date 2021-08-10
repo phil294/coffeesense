@@ -1,7 +1,7 @@
 {
   "name": "coffeesense-language-server",
   "description": "CoffeeSense Language Server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "phil294",
   "license": "MIT",
   "main": "dist/coffeesense-language-server.js",
@@ -57,6 +57,6 @@
     "compile": "rollup -c rollup.config.js",
     "watch": "rollup -c rollup.config.js -w",
     "newVersion": "yarn version --new-version patch -m \"coffeesense-language-server %s\"",
-    "preversion": "yarn compile && yarn test"
+    "preversion": "yarn compile"
   }
 }
