@@ -1,6 +1,6 @@
 ## CoffeeSense Language Server
 
-TODO below text is not correct, package was not yet published to npm
+BELOW TEXT IS NOT FULLY CORRECT, PACKAGE WAS NOT YET PUBLISHED TO NPM
 
 [CoffeeSense Language Server](https://www.npmjs.com/package/coffeesense-language-server) is a language server implementation compatible with [Language Server Protocol](https://github.com/microsoft/language-server-protocol).
 
@@ -12,4 +12,4 @@ Please note that this is *not* a complete LSP implementation due to its technica
 
 ## Usage (outside of VSCode `CoffeeSense` Extension)
 
-See https://github.com/phil294/coffeesense/blob/master/server/README.md for how you do it in principle. `coffeesense-language-server` is on NPM so you can install it for example with `npm install coffeesense-language-server -g`.
+See https://github.com/vuejs/vetur/blob/master/server/README.md for how you do it in principle. `coffeesense-language-server` is on NPM so you can install it for example with `npm install coffeesense-language-server -g`.

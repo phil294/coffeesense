@@ -1,3 +1,8 @@
+
+
+PLEASE IGNORE THIS DIRECTORY / FILE FOR NOW
+
+
 # `coffeesense.config.js`
 
 A new configuration file for CoffeeSense and VTI
