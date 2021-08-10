@@ -1,9 +1,5 @@
 import { LanguageId } from './embeddedSupport/embeddedSupport';
 
-export interface DocumentContext {
-  resolveReference(ref: string, base?: string): string;
-}
-
 export enum CodeActionDataKind {
   CombinedCodeFix,
   RefactorAction,

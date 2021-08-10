@@ -29,7 +29,6 @@ import { nullMode } from '../modes/nullMode';
 import { getServiceHost, IServiceHost } from '../services/typescriptService/serviceHost';
 import { VCancellationToken } from '../utils/cancellationToken';
 import { EnvironmentService } from '../services/EnvironmentService';
-import { FileRename } from 'vscode-languageserver';
 import { LANGUAGE_ID } from '../language';
 
 export interface LSPServices {
@@ -51,7 +50,6 @@ export interface LanguageMode {
   findDocumentSymbols?(document: TextDocument): SymbolInformation[];
   findDefinition?(document: TextDocument, position: Position): Definition;
   findReferences?(document: TextDocument, position: Position): Location[];
-  getRenameFileEdit?(renames: FileRename): TextDocumentEdit[];
 
   onDocumentChanged?(filePath: string): void;
   onDocumentRemoved(document: TextDocument): void;

@@ -67,8 +67,6 @@ export function getDefaultLSPConfig(): LSPFullConfig {
   };
 }
 
-export type Glob = string;
-
 export interface CoffeeSenseProject {
   root: string;
   package?: string;
