@@ -21,7 +21,7 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
     - Get IntelliSense for imports from Coffee files, JS files, TS files, be it in workspace or `node_modules`, everything should behave as you are familiar from TypeScript ecosystem
 - **Autocompletion**: Works even function when a line / the current line is invalid syntax (so, while typing, basically), but results may be a bit more unpredictable at times. Autocomplete is based on TypeScript.
   - Methods, properties etc.
-  - *missing, TO DO:* Automatic imports
+  - Automatic imports
 - **Hover information**
 - **Signature type hints** Trigger characters are both `(` and ` ` (space)
 - **Document highlight**:

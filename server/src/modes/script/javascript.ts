@@ -56,12 +56,6 @@ export async function getJavascriptMode(
     return coffeescriptDocument.getSingleTypeDocument('script');
   });
 
-  const firstScriptRegion = getLanguageModelCache(10, 60, document => {
-    const coffeescriptDocument = documentRegions.refreshAndGet(document);
-    const scriptRegions = coffeescriptDocument.getLanguageRangesOfType('script');
-    return scriptRegions.length > 0 ? scriptRegions[0] : undefined;
-  });
-
   const tsModule: RuntimeLibrary['typescript'] = dependencyService.get('typescript').module;
 
   const { updateCurrentCoffeescriptTextDocument } = serviceHost;
@@ -329,14 +323,17 @@ export async function getJavascriptMode(
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return item;
       }
-
       const fileFsPath = getFileFsPath(doc.uri);
+
+      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      if(!transpilation)
+        return item
 
       const details = service.getCompletionEntryDetails(
         fileFsPath,
-        item.data.offset, // ?
+        item.data.offset,
         item.label,
-        undefined,
+        {},
         item.data.source,
         getUserPreferences(scriptDoc),
         item.data.tsData
@@ -361,7 +358,19 @@ export async function getJavascriptMode(
         }
 
         if (details.codeActions) {
-          const textEdits = convertCodeAction(doc, details.codeActions, firstScriptRegion);
+          const textEdits = details.codeActions.map(action =>
+            action.changes.map(change =>
+              change.textChanges.map(text_change => {
+                return {
+                  // map_range is possible but does not make sense: ts service response
+                  // does not point to a relevant source statement, instead this is the place
+                  // where it suggests to insert the import. we can ignore that anyway and place
+                  // automatic imports at the very start, always
+                  range: Range.create(0, 0, 0, 0),
+                  newText: text_change.newText
+                }
+          }))).flat().flat()
+
           item.additionalTextEdits = textEdits;
 
           details.codeActions.forEach(action => {
@@ -791,40 +800,6 @@ function getTsTriggerCharacter(triggerChar: string) {
     return triggerChar as ts.CompletionsTriggerCharacter;
   }
   return undefined;
-}
-
-function convertCodeAction(
-  doc: TextDocument,
-  codeActions: ts.CodeAction[],
-  regionStart: LanguageModelCache<LanguageRange | undefined>
-): TextEdit[] {
-  const scriptStartOffset = doc.offsetAt(regionStart.refreshAndGet(doc)!.start);
-  const textEdits: TextEdit[] = [];
-  for (const action of codeActions) {
-    for (const change of action.changes) {
-      textEdits.push(
-        ...change.textChanges.map(tc => {
-          // currently, only import codeAction is available
-          // change start of doc to start of script region
-          if (tc.span.start <= scriptStartOffset && tc.span.length === 0) {
-            const region = regionStart.refreshAndGet(doc);
-            if (region) {
-              const line = region.start.line;
-              return {
-                range: Range.create(line + 1, 0, line + 1, 0),
-                newText: tc.newText
-              };
-            }
-          }
-          return {
-            range: convertRange(doc, tc.span),
-            newText: tc.newText
-          };
-        })
-      );
-    }
-  }
-  return textEdits;
 }
 
 function parseKindModifier(kindModifiers: string) {
