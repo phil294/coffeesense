@@ -583,10 +583,9 @@ export async function getJavascriptMode(
         const definitionTargetDoc = getSourceDoc(d.fileName, program);
         let range = convertRange(definitionTargetDoc, d.textSpan)
         const uri = URI.file(d.fileName).toString()
-        if(uri === doc.uri) {
-          if(transpilation.source_map)
-            range = transpile_service.map_range(transpilation.source_map, range)
-        }
+        const uri_transpilation = transpile_service.result_by_uri.get(uri)
+        if(uri_transpilation?.source_map)
+          range = transpile_service.map_range(uri_transpilation.source_map, range)
         definitionResults.push({
           uri,
           range
@@ -622,10 +621,9 @@ export async function getJavascriptMode(
 
         let range = convertRange(referenceTargetDoc, r.textSpan)
         const uri = URI.file(r.fileName).toString()
-        if(uri === doc.uri) {
-          if(transpilation.source_map)
-            range = transpile_service.map_range(transpilation.source_map, range)
-        }
+        const uri_transpilation = transpile_service.result_by_uri.get(uri)
+        if(uri_transpilation?.source_map)
+          range = transpile_service.map_range(uri_transpilation.source_map, range)
         if (referenceTargetDoc) {
           referenceResults.push({
             uri,
