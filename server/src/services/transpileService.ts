@@ -38,7 +38,7 @@ const transpile_service = {
       // makes sense in CS syntax.
       // To avoid unexpected syntax weirdness, we additionally show an unavoidable
       // error below (TODO: integrate this replace into the matchAll() below to avoid duplicate work)
-      .replace(/([a-zA-Z_]) \n/g, (_,c) => `${c}(\n`)
+      .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => `${c}(\n`)
     let result: ITranspilationResult
     try {
       // 1. Try normal compilation
@@ -63,7 +63,7 @@ const transpile_service = {
       }]
       // see above
       diagnostics.push(...[...document.getText()
-        .matchAll(/([a-zA-Z_]) \n/g)]
+        .matchAll(/([a-zA-Z_]) (\n|$)/g)]
         .map(m => {
           const pos = document.positionAt(m.index||0+1)
           return {
