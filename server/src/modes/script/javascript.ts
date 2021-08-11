@@ -367,7 +367,7 @@ export async function getJavascriptMode(
                   // where it suggests to insert the import. we can ignore that anyway and place
                   // automatic imports at the very start, always
                   range: Range.create(0, 0, 0, 0),
-                  newText: text_change.newText
+                  newText: text_change.newText.replace(/;/g,'')
                 }
           }))).flat().flat()
 

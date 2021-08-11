@@ -4,7 +4,7 @@
   "description": "IntelliSense for CoffeeScript based on its compiled JavaScript output",
   "author": "phil294",
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "asset/logo.png",
   "repository": {
     "type": "git",
