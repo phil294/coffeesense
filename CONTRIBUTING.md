@@ -3,7 +3,7 @@ This repository is a fork of [Vetur[(https://github.com/vuejs/vetur). Vetur itse
 To help you getting started on contributing:
 
 The interesting stuff happens here:
- - [Compile to JS](https://github.com/phil294/coffeesense/blob/76b990d3f8f82ace1c0dd1324b69030db7e2a940/server/src/embeddedSupport/embeddedSupport.ts#L105 (one line)
+ - [Compile to JS](https://github.com/phil294/coffeesense/blob/master/server/src/embeddedSupport/embeddedSupport.ts#L105 (one line)
  - [javascript.ts](server/src/modes/script/javascript.ts). You can see what was added to it in 76b990. Mostly, positions and ranges are mapped back and forth between JS and CS (TODO:link to hover)
  - [transpileService.ts](server/src/modes/script/transpileService.ts). This is the only file that was added. It provides compiling capabilities and mapping functions. It also contains a faked coffee compilation step to enable autocomplete in syntactically incorrect coffee files, but with one erroneous line only. Maybe accept more error lines in future? It brings its own state and cache and thus is not really integrated into the rest of the system but rather a standalone module.
 

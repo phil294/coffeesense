@@ -185,22 +185,28 @@ export async function getJavascriptMode(
       const fileFsPath = getFileFsPath(coffee_doc.uri);
 
       const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
-      if(!transpilation?.source_map)
+      if(!transpilation)
         return { isIncomplete: false, items: [] }
       
-      // For position reverse mapping, remove . char, and add again to result afterwards.
-      // Otherwise, the source map does not know what you're talking of
       const coffee_last_char = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position) - 1]
-      const coffee_position_excl_trigger_char = {
-        line: coffee_position.line,
-        character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
-      }
-      const js_position = transpile_service.reverse_map_position(transpilation, coffee_position_excl_trigger_char)
-      if(!js_position)
-        return { isIncomplete: false, items: [] }
-      const position = {
-        line: js_position.line,
-        character: js_position.character + (coffee_last_char==='.'? 1 : 0)
+      let position: Position
+      if(transpilation.source_map) {
+        // For position reverse mapping, remove . char, and add again to result afterwards.
+        // Otherwise, the source map does not know what you're talking of
+        const coffee_position_excl_trigger_char = {
+          line: coffee_position.line,
+          character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
+        }
+        const js_position = transpile_service.reverse_map_position(transpilation, coffee_position_excl_trigger_char)
+        if(!js_position)
+          return { isIncomplete: false, items: [] }
+        position = {
+          line: js_position.line,
+          character: js_position.character + (coffee_last_char==='.'? 1 : 0)
+        }
+      } else {
+        // If no source map, the file is passed as coffee text which must not be mapped
+        position = coffee_position
       }
 
       let js_offset = js_doc.offsetAt(position);
@@ -237,7 +243,8 @@ export async function getJavascriptMode(
         items: completions.entries.map((entry, index) => {
           let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
           if(range) {
-            range = transpile_service.map_range(transpilation.source_map as LineMap[], range)
+            if(transpilation.source_map)
+              range = transpile_service.map_range(transpilation.source_map, range)
             range.start.character += char_offset
             range.end.character += char_offset
             // Or maybe do not calculate range at all, just set to coffee_position + entry length? Should work too
@@ -376,10 +383,11 @@ export async function getJavascriptMode(
       const fileFsPath = getFileFsPath(doc.uri);
 
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
-      if(!transpilation?.source_map)
+      if(!transpilation)
         return { contents: [] }
 
-      position = transpile_service.reverse_map_position(transpilation, position) || position
+      if(transpilation.source_map)
+        position = transpile_service.reverse_map_position(transpilation, position) || position
 
       const info = service.getQuickInfoAtPosition(fileFsPath, scriptDoc.offsetAt(position));
 
@@ -407,7 +415,8 @@ export async function getJavascriptMode(
         }
 
         let range = convertRange(scriptDoc, info.textSpan)
-        range = transpile_service.map_range(transpilation.source_map, range)
+        if(transpilation.source_map)
+          range = transpile_service.map_range(transpilation.source_map, range)
 
         return {
           range,
@@ -424,10 +433,11 @@ export async function getJavascriptMode(
       const fileFsPath = getFileFsPath(doc.uri);
 
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
-      if(!transpilation?.source_map)
+      if(!transpilation)
         return NULL_SIGNATURE
 
-      position = transpile_service.reverse_map_position(transpilation, position) || position
+      if(transpilation.source_map)
+        position = transpile_service.reverse_map_position(transpilation, position) || position
 
       const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
       if (!signatureHelpItems) {
@@ -488,7 +498,7 @@ export async function getJavascriptMode(
       const fileFsPath = getFileFsPath(doc.uri);
 
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
-      if(!transpilation)
+      if(!transpilation?.source_map)
         return []
 
       position = transpile_service.reverse_map_position(transpilation, position) || position
@@ -517,7 +527,7 @@ export async function getJavascriptMode(
       const fileFsPath = getFileFsPath(doc.uri);
 
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
-      if(!transpilation)
+      if(!transpilation?.source_map)
         return []
 
       const items = service.getNavigationBarItems(fileFsPath);
@@ -567,7 +577,8 @@ export async function getJavascriptMode(
       if(!transpilation)
         return []
 
-      position = transpile_service.reverse_map_position(transpilation, position) || position
+      if(transpilation.source_map)
+        position = transpile_service.reverse_map_position(transpilation, position) || position
 
       const definitions = service.getDefinitionAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (!definitions) {
@@ -604,7 +615,8 @@ export async function getJavascriptMode(
       if(!transpilation)
         return []
 
-      position = transpile_service.reverse_map_position(transpilation, position) || position
+      if(transpilation.source_map)
+        position = transpile_service.reverse_map_position(transpilation, position) || position
 
       const references = service.getReferencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (!references) {
@@ -635,7 +647,7 @@ export async function getJavascriptMode(
     },
     getCodeActions(doc: TextDocument, coffee_range: Range, context: CodeActionContext) {
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
-      if(!transpilation)
+      if(!transpilation?.source_map)
         return []
       const js_range = transpile_service.reverse_map_range(transpilation, coffee_range)
       if(!js_range)

@@ -102,8 +102,9 @@ export function getSingleTypeDocument(
   }
   // newContent is coffee
 
-  newContent = transpile_service.transpile(document).js || ''
-  // now it's JS. source map etc are saved in transpileService to be retrievable in js language service methods
+  newContent = transpile_service.transpile(document).js || document.getText()
+  // now it's JS (or if failed, coffee as a fallback)
+  // source map etc are saved in transpileService to be retrievable in js language service methods
 
   return TextDocument.create(document.uri, langId, document.version, newContent);
 }
