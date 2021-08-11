@@ -19,16 +19,16 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
     - Be sure to include `//@ts-check` at the top of your script or set `checkJs=true` in your `jsconfig.json` in your workspace root. For multi-root or nested projects, see [setup](docs/guide/setup.md) and [FAQ](docs/guide/FAQ.md).
     - You can use [JSDoc](https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html) comment blocks in your code [like this](https://github.com/jashkenas/coffeescript/issues/5366) to even define types yourself. See [JS Projects Utilizing TypeScript](https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html) for details
     - Get IntelliSense for imports from Coffee files, JS files, TS files, be it in workspace or `node_modules`, everything should behave as you are familiar from TypeScript ecosystem
-- **Autocompletion**: Complicated but works reasonably well. Can even function when a line / the current line is invalid syntax (so, while typing, basically), but results may be a bit more unpredictable at times. Autocomplete is based on TypeScript.
+- **Autocompletion**: Works even function when a line / the current line is invalid syntax (so, while typing, basically), but results may be a bit more unpredictable at times. Autocomplete is based on TypeScript.
   - Methods, properties etc.
   - *missing, TO DO:* Automatic imports
-- **Hover information**: Works well
-- **Signature type hints** (trigger characters both `,` and ` ` (space)). Similar to validation
-- **Document highlight**: Works well
-- **Document symbols**: Usable
-- **Find definition** (jump to source): Works well, but probably in current file only
-- **Find references**: Probably works in current file only
-- **Code actions**: Organize imports only. Probably only rarely works as you intend it to.
+- **Hover information**
+- **Signature type hints** Trigger characters are both `(` and ` ` (space)
+- **Document highlight**:
+x **Document symbols**: Usable but not great. Check out [Yorkxin's extension](https://github.com/yorkxin/vscode-coffeescript-support), it provides much better symbols if you need that
+- **Find definition**
+- **Find references**
+x **Code actions**: Organize imports only. Probably only rarely works as you intend it to.
 - *missing* Quick fix, refactor
 - *missing* Formatting
 - *missing* Rename var
