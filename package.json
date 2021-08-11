@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/phil294/coffeesense"
   },
-  "publisher": "vscode",
+  "publisher": "phil294",
   "keywords": [
     "CoffeeScript",
     "IntelliSense",
