@@ -50,13 +50,6 @@ export async function createProjectService(
 ): Promise<ProjectService> {
   const languageModes = new LanguageModes();
 
-  function getValidationFlags(): Record<string, boolean> {
-    const config = env.getConfig();
-    return {
-      javascript: config.coffeesense.validation.script
-    };
-  }
-
   await languageModes.init(env, {
     dependencyService
   });
@@ -141,10 +134,6 @@ export async function createProjectService(
       return NULL_SIGNATURE;
     },
     async onCodeAction({ textDocument, range, context }: CodeActionParams) {
-      if (!env.getConfig().coffeesense.languageFeatures.codeActions) {
-        return [];
-      }
-
       const doc = documentService.getDocument(textDocument.uri)!;
       const mode = languageModes.getModeAtPosition(doc, range.start);
       if (languageModes.getModeAtPosition(doc, range.end) !== mode) {
@@ -175,12 +164,9 @@ export async function createProjectService(
     async doValidate(doc: TextDocument, cancellationToken?: VCancellationToken) {
       const diagnostics: Diagnostic[] = [];
       if (doc.languageId === LANGUAGE_ID) {
-        const validationFlags = getValidationFlags();
         for (const lmr of languageModes.getAllLanguageModeRangesInDocument(doc)) {
           if (lmr.mode.doValidation) {
-            if (validationFlags[lmr.mode.getId()]) {
-              diagnostics.push.apply(diagnostics, await lmr.mode.doValidation(doc, cancellationToken));
-            }
+            diagnostics.push.apply(diagnostics, await lmr.mode.doValidation(doc, cancellationToken));
           }
         }
       }

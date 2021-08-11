@@ -3,6 +3,7 @@
     "docs/_book": true
   },
   "cSpell.words": [
+    "esbuild",
     "jshashes"
   ]
 }

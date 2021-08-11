@@ -1,26 +1,26 @@
 {
-	"name": "coffeesense",
+  "name": "coffeesense",
   "displayName": "CoffeeSense",
-	"description": "IntelliSense for CoffeeScript based on its compiled JavaScript output",
-	"author": "phil294",
-	"license": "MIT",
-	"version": "0.0.1",
-  "icon": "asset/TODO.png",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/phil294/coffeesense"
-	},
-	"publisher": "vscode",
-	"keywords": [
-		"CoffeeScript",
-		"IntelliSense",
-		"Autocomplete",
-		"Go To Definition",
-		"Diagnostics",
-		"(TODO)"
-	],
+  "description": "IntelliSense for CoffeeScript based on its compiled JavaScript output",
+  "author": "phil294",
+  "license": "MIT",
+  "version": "0.0.2",
+  "icon": "asset/logo.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phil294/coffeesense"
+  },
+  "publisher": "vscode",
+  "keywords": [
+    "CoffeeScript",
+    "IntelliSense",
+    "Autocomplete",
+    "Go To Definition",
+    "Extension",
+    "coffee"
+  ],
   "scripts": {
-    "postinstall": "run-s install:*",
+    "postinstall": "npm run install:server",
     "install:server": "cd server && yarn",
     "compile": "rollup -c rollup.config.js",
     "watch": "rollup -c rollup.config.js -w",
@@ -71,23 +71,8 @@
         "coffeesense.useWorkspaceDependencies": {
           "type": "boolean",
           "default": false,
-          "description": "Use dependencies from workspace. Currently only for TypeScript.",
+          "description": "Use dependencies from workspace. Currently only for TypeScript. (not sure if this works)",
           "scope": "application"
-        },
-        "coffeesense.completion.autoImport": {
-          "type": "boolean",
-          "default": true,
-          "description": "Include completion for module export and auto import them"
-        },
-        "coffeesense.validation.script": {
-          "type": "boolean",
-          "default": true,
-          "description": "Validate js/ts in <script>"
-        },
-        "coffeesense.languageFeatures.codeActions": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to enable codeActions"
         },
         "coffeesense.trace.server": {
           "type": "string",
@@ -99,19 +84,19 @@
           "default": "off",
           "description": "Traces the communication between VS Code and CoffeeSense Language Server."
         },
-        "coffeesense.dev.vlsPath": {
+        "coffeesense.dev.lspPath": {
           "type": "string",
-          "description": "Path to vls for CoffeeSense developers. There are two ways of using it. \n\n1. Clone phil294/coffeesense from GitHub, build it and point it to the ABSOLUTE path of `/server`.\n2. `yarn global add vls` and point CoffeeSense to the installed location (`yarn global dir` + node_modules/vls)",
+          "description": "Path to lsp for CoffeeSense developers. There are two ways of using it. \n\n1. Clone phil294/coffeesense from GitHub, build it and point it to the ABSOLUTE path of `/server`.\n2. `yarn global add coffeesense-language-server` and point CoffeeSense to the installed location (`yarn global dir` + node_modules/coffeesense-language-server)",
           "scope": "machine"
         },
-        "coffeesense.dev.vlsPort": {
+        "coffeesense.dev.lspPort": {
           "type": "number",
-          "description": "The port that VLS listens to. Can be used for attaching to the VLS Node process for debugging / profiling.",
+          "description": "The port that the lsp listens to. Can be used for attaching to the LSP Node process for debugging / profiling.",
           "default": -1
         },
         "coffeesense.dev.logLevel": {
           "type": "string",
-          "description": "Log level for VLS",
+          "description": "Log level for the lsp",
           "default": "INFO",
           "enum": [
             "INFO",
@@ -130,29 +115,21 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.0.0",
     "@rollup/plugin-replace": "^2.4.2",
-    "@types/glob": "^7.1.3",
-    "@types/js-yaml": "^4.0.1",
     "@types/lodash": "^4.14.170",
-    "@types/minimist": "^1.2.1",
     "@types/node": "^15.12.4",
-    "@types/shelljs": "^0.8.8",
     "@types/vscode": "^1.52.0",
     "esbuild": "^0.12.5",
-    "fs-extra": "^10.0.0",
-    "glob": "^7.1.7",
-    "js-yaml": "^4.1.0",
-    "minimist": "^1.2.5",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^2.3.0",
     "rollup": "^2.52.2",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-dts": "^3.0.2",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.30.0",
-    "shelljs": "^0.8.4",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2",
     "vscode-languageclient": "^7.0.0",
     "vscode-languageserver-types": "^3.16.0"
+  },
+  "dependencies": {
+    "generate-license-file": "^1.1.0"
   }
 }

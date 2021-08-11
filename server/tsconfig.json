@@ -8,7 +8,7 @@
     "rootDir": "src",
 
     "lib": ["es2020"],
-    // Most classes in VLS are asynchronously initialized
+    // Most classes in LSP are asynchronously initialized
     "strictPropertyInitialization": false
   },
   "include": [

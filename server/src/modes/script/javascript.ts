@@ -23,9 +23,7 @@ import {
   CodeAction,
   CodeActionKind,
   CompletionItemTag,
-  CodeActionContext,
-  TextDocumentEdit,
-  VersionedTextDocumentIdentifier
+  CodeActionContext
 } from 'vscode-languageserver-types';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LanguageMode } from '../../embeddedSupport/languageModes';
@@ -34,13 +32,12 @@ import { getFileFsPath, getFilePath } from '../../utils/paths';
 
 import { URI } from 'vscode-uri';
 import type ts from 'typescript';
-import _ from 'lodash';
 
 import { NULL_SIGNATURE } from '../nullMode';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
-import { isCoffeescriptFile, toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
+import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import * as Previewer from './previewer';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { EnvironmentService } from '../../services/EnvironmentService';
@@ -209,14 +206,14 @@ export async function getJavascriptMode(
       let js_offset = js_doc.offsetAt(position);
       if(position.character > 1000) // End of line (Number.MAX_VALUE)
         js_offset--
-
+        
+      let char_offset = 0
       const js_text = js_doc.getText()
       const js_last_char = js_text[js_offset - 1]
       const js_next_char = js_text[js_offset]
-      // When CS cursor is e.g. at `a('|`, completion does not work bc of bad source mapping,
-      // JS cursor is falsely `a(|')`. Fix this below:
+      // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
+      // JS cursor is falsely `a(|'')`. Circumvent this:
       const special_trigger_chars = ['"', "'"]
-      let char_offset = 0
       for(const s of special_trigger_chars) {
         if(coffee_last_char === s && js_last_char !== s && js_next_char === s) {
           char_offset += 1
@@ -229,7 +226,7 @@ export async function getJavascriptMode(
         ...getUserPreferences(js_doc),
         triggerCharacter: getTsTriggerCharacter(coffee_last_char),
         includeCompletionsWithInsertText: true,
-        includeCompletionsForModuleExports: env.getConfig().coffeesense.completion.autoImport
+        includeCompletionsForModuleExports: true
       });
 
       if (!completions) {
@@ -243,7 +240,7 @@ export async function getJavascriptMode(
             range = transpile_service.map_range(transpilation.source_map as LineMap[], range)
             range.start.character += char_offset
             range.end.character += char_offset
-            // Or maybe do not calculate range at all, just set to coffee_position? Should work too
+            // Or maybe do not calculate range at all, just set to coffee_position + entry length? Should work too
           }
           
           const { label, detail } = calculateLabelAndDetailTextForPathImport(entry);
@@ -356,7 +353,7 @@ export async function getJavascriptMode(
           }
         }
 
-        if (details.codeActions && env.getConfig().coffeesense.completion.autoImport) {
+        if (details.codeActions) {
           const textEdits = convertCodeAction(doc, details.codeActions, firstScriptRegion);
           item.additionalTextEdits = textEdits;
 

@@ -5,16 +5,6 @@ export interface LSPConfig {
   coffeesense: {
     ignoreProjectWarning: boolean;
     useWorkspaceDependencies: boolean;
-    completion: {
-      autoImport: boolean;
-    };
-    validation: {
-      script: boolean;
-    };
-    languageFeatures: {
-      codeActions: boolean;
-      updateImportOnFileMove: boolean;
-    };
     trace: {
       server: 'off' | 'messages' | 'verbose';
     };
@@ -27,14 +17,8 @@ export interface LSPConfig {
 }
 
 export interface LSPFullConfig extends LSPConfig {
-  emmet?: any;
-  html?: any;
-  css?: any;
-  sass?: any;
   javascript?: any;
   typescript?: any;
-  prettier?: any;
-  stylusSupremacy?: any;
 }
 
 export function getDefaultLSPConfig(): LSPFullConfig {
@@ -42,16 +26,6 @@ export function getDefaultLSPConfig(): LSPFullConfig {
     coffeesense: {
       ignoreProjectWarning: false,
       useWorkspaceDependencies: false,
-      validation: {
-        script: true
-      },
-      completion: {
-        autoImport: false
-      },
-      languageFeatures: {
-        codeActions: true,
-        updateImportOnFileMove: true
-      },
       trace: {
         server: 'off'
       },

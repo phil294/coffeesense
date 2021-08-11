@@ -238,7 +238,7 @@ export class LSP {
     if (!projectConfig.tsconfigPath) {
       showWarningAndLearnMore(
         getCantFindMessage(['tsconfig.json', 'jsconfig.json']),
-        'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-can-t-find-tsconfig-json-jsconfig-json-in-xxxx-xxxxxx'
+        'https://github.com/phil294/coffeesense/blob/master/docs/guide/FAQ.md#coffeesense-can-t-find-tsconfig-json-jsconfig-json-in-xxxx-xxxxxx'
       );
     } else if (!isFileCanAccess(projectConfig.tsconfigPath)) {
       showErrorIfCantAccess('ts/js config', projectConfig.tsconfigPath);
@@ -252,7 +252,7 @@ export class LSP {
       ) {
         showWarningAndLearnMore(
           `CoffeeSense found \`tsconfig.json\`/\`jsconfig.json\`, but they aren\'t in the project root.`,
-          'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
+          'https://github.com/phil294/coffeesense/blob/master/docs/guide/FAQ.md#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
         );
       }
     }
@@ -260,7 +260,7 @@ export class LSP {
     if (!projectConfig.packagePath) {
       showWarningAndLearnMore(
         getCantFindMessage(['package.json']),
-        'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-can-t-find-package-json-in-xxxx-xxxxxx'
+        'https://github.com/phil294/coffeesense/blob/master/docs/guide/FAQ.md#coffeesense-can-t-find-package-json-in-xxxx-xxxxxx'
       );
     } else if (!isFileCanAccess(projectConfig.packagePath)) {
       showErrorIfCantAccess('ts/js config', projectConfig.packagePath);
@@ -271,7 +271,7 @@ export class LSP {
       ) {
         showWarningAndLearnMore(
           `CoffeeSense found \`package.json\`/, but it isn\'t in the project root.`,
-          'https://vuejs.github.io/vetur/guide/FAQ.html#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
+          'https://github.com/phil294/coffeesense/blob/master/docs/guide/FAQ.md#coffeesense-found-xxx-but-they-aren-t-in-the-project-root'
         );
       }
     }

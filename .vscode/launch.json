@@ -25,7 +25,7 @@
       "request": "attach",
       "port": 6005,
       "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/server/dist/vls.js", "${workspaceFolder}/server/dist/coffeescriptServerMain.js"],
+      "outFiles": ["${workspaceFolder}/server/dist/lsp.js", "${workspaceFolder}/server/dist/coffeescriptServerMain.js"],
       "protocol": "inspector",
       "restart": true,
       "smartStep": true,

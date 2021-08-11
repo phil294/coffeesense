@@ -1,6 +1,3 @@
-const fs = require('fs-extra');
-const path = require('path');
-const fg = require('fast-glob');
 const { getRootPath, clearDist, external, onwarn, createPlugins } = require('../build/rollup-common-config');
 const {
   linkLspInCLI,

@@ -16,10 +16,9 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - **Validation**
   - CoffeeScript compilation errors
   - TypeScript type checking
-    - Be sure to include `//@ts-check` at the top of your script or set `checkJs=true` in your `jsconfig.json` in your workspace root. Proper configuration, project subfolders etc. might work? See [Vetur docs](https://vuejs.github.io/vetur), I haven't touched that part.
+    - Be sure to include `//@ts-check` at the top of your script or set `checkJs=true` in your `jsconfig.json` in your workspace root. For multi-root or nested projects, see [setup](docs/guide/setup.md) and [FAQ](docs/guide/FAQ.md).
     - You can use [JSDoc](https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html) comment blocks in your code [like this](https://github.com/jashkenas/coffeescript/issues/5366) to even define types yourself. See [JS Projects Utilizing TypeScript](https://www.typescriptlang.org/docs/handbook/intro-to-js-ts.html) for details
-    - Work with imports from JS files, TS files, be it in workspace or `node_modules`, everything should behave as you are familiar from TypeScript ecosystem
-    - *missing, TO DO:* Work with imports from other CoffeeScript files. This makes it currently uncomfortable working in a codebase with several coffee files. Will try to fix this soon
+    - Get IntelliSense for imports from Coffee files, JS files, TS files, be it in workspace or `node_modules`, everything should behave as you are familiar from TypeScript ecosystem
 - **Autocompletion**: Complicated but works reasonably well. Can even function when a line / the current line is invalid syntax (so, while typing, basically), but results may be a bit more unpredictable at times. Autocomplete is based on TypeScript.
   - Methods, properties etc.
   - *missing, TO DO:* Automatic imports
