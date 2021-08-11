@@ -57,6 +57,8 @@ a = 'one';
 ```
 and now `a` is of type `number | string`. Please see https://github.com/microsoft/TypeScript/issues/45369 for further details. If you have a good solution for this problem, let me know.
 
+For more discussion, see [this issue](https://github.com/jashkenas/coffeescript/issues/5307)
+
 ### Nice
 
 Please feel free to open an issue if you find bugs, but be aware some might be set in stone. I have not encountered any dealbreakers yet.
