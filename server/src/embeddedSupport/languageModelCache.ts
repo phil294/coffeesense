@@ -35,10 +35,6 @@ export function getLanguageModelCache<T>(
   }
 
   return {
-    // This is where e.g. script sections are transformed into "virtual" documents (I think)
-    // (the actual virtual word is used by vetur for two different things:
-    // 1. artificial vue template js files, most of the time. Removed from this repo
-    // 2. any virtual doc. rarely called that way, but present, see isVirtualCoffeeFile
     refreshAndGet(document: TextDocument): T {
       const version = document.version;
       const languageId = document.languageId;

@@ -81,6 +81,11 @@ function getLanguageAtPosition(document: TextDocument, regions: EmbeddedRegion[]
   return LANGUAGE_ID;
 }
 
+// This is where the real CS doc is being transformed into a "virtual" JS document.
+// The only function as there is only one language / mode handled in CoffeeSense.
+// (the actual virtual word is used by vetur for two different things:
+// 1. artificial vue template js files, most of the time. Removed from this repo
+// 2. any virtual doc. rarely called that way, but present, see isVirtualCoffeeFile)
 export function getSingleTypeDocument(
   document: TextDocument,
   regions: EmbeddedRegion[],
