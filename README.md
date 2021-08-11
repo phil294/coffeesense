@@ -1,6 +1,8 @@
 # CoffeeSense
 ## [CoffeeScript](https://coffeescript.org) [LSP](https://github.com/microsoft/language-server-protocol) implementation
 
+![Demo](https://github.com/phil294/coffeesense/blob/master/images/demo.gif?raw=true)
+
 ### What
 
 CoffeeSense gives you IntelliSense (autocompletion, go to implementation, etc.) for CoffeeScript. It is based on CoffeeScript's compiled JavaScript output. Because of this, this LSP implementation is and can **not** be feature-complete due to the limitations of its technical architecture. See further below for details.
