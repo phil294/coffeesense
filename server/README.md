@@ -1,6 +1,6 @@
 ## CoffeeSense Language Server
 
-[CoffeeSense Language Server](https://www.npmjs.com/package/coffeesense-language-server) is a language server implementation compatible with [Language Server Protocol](https://github.com/microsoft/language-server-protocol).
+[CoffeeSense Language Server](https://www.npmjs.com/package/coffeesense-language-server) is a language server implementation compatible with [Language Server Protocol](https://github.com/microsoft/language-server-protocol) for [CoffeeScript](https://coffeescript.org).
 
 CoffeeSense is the VS Code extension consuming `coffeesense-language-server`.
 
