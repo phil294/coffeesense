@@ -59,7 +59,7 @@ const transpile_service = {
       const response = compile(coffee, { sourceMap: true, bare: true })
       result = {
         source_map: response.sourceMap.lines,
-        js: response.js.trim()
+        js: response.js
       }
     } catch (normal_compilation_error) {
       if (normal_compilation_error.name !== "SyntaxError")
@@ -181,9 +181,7 @@ const transpile_service = {
    * Tries to find by line and column, or if not found, the first match by line only.
    */
   position_js_to_coffee(source_map: LineMap[], js_position: Position): Position {
-    // idk but both -1 and -0 were necessary in different files. not sure where my error is. I think -1 is the normal case <- TODO: outdated, probably 0 is indeed right
-    // const columns = (source_map[js_position.line-1]||source_map[js_position.line]||source_map[js_position.line+1])?.columns
-    const columns = (source_map[js_position.line]||source_map[js_position.line-1]||source_map[js_position.line+1])?.columns
+    const columns = source_map[js_position.line]?.columns
     let mapped: typeof columns[0] | undefined = columns?.[js_position.character]
     if(!mapped)
       mapped = columns
