@@ -6,6 +6,20 @@ import jshashes from 'jshashes'
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types'
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
+function get_word_around_position(doc: TextDocument, position: Position) {
+  const text = doc.getText()
+  const offset = doc.offsetAt(position)
+  let i_offset = offset
+  while(text[i_offset - 1].match(/[a-zA-Z_]/))
+    i_offset--
+  let match_word = ""
+  do {
+    match_word += text[i_offset]
+    i_offset++
+  } while(i_offset <= offset || text[i_offset].match(/[a-zA-Z_]/))
+  return match_word
+}
+
 type ITranspilationResult = {
   /** coffeescript compile diagnostics, if present, without considering `fake_line` */
   diagnostics?: Diagnostic[]
@@ -24,12 +38,12 @@ const transpile_service = {
   
   result_by_uri: new Map<string, ITranspilationResult>(),
 
-  transpile(document: TextDocument): ITranspilationResult {
-    const text = document.getText()
+  transpile(coffee_doc: TextDocument): ITranspilationResult {
+    const text = coffee_doc.getText()
     const hash = MD5.hex(text)
     const cached = transpilation_cache.get(hash)
     if (cached) {
-      this.result_by_uri.set(document.uri, cached)
+      this.result_by_uri.set(coffee_doc.uri, cached)
       return cached
     }
     const coffee = text
@@ -62,10 +76,10 @@ const transpile_service = {
         source: 'CoffeeSense'
       }]
       // see above
-      diagnostics.push(...[...document.getText()
+      diagnostics.push(...[...coffee_doc.getText()
         .matchAll(/([a-zA-Z_]) (\n|$)/g)]
         .map(m => {
-          const pos = document.positionAt(m.index||0+1)
+          const pos = coffee_doc.positionAt(m.index||0+1)
           return {
             range:  Range.create(pos, pos),
             severity: DiagnosticSeverity.Error,
@@ -95,7 +109,7 @@ const transpile_service = {
       let coffee_error_line_no = l.first_line
       // if(normal_compilation_error.message === 'unexpected newline')
       //   coffee_error_line_no-- // not accurate, note:yml style arrays. but it was at some point, in combination with comments in next line? cs bug?
-      const coffee_error_offset = document.offsetAt(Position.create(coffee_error_line_no, 0))
+      const coffee_error_offset = coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
       const coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : undefined
       const coffee_error_line = coffee.slice(coffee_error_offset, coffee_error_end)
@@ -139,10 +153,10 @@ const transpile_service = {
       if(js_fake && source_map_fake) {  
         // Fake coffee compilation succeeded, now inject the coffee line into js
 
-        const coffee_fake_𒐩_position = document.positionAt(coffee_error_offset + error_line_indentation.length)
+        const coffee_fake_𒐩_position = coffee_doc.positionAt(coffee_error_offset + error_line_indentation.length)
         
         // Could also be calculated with js_fake.indexOf('𒐩'), given the user has not used the symbol
-        const js_fake_𒐩_line_no = this.reverse_map_position({ source_map: source_map_fake }, coffee_fake_𒐩_position)?.line
+        const js_fake_𒐩_line_no = this.position_coffee_to_js({ source_map: source_map_fake }, coffee_fake_𒐩_position, coffee_doc)?.line
         if(js_fake_𒐩_line_no == null)
           throw new Error('could not map back js 𒐩 line')
         
@@ -157,7 +171,7 @@ const transpile_service = {
       }
     }
     transpilation_cache.set(hash, result)
-    this.result_by_uri.set(document.uri, result)
+    this.result_by_uri.set(coffee_doc.uri, result)
     return result
   },
 
@@ -166,7 +180,7 @@ const transpile_service = {
    * Convert position in transpiled JS text back to where it was in the original CS text.
    * Tries to find by line and column, or if not found, the first match by line only.
    */
-  map_position(source_map: LineMap[], js_position: Position): Position {
+  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position {
     // idk but both -1 and -0 were necessary in different files. not sure where my error is. I think -1 is the normal case <- TODO: outdated, probably 0 is indeed right
     // const columns = (source_map[js_position.line-1]||source_map[js_position.line]||source_map[js_position.line+1])?.columns
     const columns = (source_map[js_position.line]||source_map[js_position.line-1]||source_map[js_position.line+1])?.columns
@@ -185,63 +199,86 @@ const transpile_service = {
   },
 
   /** Convert range in transpiled JS back to where it was in the original CS */
-  map_range(source_map: LineMap[], js_range: Range): Range {
+  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range {
     return Range.create(
-      this.map_position(source_map, js_range.start),
-      this.map_position(source_map, js_range.end))
+      this.position_js_to_coffee(source_map, js_range.start),
+      this.position_js_to_coffee(source_map, js_range.end))
   },
 
   /**
    * Convert position in original CS to where it eventually turned out in the transpiled JS.
-   * Tries to find by line and column, furthest down in JS as possible, or if not found,
-   * by line at the next smaller column, furthest down in JS as possible,
+   * Tries to find by line and column, or if not found,
+   * by line at the next smaller column,
    * or if no column match, end of line `(Number.MAX_VALUE)`, or if no line match, undefined.
+   * If multiple JS finds for a coffee line/col combination, try to find where JS match equals
+   * the word at `coffee_position`, else where JS is any word at all, else furthest down
+   * in JS as possible.
    */
-  reverse_map_position(result: ITranspilationResult, coffee_position: Position): Position | undefined {
+  position_coffee_to_js(result: ITranspilationResult, coffee_position: Position, coffee_doc: TextDocument): Position | undefined {
     if(!result.source_map)
       throw 'cannot reverse map position without source map'
-    let in_line = result.source_map
+    let js_matches_by_line = result.source_map
       .map(line => line?.columns
         .filter(c => c?.sourceLine === coffee_position.line))
       .flat()
-    if(!in_line.length)
+    if(!js_matches_by_line.length)
         return undefined
-    let column: typeof in_line[0] | undefined = in_line
-      .filter(c => c?.sourceColumn === coffee_position.character)
-      .sort((a,b) => b.line - a.line)
-      [0]
-    if(!column) {
-      const next_smaller_source_column = Math.max(...in_line
-        .map(c => c.sourceColumn)
-        .filter(c => c <= coffee_position.character))
-      column = in_line
-        .filter(c => c.sourceColumn === next_smaller_source_column)
-        // Both here and at the previous sort, we could also (before fallback resorting to sort)
-        // choose the column that has the same text / starts with the same char at its position.
-        // Maybe do this, so far it has not yet proven necessary
+    
+    const choose_match = (js_matches: typeof js_matches_by_line) => {
+      const word_at_coffee_position = get_word_around_position(coffee_doc, coffee_position)
+      const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
+      const words_at_js_matches = js_matches.map(m =>
+        result.js?.substr(
+            js_doc_tmp.offsetAt({ line: m.line, character: m.column }),
+            word_at_coffee_position.length || 1))
+      if(word_at_coffee_position) {
+        const index_match_by_word = words_at_js_matches.findIndex(m => m === word_at_coffee_position)
+        if(index_match_by_word > -1)
+            return js_matches[index_match_by_word]
+      }
+      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0].match(/[a-zA-Z_]/))
+      if(index_match_by_is_char > -1)
+        return js_matches[index_match_by_is_char]
+      return [...js_matches]
         .sort((a,b) => b.line - a.line)
         [0]
-      if(!column) {
-        column = in_line.find(Boolean)
-        if(!column)
+    }
+
+    let match
+    const js_matches_by_char = js_matches_by_line
+      .filter(c => c?.sourceColumn === coffee_position.character)
+    if(js_matches_by_char.length)
+      match = choose_match(js_matches_by_char)
+    else {
+      const next_smaller_source_column = Math.max(...js_matches_by_line
+        .map(c => c.sourceColumn)
+        .filter(c => c <= coffee_position.character))
+      const js_matches_by_next_smaller_char = js_matches_by_line
+        .filter(c => c?.sourceColumn === next_smaller_source_column)
+      if(js_matches_by_next_smaller_char.length)
+        match = choose_match(js_matches_by_next_smaller_char)
+      else {
+        match = js_matches_by_line.find(Boolean)
+        if(!match)
           return undefined
-        column.column = Number.MAX_VALUE
+        match.column = Number.MAX_VALUE
       }
     }
+    
     if(result.fake_line == coffee_position.line)
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
       // helpful but `column.column` does not make any sense, it contains only one column (where
       // the injected `𒐩` was placed). But since the error line was simply put into JS, we can
       // use the same pos:
-      column.column = coffee_position.character
-    return Position.create(column.line, column.column)
+      match.column = coffee_position.character
+    return Position.create(match.line, match.column)
   },
 
   /** Convert range in original CS to where it eventually turned out in the transpiled JS.
    * See reverse_map_position for implementation details. */
-  reverse_map_range(result: ITranspilationResult, coffee_range: Range): Range | undefined {
-    const start = this.reverse_map_position(result, coffee_range.start);
-    const end = this.reverse_map_position(result, coffee_range.end);
+  range_coffee_to_js(result: ITranspilationResult, coffee_range: Range, coffee_doc: TextDocument): Range | undefined {
+    const start = this.position_coffee_to_js(result, coffee_range.start, coffee_doc);
+    const end = this.position_coffee_to_js(result, coffee_range.end, coffee_doc);
     if(start && end)
       return Range.create(start, end)
     return undefined

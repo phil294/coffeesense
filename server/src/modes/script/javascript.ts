@@ -157,7 +157,7 @@ export async function getJavascriptMode(
 
         let range = convertRange(scriptDoc, diag as ts.TextSpan)
         if(transpilation.source_map)
-          range = transpile_service.map_range(transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
 
         // syntactic/semantic diagnostic always has start and length
         // so we can safely cast diag to TextSpan
@@ -191,7 +191,7 @@ export async function getJavascriptMode(
           line: coffee_position.line,
           character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
         }
-        const js_position = transpile_service.reverse_map_position(transpilation, coffee_position_excl_trigger_char)
+        const js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_excl_trigger_char, coffee_doc)
         if(!js_position)
           return { isIncomplete: false, items: [] }
         position = {
@@ -238,7 +238,7 @@ export async function getJavascriptMode(
           let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
           if(range) {
             if(transpilation.source_map)
-              range = transpile_service.map_range(transpilation.source_map, range)
+              range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
             range.start.character += char_offset
             range.end.character += char_offset
             // Or maybe do not calculate range at all, just set to coffee_position + entry length? Should work too
@@ -396,7 +396,7 @@ export async function getJavascriptMode(
         return { contents: [] }
 
       if(transpilation.source_map)
-        position = transpile_service.reverse_map_position(transpilation, position) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
       const info = service.getQuickInfoAtPosition(fileFsPath, scriptDoc.offsetAt(position));
 
@@ -425,7 +425,7 @@ export async function getJavascriptMode(
 
         let range = convertRange(scriptDoc, info.textSpan)
         if(transpilation.source_map)
-          range = transpile_service.map_range(transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
 
         return {
           range,
@@ -446,7 +446,7 @@ export async function getJavascriptMode(
         return NULL_SIGNATURE
 
       if(transpilation.source_map)
-        position = transpile_service.reverse_map_position(transpilation, position) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
       const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
       if (!signatureHelpItems) {
@@ -510,14 +510,14 @@ export async function getJavascriptMode(
       if(!transpilation?.source_map)
         return []
 
-      position = transpile_service.reverse_map_position(transpilation, position) || position
+      position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
       const occurrences = service.getOccurrencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (occurrences) {
         return occurrences.map(entry => {
           let range = convertRange(scriptDoc, entry.textSpan)
           if(transpilation.source_map) {
-            range = transpile_service.map_range(transpilation.source_map, range)
+            range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
             range.end.character = range.start.character + entry.textSpan.length
           }
           return {
@@ -550,7 +550,7 @@ export async function getJavascriptMode(
         if (item.kind !== 'script' && !existing[sig]) {
           let range = convertRange(scriptDoc, item.spans[0])
           if(transpilation?.source_map)
-            range = transpile_service.map_range(transpilation.source_map, range)
+            range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
           const symbol: SymbolInformation = {
             name: item.text,
             kind: toSymbolKind(item.kind),
@@ -575,21 +575,21 @@ export async function getJavascriptMode(
       items.forEach(item => collectSymbols(item));
       return result;
     },
-    findDefinition(doc: TextDocument, position: Position): Definition {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    findDefinition(coffee_doc: TextDocument, position: Position): Definition {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return []
-
+    
       if(transpilation.source_map)
-        position = transpile_service.reverse_map_position(transpilation, position) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
-      const definitions = service.getDefinitionAtPosition(fileFsPath, scriptDoc.offsetAt(position));
+      const definitions = service.getDefinitionAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (!definitions) {
         return [];
       }
@@ -605,7 +605,7 @@ export async function getJavascriptMode(
         const uri = URI.file(d.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.map_range(uri_transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range)
         definitionResults.push({
           uri,
           range
@@ -625,7 +625,7 @@ export async function getJavascriptMode(
         return []
 
       if(transpilation.source_map)
-        position = transpile_service.reverse_map_position(transpilation, position) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
       const references = service.getReferencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
       if (!references) {
@@ -644,7 +644,7 @@ export async function getJavascriptMode(
         const uri = URI.file(r.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.map_range(uri_transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range)
         if (referenceTargetDoc) {
           referenceResults.push({
             uri,
@@ -658,7 +658,7 @@ export async function getJavascriptMode(
       const transpilation = transpile_service.result_by_uri.get(doc.uri)
       if(!transpilation?.source_map)
         return []
-      const js_range = transpile_service.reverse_map_range(transpilation, coffee_range)
+      const js_range = transpile_service.range_coffee_to_js(transpilation, coffee_range, doc)
       if(!js_range)
         return []
 
@@ -698,7 +698,7 @@ export async function getJavascriptMode(
 
       if (data.kind === CodeActionDataKind.OrganizeImports) {
         const text_range_length = data.textRange.end - data.textRange.pos
-        const mapped_pos_start = transpile_service.reverse_map_position(transpilation, doc.positionAt(data.textRange.pos))
+        const mapped_pos_start = transpile_service.position_coffee_to_js(transpilation, doc.positionAt(data.textRange.pos), doc)
         if(!mapped_pos_start)
           return action
         data.textRange.pos = doc.offsetAt(mapped_pos_start)
@@ -709,7 +709,7 @@ export async function getJavascriptMode(
         
         const doc_changes = action.edit.changes?.[doc.uri] || []
         for(const change of doc_changes) {
-          change.range = transpile_service.map_range(transpilation.source_map, change.range)
+          change.range = transpile_service.range_js_to_coffee(transpilation.source_map, change.range)
           if(change.range.start.line === change.range.end.line && change.range.start.character === 0 && change.range.end.character === 0)
             // Import removed; fix line range
             change.range.end.line++
