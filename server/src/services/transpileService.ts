@@ -194,7 +194,7 @@ const transpile_service = {
   /**
    * Convert position in original CS to where it eventually turned out in the transpiled JS.
    * Tries to find by line and column, furthest down in JS as possible, or if not found,
-   * by line at the next smaller column,
+   * by line at the next smaller column, furthest down in JS as possible,
    * or if no column match, end of line `(Number.MAX_VALUE)`, or if no line match, undefined.
    */
   reverse_map_position(result: ITranspilationResult, coffee_position: Position): Position | undefined {
@@ -211,9 +211,15 @@ const transpile_service = {
       .sort((a,b) => b.line - a.line)
       [0]
     if(!column) {
+      const next_smaller_source_column = Math.max(...in_line
+        .map(c => c.sourceColumn)
+        .filter(c => c <= coffee_position.character))
       column = in_line
-        .filter(c => c.sourceColumn <= coffee_position.character)
-        .sort((a,b) => b.sourceColumn - a.sourceColumn)
+        .filter(c => c.sourceColumn === next_smaller_source_column)
+        // Both here and at the previous sort, we could also (before fallback resorting to sort)
+        // choose the column that has the same text / starts with the same char at its position.
+        // Maybe do this, so far it has not yet proven necessary
+        .sort((a,b) => b.line - a.line)
         [0]
       if(!column) {
         column = in_line.find(Boolean)
