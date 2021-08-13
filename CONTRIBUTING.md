@@ -14,3 +14,8 @@ A disadvantage of the current project structure is the inability to pass dynamic
 const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
 ```
 you cannot pass special file contents to the service (`getSignatureHelpItems(alteredJs)`), but it would be handy. In the case of signature help provider, it would be great to just replace dangling spaces with opening braces and change compilation process as we don't care for syntax correctness in this place. Instead, it is baked into the compilation step in `transpileService` directly which also works but is a bit annoying. Would be good to fix this some day.
+
+### Code style
+
+Code specific to this repository follows `underscore_variable` naming. This greatly helps to differentiate it from Vetur/dependencies code.
+Remaining formatting standards ramain untouched to upstream.
