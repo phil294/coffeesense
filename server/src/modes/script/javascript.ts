@@ -105,12 +105,12 @@ export async function getJavascriptMode(
     getId() {
       return 'javascript';
     },
-    async doValidation(doc: TextDocument, cancellationToken?: VCancellationToken): Promise<Diagnostic[]> {
+    async doValidation(coffee_doc: TextDocument, cancellationToken?: VCancellationToken): Promise<Diagnostic[]> {
       if (await isVCancellationRequested(cancellationToken)) {
         return [];
       }
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
       }
 
@@ -118,13 +118,13 @@ export async function getJavascriptMode(
         return [];
       }
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return []
       if(transpilation.diagnostics)
         return transpilation.diagnostics || []
 
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
       const program = service.getProgram();
       const sourceFile = program?.getSourceFile(fileFsPath);
       if (!program || !sourceFile) {
@@ -145,6 +145,8 @@ export async function getJavascriptMode(
         ];
       }
 
+      const js_text = js_doc.getText()
+
       return rawScriptDiagnostics.map(diag => {
         const tags: DiagnosticTag[] = [];
 
@@ -155,9 +157,23 @@ export async function getJavascriptMode(
           tags.push(DiagnosticTag.Deprecated);
         }
 
-        let range = convertRange(scriptDoc, diag as ts.TextSpan)
-        if(transpilation.source_map)
+        let range = convertRange(js_doc, diag as ts.TextSpan)
+
+        if(js_text.slice(js_doc.offsetAt({ line: range.start.line, character: 0 }))
+          .match(/^\s*var /)) {
+            // Position of errors shown at variable declaration are most often useless, it would
+            // be better to show them at their (first) usage instead which implies declaration
+            // in CS. Luckily, this is possible using highlight querying:
+            const occurrence = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(range.start))?.[1]
+            if(occurrence)
+              range = convertRange(js_doc, occurrence.textSpan)
+        }
+
+        if(transpilation.source_map) {
           range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+          if(range.end.line < range.start.line || range.end.line === range.start.line && range.end.character < range.start.character)
+            range.end = { line: range.start.line, character: range.start.character + 1}
+        }
 
         // syntactic/semantic diagnostic always has start and length
         // so we can safely cast diag to TextSpan
@@ -500,7 +516,7 @@ export async function getJavascriptMode(
       };
     },
     findDocumentHighlight(doc: TextDocument, position: Position): DocumentHighlight[] {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(doc);
       if (!languageServiceIncludesFile(service, doc.uri)) {
         return [];
       }
@@ -512,10 +528,10 @@ export async function getJavascriptMode(
 
       position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
-      const occurrences = service.getOccurrencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
+      const occurrences = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (occurrences) {
         return occurrences.map(entry => {
-          let range = convertRange(scriptDoc, entry.textSpan)
+          let range = convertRange(js_doc, entry.textSpan)
           if(transpilation.source_map) {
             range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
             range.end.character = range.start.character + entry.textSpan.length
