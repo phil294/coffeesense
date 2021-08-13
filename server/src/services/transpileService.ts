@@ -16,7 +16,7 @@ function get_word_around_position(doc: TextDocument, position: Position) {
   do {
     match_word += text[i_offset]
     i_offset++
-  } while(i_offset <= offset || text[i_offset].match(/[a-zA-Z_]/))
+  } while(i_offset <= offset || text[i_offset]?.match(/[a-zA-Z_]/))
   return match_word
 }
 
