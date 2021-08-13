@@ -528,19 +528,26 @@ export async function getJavascriptMode(
 
       position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
 
+      const js_text = js_doc.getText()
+
       const occurrences = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (occurrences) {
-        return occurrences.map(entry => {
-          let range = convertRange(js_doc, entry.textSpan)
-          if(transpilation.source_map) {
-            range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
-            range.end.character = range.start.character + entry.textSpan.length
-          }
-          return {
-            range,
-            kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
-          };
-        });
+        return occurrences
+          .map(entry => ({
+            entry,
+            range: convertRange(js_doc, entry.textSpan)
+          })).filter(({ range }) =>
+            ! js_text.slice(js_doc.offsetAt({ line: range.start.line, character: 0 })).match(/^\s*var /)
+          ).map(({ entry, range }) => {
+            if(transpilation.source_map) {
+              range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+              range.end.character = range.start.character + entry.textSpan.length
+            }
+            return {
+              range,
+              kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
+            };
+          });
       }
       return [];
     },
