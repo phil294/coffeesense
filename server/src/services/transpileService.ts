@@ -130,7 +130,7 @@ const transpile_service = {
       try {
         const response = compile(coffee_fake, { sourceMap: true, bare: true })
         logger.logDebug(`successfully compiled with fake line: ${coffee_doc.uri}`)
-        js_fake = response.js.trim()
+        js_fake = response.js
         source_map_fake = response.sourceMap.lines
       } catch (fake_compilation_error) {
         if (fake_compilation_error.name !== "SyntaxError")
@@ -147,7 +147,7 @@ const transpile_service = {
         try {
           const response = compile(coffee_fake2, { sourceMap: true, bare: true })
           logger.logDebug(`successfully compiled with fake line 2: ${coffee_doc.uri}`)
-          js_fake = response.js.trim()
+          js_fake = response.js
           source_map_fake = response.sourceMap.lines
         } catch (fake2_compilation_error) {
           if (fake_compilation_error.name !== "SyntaxError")
