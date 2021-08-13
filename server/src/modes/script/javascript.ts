@@ -157,7 +157,7 @@ export async function getJavascriptMode(
 
         let range = convertRange(scriptDoc, diag as ts.TextSpan)
         if(transpilation.source_map)
-          range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
 
         // syntactic/semantic diagnostic always has start and length
         // so we can safely cast diag to TextSpan
@@ -238,7 +238,7 @@ export async function getJavascriptMode(
           let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
           if(range) {
             if(transpilation.source_map)
-              range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+              range = transpile_service.range_js_to_coffee(transpilation.source_map, range)  || range
             range.start.character += char_offset
             range.end.character += char_offset
             // Or maybe do not calculate range at all, just set to coffee_position + entry length? Should work too
@@ -425,7 +425,7 @@ export async function getJavascriptMode(
 
         let range = convertRange(scriptDoc, info.textSpan)
         if(transpilation.source_map)
-          range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
 
         return {
           range,
@@ -517,7 +517,7 @@ export async function getJavascriptMode(
         return occurrences.map(entry => {
           let range = convertRange(scriptDoc, entry.textSpan)
           if(transpilation.source_map) {
-            range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+            range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
             range.end.character = range.start.character + entry.textSpan.length
           }
           return {
@@ -550,7 +550,7 @@ export async function getJavascriptMode(
         if (item.kind !== 'script' && !existing[sig]) {
           let range = convertRange(scriptDoc, item.spans[0])
           if(transpilation?.source_map)
-            range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+            range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
           const symbol: SymbolInformation = {
             name: item.text,
             kind: toSymbolKind(item.kind),
@@ -605,7 +605,7 @@ export async function getJavascriptMode(
         const uri = URI.file(d.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range) || range
         definitionResults.push({
           uri,
           range
@@ -644,7 +644,7 @@ export async function getJavascriptMode(
         const uri = URI.file(r.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range)
+          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range) || range
         if (referenceTargetDoc) {
           referenceResults.push({
             uri,
@@ -705,15 +705,19 @@ export async function getJavascriptMode(
         data.textRange.end = data.textRange.pos + text_range_length
         
         const response = service.organizeImports({ type: 'file', fileName: fileFsPath }, {}, preferences);
-        action.edit = { changes: createUriMappingForEdits(response.slice(), service) };
+        const edit = { changes: createUriMappingForEdits(response.slice(), service) };
         
-        const doc_changes = action.edit.changes?.[doc.uri] || []
+        const doc_changes = edit.changes?.[doc.uri] || []
         for(const change of doc_changes) {
-          change.range = transpile_service.range_js_to_coffee(transpilation.source_map, change.range)
+          const range = transpile_service.range_js_to_coffee(transpilation.source_map, change.range)
+          if(!range)
+            return action
           if(change.range.start.line === change.range.end.line && change.range.start.character === 0 && change.range.end.character === 0)
             // Import removed; fix line range
             change.range.end.line++
         }
+        
+        action.edit = edit
       }
 
       delete action.data;

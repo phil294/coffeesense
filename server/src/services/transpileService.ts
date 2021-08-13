@@ -180,7 +180,7 @@ const transpile_service = {
    * Convert position in transpiled JS text back to where it was in the original CS text.
    * Tries to find by line and column, or if not found, the first match by line only.
    */
-  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position {
+  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined {
     const columns = source_map[js_position.line]?.columns
     let mapped: typeof columns[0] | undefined = columns?.[js_position.character]
     if(!mapped)
@@ -190,17 +190,19 @@ const transpile_service = {
         .sort((a,b)=> b.column - a.column)
         [0]
     if(!mapped)
-      mapped = columns.find(Boolean)
+      mapped = columns?.find(Boolean)
     if(!mapped)
-      throw new Error('could not sourcemap js pos back to cs')
+      return undefined
     return Position.create(mapped.sourceLine, mapped.sourceColumn)
   },
 
   /** Convert range in transpiled JS back to where it was in the original CS */
-  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range {
-    return Range.create(
-      this.position_js_to_coffee(source_map, js_range.start),
-      this.position_js_to_coffee(source_map, js_range.end))
+  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range | undefined {
+    const start = this.position_js_to_coffee(source_map, js_range.start)
+    const end = this.position_js_to_coffee(source_map, js_range.end)
+    if(start && end)
+      return Range.create(start, end)
+    return undefined
   },
 
   /**
