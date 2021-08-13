@@ -5,6 +5,7 @@ import VolatileMap from 'volatile-map'
 import jshashes from 'jshashes'
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver-types'
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { logger } from '../log';
 
 function get_word_around_position(doc: TextDocument, position: Position) {
   const text = doc.getText()
@@ -43,6 +44,7 @@ const transpile_service = {
     const hash = MD5.hex(text)
     const cached = transpilation_cache.get(hash)
     if (cached) {
+      logger.logDebug(`found cached compilation for contents of ${coffee_doc.uri}`)
       this.result_by_uri.set(coffee_doc.uri, cached)
       return cached
     }
@@ -57,6 +59,7 @@ const transpile_service = {
     try {
       // 1. Try normal compilation
       const response = compile(coffee, { sourceMap: true, bare: true })
+      logger.logDebug(`successfully compiled ${coffee_doc.uri}`)
       result = {
         source_map: response.sourceMap.lines,
         js: response.js
@@ -126,6 +129,7 @@ const transpile_service = {
       let js_fake, source_map_fake
       try {
         const response = compile(coffee_fake, { sourceMap: true, bare: true })
+        logger.logDebug(`successfully compiled with fake line: ${coffee_doc.uri}`)
         js_fake = response.js.trim()
         source_map_fake = response.sourceMap.lines
       } catch (fake_compilation_error) {
@@ -142,11 +146,13 @@ const transpile_service = {
         // TODO: refactor this, externalize compile or something
         try {
           const response = compile(coffee_fake2, { sourceMap: true, bare: true })
+          logger.logDebug(`successfully compiled with fake line 2: ${coffee_doc.uri}`)
           js_fake = response.js.trim()
           source_map_fake = response.sourceMap.lines
         } catch (fake2_compilation_error) {
           if (fake_compilation_error.name !== "SyntaxError")
             throw fake_compilation_error
+          logger.logDebug(`could not compile ${coffee_doc.uri}`)
         }
       }
       
@@ -181,6 +187,7 @@ const transpile_service = {
    * Tries to find by line and column, or if not found, the first match by line only.
    */
   position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined {
+    let result
     const columns = source_map[js_position.line]?.columns
     let mapped: typeof columns[0] | undefined = columns?.[js_position.character]
     if(!mapped)
@@ -192,8 +199,11 @@ const transpile_service = {
     if(!mapped)
       mapped = columns?.find(Boolean)
     if(!mapped)
-      return undefined
-    return Position.create(mapped.sourceLine, mapped.sourceColumn)
+      result = undefined
+    else
+      result = Position.create(mapped.sourceLine, mapped.sourceColumn)
+    logger.logDebug(`mapped JS => CS: ${js_position.line}:${js_position.character} => ${result?.line}:${result?.character}`)
+    return result
   },
 
   /** Convert range in transpiled JS back to where it was in the original CS */
@@ -221,8 +231,10 @@ const transpile_service = {
       .map(line => line?.columns
         .filter(c => c?.sourceLine === coffee_position.line))
       .flat()
-    if(!js_matches_by_line.length)
+    if(!js_matches_by_line.length) {
+        logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => undefined`)
         return undefined
+    }
     
     const choose_match = (js_matches: typeof js_matches_by_line) => {
       const word_at_coffee_position = get_word_around_position(coffee_doc, coffee_position)
@@ -259,18 +271,21 @@ const transpile_service = {
         match = choose_match(js_matches_by_next_smaller_char)
       else {
         match = js_matches_by_line.find(Boolean)
-        if(!match)
-          return undefined
-        match.column = Number.MAX_VALUE
+        if(match)
+          match.column = Number.MAX_VALUE
       }
     }
     
-    if(result.fake_line == coffee_position.line)
+    if(match && result.fake_line == coffee_position.line)
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
       // helpful but `column.column` does not make any sense, it contains only one column (where
       // the injected `𒐩` was placed). But since the error line was simply put into JS, we can
       // use the same pos:
       match.column = coffee_position.character
+
+    logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
+    if(!match)
+      return undefined
     return Position.create(match.line, match.column)
   },
 
