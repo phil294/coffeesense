@@ -10,7 +10,7 @@ function get_word_around_position(doc: TextDocument, position: Position) {
   const text = doc.getText()
   const offset = doc.offsetAt(position)
   let i_offset = offset
-  while(text[i_offset - 1].match(/[a-zA-Z_]/))
+  while(text[i_offset - 1]?.match(/[a-zA-Z_]/))
     i_offset--
   let match_word = ""
   do {
