@@ -1,7 +1,7 @@
 {
   "name": "coffeesense-language-server",
   "description": "CoffeeSense Language Server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "phil294",
   "license": "MIT",
   "main": "dist/coffeesense-language-server.js",
