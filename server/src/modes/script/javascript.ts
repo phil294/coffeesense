@@ -172,7 +172,8 @@ export async function getJavascriptMode(
         if(transpilation.source_map) {
           range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
           if(range.end.line < range.start.line || range.end.line === range.start.line && range.end.character < range.start.character)
-            range.end = { line: range.start.line, character: range.start.character + 1}
+            // end character is messed up (happens often). just use whole word instead
+            range.end = { line: range.start.line, character: range.start.character }
         }
 
         // syntactic/semantic diagnostic always has start and length
