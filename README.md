@@ -55,11 +55,22 @@ var a;
 a = 1;
 a = 'one';
 ```
-and now `a` is of type `number | string`. Please see https://github.com/microsoft/TypeScript/issues/45369 for further details. If you have a good solution for this problem, let me know.
+and [now `a` is of type `number | string`](https://github.com/microsoft/TypeScript/issues/45369). 
 
-For more discussion, see [this issue](https://github.com/jashkenas/coffeescript/issues/5307)
+This also happens for example with object property access:
+```coffeescript
+a =
+    b: ->
+        # Should be a type error but is not :-/
+        @c
+```
+This e.g. means that autocompletion based on `this.` is not possible.
 
-### Nice
+If you have a solution for this problem, let me know.
+
+For more general discussion, see [this issue](https://github.com/jashkenas/coffeescript/issues/5307)
+
+### Contribute
 
 Please feel free to open an issue if you find bugs, but be aware some might be set in stone. I have not encountered any dealbreakers yet.
 

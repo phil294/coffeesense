@@ -17,5 +17,5 @@ you cannot pass special file contents to the service (`getSignatureHelpItems(alt
 
 ### Code style
 
-Code specific to this repository follows `underscore_variable` naming. This greatly helps to differentiate it from Vetur/dependencies code.
-Remaining formatting standards ramain untouched to upstream.
+Code specific to this repository follows `underscore_variable` naming. This greatly helps to differentiate it from Vetur/dependencies code. Also omit semicolons.
+Remaining formatting standards remain untouched to upstream.
