@@ -122,7 +122,7 @@ const transpile_service = {
 				coffee.substr(0, coffee_error_offset),
 				error_line_indentation,
 				'𒐩',
-        ' '.repeat(coffee_error_line.length - error_line_indentation.length - 1),
+        ' '.repeat(Math.max(0,coffee_error_line.length - error_line_indentation.length - 1)),
 				coffee_error_end ? coffee.slice(coffee_error_end) : ''
 			].join('')
 
@@ -140,7 +140,7 @@ const transpile_service = {
           coffee.substr(0, coffee_error_offset),
           error_line_indentation,
           '𒐩:𒐩',
-          ' '.repeat(coffee_error_line.length - error_line_indentation.length - 3),
+          ' '.repeat(Math.max(0, coffee_error_line.length - error_line_indentation.length - 3)),
           coffee_error_end ? coffee.slice(coffee_error_end) : ''
         ].join('')
         // TODO: refactor this, externalize compile or something
