@@ -241,7 +241,7 @@ export async function getJavascriptMode(
       
       const completions = service.getCompletionsAtPosition(fileFsPath, js_offset, {
         ...getUserPreferences(js_doc),
-        triggerCharacter: getTsTriggerCharacter(coffee_last_char),
+        triggerCharacter: getTsTriggerCharacter(coffee_last_char || ''),
         includeCompletionsWithInsertText: true,
         includeCompletionsForModuleExports: true
       });
@@ -570,9 +570,9 @@ export async function getJavascriptMode(
       const result: SymbolInformation[] = [];
       const existing: { [k: string]: boolean } = {};
       const collectSymbols = (item: ts.NavigationBarItem, containerLabel?: string) => {
-        const sig = item.text + item.kind + item.spans[0].start;
+        const sig = item.text + item.kind + item.spans[0]!.start;
         if (item.kind !== 'script' && !existing[sig]) {
-          let range = convertRange(scriptDoc, item.spans[0])
+          let range = convertRange(scriptDoc, item.spans[0]!)
           if(transpilation?.source_map)
             range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
           const symbol: SymbolInformation = {
@@ -796,7 +796,7 @@ function createUriMappingForEdits(changes: ts.FileTextChanges[], service: ts.Lan
     }));
     const uri = URI.file(fileName).toString();
     if (result[uri]) {
-      result[uri].push(...edits);
+      result[uri]!.push(...edits);
     } else {
       result[uri] = edits;
     }

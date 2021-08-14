@@ -97,7 +97,7 @@ export function getSingleTypeDocument(
     .map(line => ' '.repeat(line.length))
     .join('\n');
 
-  let langId: string = defaultLanguageIdForBlockTypes[type];
+  let langId = defaultLanguageIdForBlockTypes[type];
 
   for (const r of regions) {
     if (r.type === type) {
@@ -111,7 +111,7 @@ export function getSingleTypeDocument(
   // now it's JS (or if failed, coffee as a fallback)
   // source map etc are saved in transpileService to be retrievable in js language service methods
 
-  return TextDocument.create(document.uri, langId, document.version, newContent);
+  return TextDocument.create(document.uri, langId || '', document.version, newContent);
 }
 
 export function getLanguageRangesOfType(

@@ -226,11 +226,11 @@ export const createDependencyService = async (
 
     // When no filePath, read root workspace dep
     if (!filePath) {
-      return deps[deps.length - 1];
+      return deps[deps.length - 1]!;
     }
     // When only one dep, return it
     if (deps.length === 1) {
-      return deps[0];
+      return deps[0]!;
     }
 
     const possiblePaths: string[] = [];
@@ -244,7 +244,7 @@ export const createDependencyService = async (
     }
 
     const result = deps.find(dep => possiblePaths.includes(dep.dir));
-    return result ?? deps[0];
+    return result ?? deps[0]!;
   };
 
   const getBundled = <L extends keyof RuntimeLibrary>(lib: L): Dependency<RuntimeLibrary[L]> => {

@@ -6,6 +6,7 @@
     "outDir": "./dist",
     "tsBuildInfoFile": "./typings/tsconfig.tsbuildinfo",
     "rootDir": "src",
+    "noUncheckedIndexedAccess": true,
 
     "lib": ["es2020"],
     // Most classes in LSP are asynchronously initialized

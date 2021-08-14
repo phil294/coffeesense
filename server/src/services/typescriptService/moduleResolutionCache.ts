@@ -13,7 +13,7 @@ export class ModuleResolutionCache {
       return undefined;
     }
 
-    return this._cache[containingFile][moduleName];
+    return this._cache[containingFile]![moduleName];
   }
 
   setCache(moduleName: string, containingFile: string, cache: ts.ResolvedModule) {
@@ -22,6 +22,6 @@ export class ModuleResolutionCache {
       return undefined;
     }
 
-    this._cache[containingFile][moduleName] = cache;
+    this._cache[containingFile]![moduleName] = cache;
   }
 }

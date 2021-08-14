@@ -26,7 +26,7 @@ export function getLanguageModelCache<T>(
       const uris = Object.keys(languageModels);
       for (const uri of uris) {
         const languageModelInfo = languageModels[uri];
-        if (languageModelInfo.cTime < cutoffTime) {
+        if (languageModelInfo!.cTime < cutoffTime) {
           delete languageModels[uri];
           nModels--;
         }
@@ -54,9 +54,9 @@ export function getLanguageModelCache<T>(
         let oldestUri = null;
         for (const uri in languageModels) {
           const languageModelInfo = languageModels[uri];
-          if (languageModelInfo.cTime < oldestTime) {
+          if (languageModelInfo!.cTime < oldestTime) {
             oldestUri = uri;
-            oldestTime = languageModelInfo.cTime;
+            oldestTime = languageModelInfo!.cTime;
           }
         }
         if (oldestUri) {

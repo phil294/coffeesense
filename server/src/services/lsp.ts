@@ -518,7 +518,7 @@ export class LSP {
     this.pendingValidationRequests[textDocument.uri] = setTimeout(() => {
       delete this.pendingValidationRequests[textDocument.uri];
       this.cancellationTokenValidationRequests[textDocument.uri] = new VCancellationTokenSource();
-      this.validateTextDocument(textDocument, this.cancellationTokenValidationRequests[textDocument.uri].token);
+      this.validateTextDocument(textDocument, this.cancellationTokenValidationRequests[textDocument.uri]!.token);
     }, this.validationDelayMs);
   }
 

@@ -189,7 +189,7 @@ const transpile_service = {
   position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined {
     let result
     const columns = source_map[js_position.line]?.columns
-    let mapped: typeof columns[0] | undefined = columns?.[js_position.character]
+    let mapped = columns?.[js_position.character]
     if(!mapped)
       mapped = columns
         ?.filter(Boolean)
@@ -248,7 +248,7 @@ const transpile_service = {
         if(index_match_by_word > -1)
             return js_matches[index_match_by_word]
       }
-      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0].match(/[a-zA-Z_]/))
+      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(/[a-zA-Z_]/))
       if(index_match_by_is_char > -1)
         return js_matches[index_match_by_is_char]
       return [...js_matches]
