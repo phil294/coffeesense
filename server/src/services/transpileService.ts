@@ -7,17 +7,15 @@ import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-language
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { logger } from '../log';
 
-function get_word_around_position(doc: TextDocument, position: Position) {
-  const text = doc.getText()
-  const offset = doc.offsetAt(position)
+export function get_word_around_position(text: string, offset: number) {
   let i_offset = offset
-  while(text[i_offset - 1]?.match(/[a-zA-Z_]/))
+  while(text[i_offset - 1]?.match(/[a-zA-Z0-9_]/))
     i_offset--
   let match_word = ""
-  do {
+  while(i_offset <= offset || text[i_offset]?.match(/[a-zA-Z0-9_]/)) {
     match_word += text[i_offset]
     i_offset++
-  } while(i_offset <= offset || text[i_offset]?.match(/[a-zA-Z_]/))
+  }
   return match_word
 }
 
@@ -237,7 +235,7 @@ const transpile_service = {
     }
     
     const choose_match = (js_matches: typeof js_matches_by_line) => {
-      const word_at_coffee_position = get_word_around_position(coffee_doc, coffee_position)
+      const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
       const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
       const words_at_js_matches = js_matches.map(m =>
         result.js?.substr(

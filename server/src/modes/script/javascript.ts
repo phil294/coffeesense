@@ -42,7 +42,7 @@ import * as Previewer from './previewer';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { EnvironmentService } from '../../services/EnvironmentService';
 import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
-import transpile_service from '../../services/transpileService';
+import transpile_service, { get_word_around_position } from '../../services/transpileService';
 import { LineMap } from 'coffeescript';
 
 export async function getJavascriptMode(
@@ -335,14 +335,14 @@ export async function getJavascriptMode(
         };
       }
     },
-    doResolve(doc: TextDocument, item: CompletionItem): CompletionItem {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doResolve(coffee_doc: TextDocument, item: CompletionItem): CompletionItem {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return item;
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return item
 
@@ -352,7 +352,7 @@ export async function getJavascriptMode(
         item.label,
         {},
         item.data.source,
-        getUserPreferences(scriptDoc),
+        getUserPreferences(js_doc),
         item.data.tsData
       );
 
@@ -375,15 +375,49 @@ export async function getJavascriptMode(
         }
 
         if (details.codeActions) {
+          // auto imports
           const textEdits = details.codeActions.map(action =>
             action.changes.map(change =>
               change.textChanges.map(text_change => {
+                let range
+                if(transpilation.source_map) {
+                  range = convertRange(js_doc, text_change.span)
+                  const js_range = range
+                  let coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, js_range)
+                  if(coffee_range) {
+                    const js_line = js_doc.getText().split('\n')[js_range.start.line]!
+                    if(!js_line.match(/^\s*import /)) {
+                      // import completion is of type "add to existing import"
+                      // Assuming that cs line is fixed and correct (always in same line of
+                      // another import, col 0) and that js pos is fixed and correct (in same line
+                      // of other import, col end of line)
+                      // Also, in JS every imported module is on its own line
+                      // JS wants to insert newline, prevent that
+                      text_change.newText = text_change.newText.replace(/\n/,'')
+                      if(js_line.substr(0, js_range.start.character).match(/^\s*$/)) {
+                        // Everything up to js range is indentation.
+                        // Prepend to existing import
+                      } else {
+                        // Append to existing import
+                        // In this case, (TODO ?)
+                        // source mapping column is wrong.
+                        // Set to end of existing import
+                        const word = get_word_around_position(js_line, js_line.length - 1)
+                        const coffee_line = coffee_doc.getText().split('\n')[coffee_range.start.line]!
+                        const coffee_line_offset = coffee_line.indexOf(word) ?? -1
+                        if(coffee_line_offset > -1) {
+                          const coffee_pos = coffee_doc.positionAt(coffee_doc.offsetAt({ line: coffee_range.start.line, character: coffee_line_offset }) + word.length)
+                          coffee_range = Range.create(coffee_pos, coffee_pos)
+                        }
+                      }
+                    }
+                  }
+                  range = coffee_range
+                }
+                if(!range)
+                  range = Range.create(0, 0, 0, 0)
                 return {
-                  // map_range is possible but does not make sense: ts service response
-                  // does not point to a relevant source statement, instead this is the place
-                  // where it suggests to insert the import. we can ignore that anyway and place
-                  // automatic imports at the very start, always
-                  range: Range.create(0, 0, 0, 0),
+                  range,
                   newText: text_change.newText.replace(/;/g,'')
                 }
           }))).flat().flat()
