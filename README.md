@@ -43,6 +43,13 @@ Overall, this implementation works, but is not optimal. It is eagerly waiting to
 
 ### Other problems
 
+If you set `"noImplicitAny":true` or `"strict":true`, code like the following will give you errors:
+```coffeescript
+xy = 123   # Error: Variable 'xy' implicitly has type 'any' in some locations where its type cannot be determined.CoffeeSense [TS](7034)
+=> xy      # Error: Variable 'xy' implicitly has an 'any' type.CoffeeSense [TS](7005)
+```
+You can hide these messages by adding `7034` and `7005` to `ignoredTypescriptErrorCodes` in [settings](docs/guide/setup.md).
+
 The following coffee code will never produce an error, even with TS `noImplicitAny=true`:
 ```coffeescript
 a = 1
