@@ -62,6 +62,15 @@
     "configuration": {
       "title": "CoffeeSense",
       "properties": {
+        "coffeesense.ignoredTypescriptErrorCodes": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "default": [],
+          "description": "Some TypeScript errors don't make a lot of sense in CS context (see main README), you can ignore them here by supplying their IDs",
+          "scope": "application"
+         },
         "coffeesense.ignoreProjectWarning": {
           "type": "boolean",
           "default": false,
