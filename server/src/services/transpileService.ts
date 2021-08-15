@@ -19,7 +19,7 @@ export function get_word_around_position(text: string, offset: number) {
   return match_word
 }
 
-type ITranspilationResult = {
+interface ITranspilationResult {
   /** coffeescript compile diagnostics, if present, without considering `fake_line` */
   diagnostics?: Diagnostic[]
   /** set to number of coffeescript altered line if it was necessary for compilation to succeed */
@@ -28,16 +28,25 @@ type ITranspilationResult = {
   js?: string;
   /** accompanying its respective `js` counterpart, also possibly depending on `fake_line` if set */
   source_map?: LineMap[];
-};
+}
+
+interface ITranspileService {
+  result_by_uri: Map<string, ITranspilationResult>,
+  transpile(coffee_doc: TextDocument): ITranspilationResult,
+  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined,
+  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range | undefined,
+  position_coffee_to_js(result: ITranspilationResult, coffee_position: Position, coffee_doc: TextDocument): Position | undefined,
+  range_coffee_to_js(result: ITranspilationResult, coffee_range: Range, coffee_doc: TextDocument): Range | undefined,
+}
 
 const MD5 = new jshashes.MD5()
 const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(180000)
 
-const transpile_service = {
-  
-  result_by_uri: new Map<string, ITranspilationResult>(),
+const transpile_service: ITranspileService = {
 
-  transpile(coffee_doc: TextDocument): ITranspilationResult {
+  result_by_uri: new Map(),
+
+  transpile(coffee_doc) {
     const text = coffee_doc.getText()
     const hash = MD5.hex(text)
     const cached = transpilation_cache.get(hash)
@@ -184,7 +193,7 @@ const transpile_service = {
    * Convert position in transpiled JS text back to where it was in the original CS text.
    * Tries to find by line and column, or if not found, the first match by line only.
    */
-  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined {
+  position_js_to_coffee(source_map, js_position) {
     let result
     const columns = source_map[js_position.line]?.columns
     let mapped = columns?.[js_position.character]
@@ -205,7 +214,7 @@ const transpile_service = {
   },
 
   /** Convert range in transpiled JS back to where it was in the original CS */
-  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range | undefined {
+  range_js_to_coffee(source_map, js_range) {
     const start = this.position_js_to_coffee(source_map, js_range.start)
     const end = this.position_js_to_coffee(source_map, js_range.end)
     if(start && end)
@@ -222,7 +231,7 @@ const transpile_service = {
    * the word at `coffee_position`, else where JS is any word at all, else furthest down
    * in JS as possible.
    */
-  position_coffee_to_js(result: ITranspilationResult, coffee_position: Position, coffee_doc: TextDocument): Position | undefined {
+  position_coffee_to_js(result, coffee_position, coffee_doc) {
     if(!result.source_map)
       throw 'cannot reverse map position without source map'
     let js_matches_by_line = result.source_map
@@ -289,7 +298,7 @@ const transpile_service = {
 
   /** Convert range in original CS to where it eventually turned out in the transpiled JS.
    * See reverse_map_position for implementation details. */
-  range_coffee_to_js(result: ITranspilationResult, coffee_range: Range, coffee_doc: TextDocument): Range | undefined {
+  range_coffee_to_js(result, coffee_range, coffee_doc) {
     const start = this.position_coffee_to_js(result, coffee_range.start, coffee_doc);
     const end = this.position_coffee_to_js(result, coffee_range.end, coffee_doc);
     if(start && end)

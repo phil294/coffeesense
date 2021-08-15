@@ -147,7 +147,9 @@ export async function getJavascriptMode(
 
       const js_text = js_doc.getText()
 
-      return rawScriptDiagnostics.map(diag => {
+      return rawScriptDiagnostics
+      .filter(diag => !env.getConfig().coffeesense.ignoredTypescriptErrorCodes.includes(diag.code))
+      .map(diag => {
         const tags: DiagnosticTag[] = [];
 
         if (diag.reportsUnnecessary) {

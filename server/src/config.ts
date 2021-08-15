@@ -3,6 +3,7 @@ import { findConfigFile } from './utils/workspace';
 
 export interface LSPConfig {
   coffeesense: {
+    ignoredTypescriptErrorCodes: number[],
     ignoreProjectWarning: boolean;
     useWorkspaceDependencies: boolean;
     trace: {
@@ -24,6 +25,7 @@ export interface LSPFullConfig extends LSPConfig {
 export function getDefaultLSPConfig(): LSPFullConfig {
   return {
     coffeesense: {
+      ignoredTypescriptErrorCodes: [],
       ignoreProjectWarning: false,
       useWorkspaceDependencies: false,
       trace: {
