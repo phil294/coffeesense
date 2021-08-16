@@ -3,6 +3,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { parseCoffeescriptDocumentRegions, EmbeddedRegion } from './coffeescriptDocumentRegionParser';
 import { LANGUAGE_ID } from '../language';
 import transpile_service from '../services/transpileService';
+import { logger } from '../log';
 
 
 export type LanguageId = typeof LANGUAGE_ID | 'javascript' | 'typescript' | 'unknown';
@@ -107,7 +108,11 @@ export function getSingleTypeDocument(
   }
   // newContent is coffee
 
-  newContent = transpile_service.transpile(document).js || document.getText()
+  try {
+    newContent = transpile_service.transpile(document).js || document.getText()
+  } catch(e) {
+    logger.logInfo('TRANSPILATION FAILED ' + document.uri + ' ' + JSON.stringify(e))
+  }
   // now it's JS (or if failed, coffee as a fallback)
   // source map etc are saved in transpileService to be retrievable in js language service methods
 
