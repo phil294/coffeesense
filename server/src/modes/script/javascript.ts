@@ -172,8 +172,15 @@ export async function getJavascriptMode(
         }
 
         if(transpilation.source_map) {
-          range = transpile_service.range_js_to_coffee(transpilation.source_map, range) ||
-            Range.create(0, 0, 0, 0)
+          const coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+          if(coffee_range) {
+            range = coffee_range
+          } else {
+            diag.messageText += `\n\nThe position of this error could not be mapped back to CoffeeScript, sorry. Here's the failing JavaScript context:\n\n${js_text.slice(
+                js_doc.offsetAt({ line: range.start.line - 2, character: 0}),
+                js_doc.offsetAt({ line: range.start.line + 2, character: Number.MAX_VALUE}))}`
+            range = Range.create(0, 0, 0, 0)
+          }
           if(range.end.line < range.start.line || range.end.line === range.start.line && range.end.character < range.start.character)
             // end character is messed up (happens often). just use whole word instead
             range.end = { line: range.start.line, character: range.start.character }
