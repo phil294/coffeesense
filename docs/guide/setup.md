@@ -7,6 +7,7 @@ The following VSCode extension options are available. The default values are set
   // Some TypeScript errors don't make a lot of sense in CS context (see main README), you can ignore them here by supplying their IDs.
   // Some error code suggestions you might want to add here:
   // 7030: Not all code paths return a value
+  // 7023: 'your_var' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
   "coffeesense.ignoredTypescriptErrorCodes": [],
   // CoffeeSense will warn about not setup correctly for the project. You can disable it.
   "coffeesense.ignoreProjectWarning": false,
