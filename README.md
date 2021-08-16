@@ -41,41 +41,9 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 
 Overall, this implementation works, but is not optimal. It is eagerly waiting to be replaced by a native, feature-complete `coffeescript-language-server` or the like some day, but so far, no one has done that yet, so it seems this is the best we have for now.
 
-### Other problems
+### But
 
-If you set `"noImplicitAny":true` or `"strict":true`, code like the following will give you errors:
-```coffeescript
-xy = 123   # Error: Variable 'xy' implicitly has type 'any' in some locations where its type cannot be determined.CoffeeSense [TS](7034)
-=> xy      # Error: Variable 'xy' implicitly has an 'any' type.CoffeeSense [TS](7005)
-```
-You can hide these messages by adding `7034` and `7005` to `ignoredTypescriptErrorCodes` in [settings](docs/guide/setup.md).
-
-The following coffee code will never produce an error, even with TS `noImplicitAny=true`:
-```coffeescript
-a = 1
-a = 'one'
-```
-This is because the cs compiler puts variable declarations to the front:
-```js
-// Translates to:
-var a;
-a = 1;
-a = 'one';
-```
-and [now `a` is of type `number | string`](https://github.com/microsoft/TypeScript/issues/45369). 
-
-This also happens for example with object property access:
-```coffeescript
-a =
-    b: ->
-        # Should be a type error but is not :-/
-        @c
-```
-This e.g. means that autocompletion based on `this.` is not possible.
-
-If you have a solution for this problem, let me know.
-
-For more general discussion, see [this issue](https://github.com/jashkenas/coffeescript/issues/5307)
+There is lot of hacky code to get this all to work. One thing to keep in mind is that the generated JS code that tsserver gets to provide compilation/type errors for differs from normal CS compilation output. You can inspect the generated JS code for the active file using the command `TODO`
 
 ### Contribute
 
