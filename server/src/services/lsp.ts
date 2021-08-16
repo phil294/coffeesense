@@ -50,6 +50,7 @@ import { accessSync, constants, existsSync } from 'fs';
 import { sleep } from '../utils/sleep';
 import { URI } from 'vscode-uri';
 import { FILE_EXTENSION } from '../language';
+import transpile_service from './transpileService';
 
 interface ProjectConfig {
   lspFullConfig: LSPFullConfig;
@@ -359,19 +360,13 @@ export class LSP {
   private setupCustomLSPHandlers() {
     this.lspConnection.onRequest('$/doctor', async ({ fileName }) => {
       const uri = getFsPathToUri(fileName);
-      const projectConfigs = this.getAllProjectConfigs();
-      const project = await this.getProjectService(uri);
+      const js = transpile_service.result_by_uri.get(uri)?.js
 
       return JSON.stringify(
         {
-          name: 'CoffeeSense doctor info',
+          name: 'CoffeeSense showGeneratedJavascript info',
           fileName,
-          currentProject: {
-            rootPathForConfig: project?.env.getRootPathForConfig() ?? null,
-            projectRootFsPath: project?.env.getProjectRoot() ?? null
-          },
-          activeProjects: Array.from(this.projects.keys()),
-          projectConfigs
+          js,
         },
         null,
         2

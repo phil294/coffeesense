@@ -49,9 +49,9 @@
         "title": "Show Output Channel"
       },
       {
-        "command": "coffeesense.showDoctorInfo",
+        "command": "coffeesense.showGeneratedJavascript",
         "category": "CoffeeSense",
-        "title": "Show Doctor info"
+        "title": "Show generated JavaScript for current file (Debugging only; might not be valid JS)"
       }
     ],
     "breakpoints": [

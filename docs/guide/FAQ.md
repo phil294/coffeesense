@@ -63,7 +63,7 @@ You can add this config in correct position in your project or use `coffeesense.
 - [Read more project setup](/guide/setup.md#project-setup)
 - [Read more `coffeesense.config.js`](/guide/setup.md#advanced)
 
-If you want debug info, you can use `CoffeeSense: show doctor info` command.   
+If you want debug info, you can use `CoffeeSense: show generated JavaScript for current file` command.   
 You can use `coffeesense.ignoreProjectWarning: true` in vscode setting to close this warning.
 
 ⚠️ Notice ⚠️ : If you don't need (path alias/decorator/import json) feature, you can just close it.
@@ -87,6 +87,5 @@ You can add this config at the correct position in your project or use `coffeese
 
 - [Read more `coffeesense.config.js`](/guide/setup.md#advanced)
 
-If you want debugging info, you can use the `CoffeeSense: show doctor info` command.   
 You can use `coffeesense.ignoreProjectWarning: true` in vscode settings to close this warning.
 

@@ -60,6 +60,6 @@ function registerRestartLSPCommand(context: vscode.ExtensionContext, client: Lan
 function registerCustomLSPCommands(context: vscode.ExtensionContext, client: LanguageClient) {
   context.subscriptions.push(
     vscode.commands.registerCommand('coffeesense.showOutputChannel', () => client.outputChannel.show()),
-    vscode.commands.registerCommand('coffeesense.showDoctorInfo', generateDoctorCommand(client))
+    vscode.commands.registerCommand('coffeesense.showGeneratedJavascript', generateDoctorCommand(client))
   );
 }
