@@ -270,17 +270,21 @@ const transpile_service: ITranspileService = {
       for(const change of js_impl_line_changes) {
         js_lines[change!.impl_line_no] = change!.new_line_content
         const map_columns = result.source_map[change!.impl_line_no]!.columns
-        const current_impl_start = map_columns[change!.new_let_column]!
-        map_columns.splice(
-          change!.new_let_column,
-          0,
-          ..."let ".split('').map((_, i) => ({
-            ...current_impl_start,
-            column: current_impl_start.column + i
-        })))
-        for(let i = current_impl_start.column + "let ".length; i < map_columns.length + "let ".length; i++) {
-          if(map_columns[i])
-            map_columns[i]!.column += "let ".length // or = i
+        const map_current_impl_start = map_columns[change!.new_let_column]!
+        // Can be null in cases where the variable is not user-set but e.g. a helper
+        // variable put there by the cs compiler itself and ignored otherwise
+        if(map_current_impl_start != null) {
+          map_columns.splice(
+            change!.new_let_column,
+            0,
+            ..."let ".split('').map((_, i) => ({
+              ...map_current_impl_start,
+              column: map_current_impl_start.column + i
+          })))
+          for(let i = map_current_impl_start.column + "let ".length; i < map_columns.length + "let ".length; i++) {
+            if(map_columns[i])
+              map_columns[i]!.column += "let ".length // or = i
+          }
         }
       }
       // Part 4: Update decl lines (Part 1). Where no impl lines were found (Part 2),
