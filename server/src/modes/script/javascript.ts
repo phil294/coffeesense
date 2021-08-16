@@ -149,6 +149,7 @@ export async function getJavascriptMode(
 
       return rawScriptDiagnostics
       .filter(diag => !env.getConfig().coffeesense.ignoredTypescriptErrorCodes.includes(diag.code))
+      .filter(diag => diag.messageText !== "Parameter '_' implicitly has an 'any' type.")
       .map(diag => {
         const tags: DiagnosticTag[] = [];
 
