@@ -12,7 +12,10 @@
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
-      "args": ["--extensionDevelopmentPath=${workspaceFolder}", "--disable-extensions"],
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        // "--disable-extensions"
+      ],
       "internalConsoleOptions": "neverOpen",
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/dist/**/*.js"],
