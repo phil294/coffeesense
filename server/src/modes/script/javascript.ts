@@ -212,7 +212,8 @@ export async function getJavascriptMode(
       if(!transpilation)
         return { isIncomplete: false, items: [] }
       
-      const coffee_last_char = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position) - 1]
+      const coffee_text = coffee_doc.getText()
+      const coffee_last_char = coffee_text[coffee_doc.offsetAt(coffee_position) - 1]
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
@@ -221,7 +222,26 @@ export async function getJavascriptMode(
           line: coffee_position.line,
           character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
         }
-        const js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_excl_trigger_char, coffee_doc)
+        let js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_excl_trigger_char, coffee_doc)
+        if(!js_position) {
+          // The following works great in principle, but is not useful as cs indentation is wrong,
+          // comma is missing, scope is mostly simply wrong
+          /*
+          // Fallback: Current line in coffee does not exist in JS, e.g. empty line, perhaps
+          // indented. In this case, find the next previous mapping-existing line and move cursor forward
+          // one character/line.
+          const i_coffee_pos = { character: 0, line: coffee_position_excl_trigger_char.line }
+          while(--i_coffee_pos.line > 0) {
+            js_position = transpile_service.position_coffee_to_js(transpilation, i_coffee_pos, coffee_doc)
+            if(js_position)
+              break
+          }
+          if(js_position) {
+            js_position.line++
+            js_position.character = 0
+          }
+          */
+        }
         if(!js_position)
           return { isIncomplete: false, items: [] }
         position = {
