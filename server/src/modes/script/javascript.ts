@@ -587,6 +587,8 @@ export async function getJavascriptMode(
           ).map(({ entry, range }) => {
             if(transpilation.source_map) {
               range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+              if(range.end.line < range.start.line)
+                range.end.line = range.start.line
               range.end.character = range.start.character + entry.textSpan.length
             }
             return {
