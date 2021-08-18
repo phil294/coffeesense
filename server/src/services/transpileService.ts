@@ -248,19 +248,26 @@ const transpile_service: ITranspileService = {
         .map(({ var_name, decl_indent, decl_line_no }) => {
           const js_line_nos_after_decl = js_line_nos.slice(decl_line_no)
           for(let impl_line_no of js_line_nos_after_decl) {
-            let match = js_lines[impl_line_no]!.match(new RegExp(`^(\\s*)(\\[?${var_name}\\]? = .+)$`))
-            if(match) {
-              const impl_indent = match[1]!.length
-              // Has to be same. If >, then this is a conditional first value assignment
-              // and type can not safely be set. If <, then something is really wrong
-              if(impl_indent === decl_indent) {
-                return {
-                  var_name,
-                  impl_line_no,
-                  decl_line_no,
-                  new_line_content: `${match[1]}let ${match[2]}`,
-                  new_let_column: impl_indent,
-                }
+            const line = js_lines[impl_line_no]!
+            const impl_whitespace = line.match(/^\s*/)![0]!
+            const impl_indent = impl_whitespace.length
+            if(impl_indent < decl_indent)
+              // Parent block scope. Need to skip this variable then, no impl has been found
+              // before current block got closed. It is important to stop here, as otherwise
+              // it might later match an impl from *another* decl of the same var name
+              return null
+            const var_impl_text = `${var_name} = `
+            if(line.substr(impl_indent, var_impl_text.length) === var_impl_text) {
+              if(impl_indent > decl_indent)
+                // This is a conditional first value assignment and type can not safely be set
+                return null
+              const rest_of_line = line.slice(impl_indent + var_impl_text.length)
+              return {
+                var_name,
+                impl_line_no,
+                decl_line_no,
+                new_line_content: `${impl_whitespace}let ${var_impl_text}${rest_of_line}`,
+                new_let_column: impl_indent,
               }
             }
           }
