@@ -65,6 +65,15 @@ const transpile_service: ITranspileService = {
         logger.logDebug(`replace dangling space with opening brace ${coffee_doc.uri}`)
         return `${c}(\n`
       })
+      // This is an experimental attempt to enable autocomplete on empty lines inside object properties.
+      // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
+      // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
+      // with the sole purpose of generating (properly indented) source maps.
+      // This tweak is separate from fake_line logic below.
+      .replaceAll(/^(\s+)$/mg, (spaces) => {
+        logger.logDebug(`append 𒐛 to empty line ${coffee_doc.uri}`)
+        return `${spaces}𒐛:𒐛`
+      })
     let result: ITranspilationResult
     try {
       // 1. Try normal compilation
@@ -120,8 +129,9 @@ const transpile_service: ITranspileService = {
       // altering the underlying architecture of the extension.
 
       let coffee_error_line_no = l.first_line
-      // if(normal_compilation_error.message === 'unexpected newline')
-      //   coffee_error_line_no-- // not accurate, note:yml style arrays. but it was at some point, in combination with comments in next line? cs bug?
+      if(normal_compilation_error.message === 'unexpected newline')
+        // Experimental
+        coffee_error_line_no++
       const coffee_error_offset = coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
       const coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : undefined
@@ -188,6 +198,11 @@ const transpile_service: ITranspileService = {
     }
 
     if(result.js && result.source_map) {
+      // See usage of 𒐛 above
+      // Note that outside of objects, this will leave empty objects behind
+      // but they do no harm and should go unnoticed
+      result.js = result.js.replaceAll('𒐛: 𒐛', '')
+
       // console.time('var-decl-fix')
       //////////////////////////////////////
       ///////// Modify variable declarations to solve various TS compiler errors:
