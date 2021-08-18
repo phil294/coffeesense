@@ -149,7 +149,8 @@ export async function getJavascriptMode(
 
       return rawScriptDiagnostics
       .filter(diag => !env.getConfig().coffeesense.ignoredTypescriptErrorCodes.includes(diag.code))
-      .filter(diag => diag.messageText !== "Parameter '_' implicitly has an 'any' type.")
+      .filter(diag => diag.messageText !== "Parameter '_' implicitly has an 'any' type." &&
+        diag.messageText !== "'_' is declared but its value is never read.")
       .map(diag => {
         const tags: DiagnosticTag[] = [];
         let message = tsModule.flattenDiagnosticMessageText(diag.messageText, '\n')
