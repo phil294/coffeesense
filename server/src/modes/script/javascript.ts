@@ -152,6 +152,7 @@ export async function getJavascriptMode(
       .filter(diag => diag.messageText !== "Parameter '_' implicitly has an 'any' type.")
       .map(diag => {
         const tags: DiagnosticTag[] = [];
+        let message = tsModule.flattenDiagnosticMessageText(diag.messageText, '\n')
 
         if (diag.reportsUnnecessary) {
           tags.push(DiagnosticTag.Unnecessary);
@@ -177,7 +178,7 @@ export async function getJavascriptMode(
           if(coffee_range) {
             range = coffee_range
           } else {
-            diag.messageText += `\n\nThe position of this error could not be mapped back to CoffeeScript, sorry. Here's the failing JavaScript context:\n\n${js_text.slice(
+            message += `\n\nThe position of this error could not be mapped back to CoffeeScript, sorry. Here's the failing JavaScript context:\n\n${js_text.slice(
                 js_doc.offsetAt({ line: range.start.line - 2, character: 0}),
                 js_doc.offsetAt({ line: range.start.line + 2, character: Number.MAX_VALUE}))}`
             range = Range.create(0, 0, 0, 0)
@@ -192,7 +193,7 @@ export async function getJavascriptMode(
         return <Diagnostic>{
           range,
           severity: convertTSDiagnosticCategoryToDiagnosticSeverity(tsModule, diag.category),
-          message: tsModule.flattenDiagnosticMessageText(diag.messageText, '\n'),
+          message,
           tags,
           code: diag.code,
           source: 'CoffeeSense [TS]'
