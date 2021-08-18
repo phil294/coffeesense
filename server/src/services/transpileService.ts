@@ -61,7 +61,10 @@ const transpile_service: ITranspileService = {
       // makes sense in CS syntax.
       // To avoid unexpected syntax weirdness, we additionally show an unavoidable
       // error below (TODO: integrate this replace into the matchAll() below to avoid duplicate work)
-      .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => `${c}(\n`)
+      .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
+        logger.logDebug(`replace dangling space with opening brace ${coffee_doc.uri}`)
+        return `${c}(\n`
+      })
     let result: ITranspilationResult
     try {
       // 1. Try normal compilation
