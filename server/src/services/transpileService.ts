@@ -201,7 +201,7 @@ const transpile_service: ITranspileService = {
       // See usage of 𒐛 above
       // Note that outside of objects, this will leave empty objects behind
       // but they do no harm and should go unnoticed
-      result.js = result.js.replaceAll('𒐛: 𒐛', '')
+      result.js = result.js.replaceAll(/𒐛: 𒐛,?/g, '')
 
       // console.time('var-decl-fix')
       //////////////////////////////////////
