@@ -70,7 +70,7 @@ const transpile_service: ITranspileService = {
       // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
       // with the sole purpose of generating (properly indented) source maps.
       // This tweak is separate from fake_line logic below.
-      .replaceAll(/^(\s+)$/mg, (spaces) => {
+      .replaceAll(/^([ \t]+)$/mg, (spaces) => {
         logger.logDebug(`append 𒐛 to empty line ${coffee_doc.uri}`)
         return `${spaces}𒐛:𒐛`
       })
