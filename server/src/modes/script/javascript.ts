@@ -418,31 +418,46 @@ export async function getJavascriptMode(
                   const js_range = range
                   let coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, js_range)
                   if(coffee_range) {
-                    const js_line = js_doc.getText().split('\n')[js_range.start.line]!
-                    if(!js_line.match(/^\s*import /)) {
-                      // import completion is of type "add to existing import"
-                      // Assuming that cs line is fixed and correct (always in same line of
-                      // another import, col 0) and that js pos is fixed and correct (in same line
-                      // of other import, col end of line)
-                      // Also, in JS every imported module is on its own line
-                      // JS wants to insert newline, prevent that
-                      text_change.newText = text_change.newText.replace(/\n/,'')
-                      if(js_line.substr(0, js_range.start.character).match(/^\s*$/)) {
-                        // Everything up to js range is indentation.
-                        // Prepend to existing import
-                      } else {
-                        // Append to existing import
-                        // In this case, (TODO ?)
-                        // source mapping column is wrong.
-                        // Set to end of existing import
-                        const word = get_word_around_position(js_line, js_line.length - 1)
-                        const coffee_line = coffee_doc.getText().split('\n')[coffee_range.start.line]!
-                        const coffee_line_offset = coffee_line.indexOf(word) ?? -1
-                        if(coffee_line_offset > -1) {
-                          const coffee_pos = coffee_doc.positionAt(coffee_doc.offsetAt({ line: coffee_range.start.line, character: coffee_line_offset }) + word.length)
-                          coffee_range = Range.create(coffee_pos, coffee_pos)
-                        }
+                    const coffee_line = coffee_doc.getText().split('\n')[coffee_range.start.line]!
+                    let coffee_range_end_of_named_group
+                    let coffee_end_of_named_group_col = coffee_line.indexOf('}')
+                    if(coffee_end_of_named_group_col > -1) {
+                      if(coffee_line[coffee_end_of_named_group_col - 1] === ' ')
+                        coffee_end_of_named_group_col--
+                      const coffee_pos = { line: coffee_range.start.line, character: coffee_end_of_named_group_col }
+                      coffee_range_end_of_named_group = Range.create(coffee_pos, coffee_pos)
+                    }
+                    if(text_change.newText.startsWith(', { ')) {
+                      // Add new named imports group to existing default import
+                      const coffee_from_col = coffee_line.indexOf(' from ')
+                      if(coffee_from_col > -1) {
+                        const coffee_pos = { line: coffee_range.start.line, character: coffee_from_col }
+                        coffee_range = Range.create(coffee_pos, coffee_pos)
                       }
+                    } else if(text_change.newText.startsWith(', ')) {
+                      // Add named import to existing named imports group
+                      coffee_range = coffee_range_end_of_named_group
+                    } else if(text_change.newText[0] === '\n') {                      
+                      // Add named import to existing named imports group in new line
+                      // We don't want new line and add a missing comma
+                        text_change.newText = text_change.newText.replace(/^\s+(.+)$/, (_, named_import) =>
+                          ', ' + named_import)
+                        coffee_range = coffee_range_end_of_named_group
+                    } else if(text_change.newText === ',') {
+                      // named import to existing named imports group actions consist of two text changes,
+                      // the first one being a comma, ignore it
+                      text_change.newText = ''
+                    } else if(text_change.newText.trim().endsWith(',')) {
+                      // Add named import to existing named imports group, possibly new line,
+                      // in between two other named imports
+                      // We don't insert in between but only at the end of group instead
+                      text_change.newText = ', ' + text_change.newText.trim().slice(0, -1)
+                      coffee_range = coffee_range_end_of_named_group
+                    } else {
+                      // Add entirely new import. Line should start with 'import',
+                      // but it can also be CommonJS-style, I haven't checked this further
+                      const coffee_pos = { line: 0, character: 0 }
+                      coffee_range = Range.create(coffee_pos, coffee_pos)
                     }
                   }
                   range = coffee_range
