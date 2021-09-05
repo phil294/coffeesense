@@ -55,5 +55,9 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.0
+##### 2021-09-05
+- Add autocompletion at `@`
+
 #### 1.0.0
 ##### 2021-09-04
