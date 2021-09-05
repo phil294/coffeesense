@@ -52,3 +52,8 @@ Also, implicit any errors (7006) for variables named `_` are ignored.
 Please feel free to open an issue if you find bugs, but be aware some might be set in stone. I have not encountered any dealbreakers yet.
 
 If you'd like to contribute or simply wonder how this works, check out [CONTRIBUTING.md](CONTRIBUTING.md)
+
+### Changelog
+
+#### 1.0.0
+##### 2021-09-04
