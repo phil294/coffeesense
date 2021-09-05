@@ -46,13 +46,13 @@ const transpile_service: ITranspileService = {
 
   result_by_uri: new Map(),
 
-  transpile(coffee_doc) {
-    const text = coffee_doc.getText()
+  transpile(orig_coffee_doc) {
+    const text = orig_coffee_doc.getText()
     const hash = MD5.hex(text)
     const cached = transpilation_cache.get(hash)
     if (cached) {
-      logger.logDebug(`found cached compilation for contents of ${coffee_doc.uri}`)
-      this.result_by_uri.set(coffee_doc.uri, cached)
+      logger.logDebug(`found cached compilation for contents of ${orig_coffee_doc.uri}`)
+      this.result_by_uri.set(orig_coffee_doc.uri, cached)
       return cached
     }
     const coffee = text
@@ -62,23 +62,33 @@ const transpile_service: ITranspileService = {
       // To avoid unexpected syntax weirdness, we additionally show an unavoidable
       // error below (TODO: integrate this replace into the matchAll() below to avoid duplicate work)
       .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
-        logger.logDebug(`replace dangling space with opening brace ${coffee_doc.uri}`)
+        logger.logDebug(`replace dangling space with opening brace ${orig_coffee_doc.uri}`)
         return `${c}(\n`
       })
-      // This is an experimental attempt to enable autocomplete on empty lines inside object properties.
+      // Enable autocomplete on empty lines inside object properties.
       // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
       // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
       // with the sole purpose of generating (properly indented) source maps.
       // This tweak is separate from fake_line logic below.
       .replaceAll(/^([ \t]+)$/mg, (spaces) => {
-        logger.logDebug(`append 𒐛 to empty line ${coffee_doc.uri}`)
+        logger.logDebug(`append 𒐛 to empty line ${orig_coffee_doc.uri}`)
         return `${spaces}𒐛:𒐛`
       })
+      // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
+      // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
+      // adds a `valueOf()` afterwards. Cursor needs to be adjusted properly in doComplete()
+      .replaceAll(/@(\s|$)/g, (_, ws) => {
+        logger.logDebug(`transform @ to this.valueOf() ${orig_coffee_doc.uri}`)
+        return `this.valueOf()${ws}`
+      })
+    // As coffee was modified, offsets and positions are changed and for these purposes,
+    // we need to construct a new doc
+    const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
     let result: ITranspilationResult
     try {
       // 1. Try normal compilation
       const response = compile(coffee, { sourceMap: true, bare: true })
-      logger.logDebug(`successfully compiled ${coffee_doc.uri}`)
+      logger.logDebug(`successfully compiled ${orig_coffee_doc.uri}`)
       result = {
         source_map: response.sourceMap.lines,
         js: response.js
@@ -98,10 +108,10 @@ const transpile_service: ITranspileService = {
         source: 'CoffeeSense'
       }]
       // see above
-      diagnostics.push(...[...coffee_doc.getText()
+      diagnostics.push(...[...orig_coffee_doc.getText()
         .matchAll(/([a-zA-Z_]) (\n|$)/g)]
         .map(m => {
-          const pos = coffee_doc.positionAt(m.index||0+1)
+          const pos = orig_coffee_doc.positionAt(m.index||0+1)
           return {
             range:  Range.create(pos, pos),
             severity: DiagnosticSeverity.Error,
@@ -132,7 +142,7 @@ const transpile_service: ITranspileService = {
       if(normal_compilation_error.message === 'unexpected newline')
         // Experimental
         coffee_error_line_no++
-      const coffee_error_offset = coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
+      const coffee_error_offset = mod_coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
       const coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : undefined
       const coffee_error_line = coffee.slice(coffee_error_offset, coffee_error_end)
@@ -149,7 +159,7 @@ const transpile_service: ITranspileService = {
       let js_fake, source_map_fake
       try {
         const response = compile(coffee_fake, { sourceMap: true, bare: true })
-        logger.logDebug(`successfully compiled with fake line: ${coffee_doc.uri}`)
+        logger.logDebug(`successfully compiled with fake line: ${orig_coffee_doc.uri}`)
         js_fake = response.js
         source_map_fake = response.sourceMap.lines
       } catch (fake_compilation_error) {
@@ -166,29 +176,32 @@ const transpile_service: ITranspileService = {
         // TODO: refactor this, externalize compile or something
         try {
           const response = compile(coffee_fake2, { sourceMap: true, bare: true })
-          logger.logDebug(`successfully compiled with fake line 2: ${coffee_doc.uri}`)
+          logger.logDebug(`successfully compiled with fake line 2: ${orig_coffee_doc.uri}`)
           js_fake = response.js
           source_map_fake = response.sourceMap.lines
         } catch (fake2_compilation_error) {
           if (fake_compilation_error.name !== "SyntaxError")
             throw fake_compilation_error
-          logger.logDebug(`could not compile ${coffee_doc.uri}`)
+          logger.logDebug(`could not compile ${orig_coffee_doc.uri}`)
         }
       }
       
       if(js_fake && source_map_fake) {  
         // Fake coffee compilation succeeded, now inject the coffee line into js
 
-        const coffee_fake_𒐩_position = coffee_doc.positionAt(coffee_error_offset + error_line_indentation.length)
+        const coffee_fake_𒐩_position = mod_coffee_doc.positionAt(coffee_error_offset + error_line_indentation.length)
         
         // Could also be calculated with js_fake.indexOf('𒐩'), given the user has not used the symbol
-        const js_fake_𒐩_line_no = this.position_coffee_to_js({ source_map: source_map_fake }, coffee_fake_𒐩_position, coffee_doc)?.line
+        const js_fake_𒐩_line_no = this.position_coffee_to_js({ source_map: source_map_fake }, coffee_fake_𒐩_position, mod_coffee_doc)?.line
         if(js_fake_𒐩_line_no == null)
           throw new Error('could not map back js 𒐩 line')
         
         const js_fake_arr = js_fake.split('\n')
         // if(js_fake_arr[js_fake_𒐩_line_no].match(/\s*\S.*{𒐩: 𒐩};/))
-        js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line
+        const coffee_error_line_modified = coffee_error_line
+          // Requires special cursor handling in doComplete() yet again
+          .replaceAll('@', 'this.')
+        js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
         js_fake = js_fake_arr.join('\n')
 
         result.fake_line = coffee_fake_𒐩_position.line
@@ -332,7 +345,7 @@ const transpile_service: ITranspileService = {
     }
 
     transpilation_cache.set(hash, result)
-    this.result_by_uri.set(coffee_doc.uri, result)
+    this.result_by_uri.set(orig_coffee_doc.uri, result)
     return result
   },
 
@@ -357,7 +370,7 @@ const transpile_service: ITranspileService = {
       result = undefined
     else
       result = Position.create(mapped.sourceLine, mapped.sourceColumn)
-    logger.logDebug(`mapped JS => CS: ${js_position.line}:${js_position.character} => ${result?.line}:${result?.character}`)
+    // logger.logDebug(`mapped JS => CS: ${js_position.line}:${js_position.character} => ${result?.line}:${result?.character}`)
     return result
   },
 
@@ -387,7 +400,7 @@ const transpile_service: ITranspileService = {
         .filter(c => c?.sourceLine === coffee_position.line))
       .flat()
     if(!js_matches_by_line.length) {
-        logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => undefined`)
+        // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => undefined`)
         return undefined
     }
     
@@ -438,7 +451,7 @@ const transpile_service: ITranspileService = {
       // use the same pos:
       match.column = coffee_position.character
 
-    logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
+    // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
     if(!match)
       return undefined
     return Position.create(match.line, match.column)

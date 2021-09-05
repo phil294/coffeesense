@@ -271,6 +271,21 @@ export async function getJavascriptMode(
         }
       }
       js_offset += char_offset
+
+      if(char_offset === 0) {
+        if(js_text.substr(js_offset, 14) === 'this.valueOf()') {
+          // CS cursor: `...@|`
+          js_offset += 'this.'.length
+        } else if(transpilation.fake_line !== undefined) {
+          const coffee_line_until_cursor = coffee_text.slice(coffee_doc.offsetAt({ line:coffee_position.line, character:0 }), coffee_doc.offsetAt(coffee_position))
+          // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
+          // the `@`s to `this` conversions need to be considered because fake lines are
+          // CS only.
+          // Edge case error: current_line != fake_line (so current_line is JS) and
+          // current_line.includes('@'), but let's ignore that
+          js_offset += (coffee_line_until_cursor.split('@').length - 1) * ('this.'.length - '@'.length)
+        }
+      }
       
       const completions = service.getCompletionsAtPosition(fileFsPath, js_offset, {
         ...getUserPreferences(js_doc),
