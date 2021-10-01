@@ -342,6 +342,11 @@ const transpile_service: ITranspileService = {
 
       result.js = js_lines.join('\n')
       // console.timeEnd('var-decl-fix')
+
+      /* Prefer object method shorthand */
+      result.js = result.js.replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
+        `${asynk || ''}${asterisk}${func_name}          (`
+      )
     }
 
     transpilation_cache.set(hash, result)
