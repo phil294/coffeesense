@@ -80,7 +80,7 @@
         "coffeesense.useWorkspaceDependencies": {
           "type": "boolean",
           "default": false,
-          "description": "Use dependencies from workspace. Currently only for TypeScript. Beware in multi root workspaces: https://github.com/phil294/coffeesense/blob/master/docs/guide/setup.md",
+          "description": "Use dependencies from workspace. Currently only for TypeScript.",
           "scope": "application"
         },
         "coffeesense.trace.server": {

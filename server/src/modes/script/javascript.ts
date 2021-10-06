@@ -46,6 +46,7 @@ import transpile_service, { get_word_around_position } from '../../services/tran
 import { LineMap } from 'coffeescript';
 
 export async function getJavascriptMode(
+  tsModule: RuntimeLibrary['typescript'],
   serviceHost: IServiceHost,
   env: EnvironmentService,
   documentRegions: LanguageModelCache<CoffeescriptDocumentRegions>,
@@ -55,8 +56,6 @@ export async function getJavascriptMode(
     const coffeescriptDocument = documentRegions.refreshAndGet(document);
     return coffeescriptDocument.getSingleTypeDocument('script');
   });
-
-  const tsModule: RuntimeLibrary['typescript'] = dependencyService.get('typescript').module;
 
   const { updateCurrentCoffeescriptTextDocument } = serviceHost;
   let supportedCodeFixCodes: Set<number>;

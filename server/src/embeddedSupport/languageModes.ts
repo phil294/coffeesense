@@ -82,7 +82,7 @@ export class LanguageModes {
   }
 
   async init(env: EnvironmentService, services: LSPServices) {
-    const tsModule = services.dependencyService.get('typescript').module;
+    const tsModule = services.dependencyService.get('typescript', env.getPackagePath()).module;
 
     /**
      * Documents where everything outside `<script>` is replaced with whitespace
@@ -93,7 +93,7 @@ export class LanguageModes {
     });
     this.serviceHost = getServiceHost(tsModule, env, scriptRegionDocuments);
 
-    const jsMode = await getJavascriptMode(this.serviceHost, env, this.documentRegions, services.dependencyService);
+    const jsMode = await getJavascriptMode(tsModule, this.serviceHost, env, this.documentRegions, services.dependencyService);
 
     this.modes['javascript'] = jsMode;
     this.modes['typescript'] = jsMode;

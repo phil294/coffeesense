@@ -12,7 +12,6 @@ The following VSCode extension options are available. The default values are set
   // CoffeeSense will warn about not setup correctly for the project. You can disable it.
   "coffeesense.ignoreProjectWarning": false,
   // Use dependencies from workspace package.json. Currently only for TypeScript.
-  // Please note: Due to a bug in upstream (https://github.com/vuejs/vetur/issues/3137), this can be problematic in multi-root workspaces: CoffeeSense might falsely read TS from an unrelated folder. See the issue for details, but you can instead also simply try it out.
   "coffeesense.useWorkspaceDependencies": false,
   // Traces the communication between VS Code and CoffeeSense Language Server.
   "coffeesense.trace.server": "off", // Possible values: "off", "messages", "verbose"
