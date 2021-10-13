@@ -3,6 +3,8 @@ set -e
 
 # increase package.json version field beforehand in both . and ./server
 
+# update changelog
+
 cd server
 yarn preversion
 npm publish
