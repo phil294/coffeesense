@@ -55,6 +55,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.3
+##### 2021-11-16
+- Fix GoTo when variable name contains dollar sign `$`
+
 #### 1.1.2
 ##### 2021-10-14
 - Fix wrong TS version under specific conditions with `useWorkspaceDependencies: true`
