@@ -425,7 +425,7 @@ const transpile_service: ITranspileService = {
       if(index_match_by_is_char > -1)
         return js_matches[index_match_by_is_char]
       return [...js_matches]
-        .sort((a,b) => b.line - a.line)
+        .sort((a,b) => b.line - a.line || b.column - a.column)
         [0]
     }
 
