@@ -7,12 +7,14 @@ import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-language
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { logger } from '../log';
 
+const common_js_variable_name_character = /[a-zA-Z0-9_$]/
+
 export function get_word_around_position(text: string, offset: number) {
   let i_offset = offset
-  while(text[i_offset - 1]?.match(/[a-zA-Z0-9_]/))
+  while(text[i_offset - 1]?.match(common_js_variable_name_character))
     i_offset--
   let match_word = ""
-  while(i_offset <= offset || text[i_offset]?.match(/[a-zA-Z0-9_]/)) {
+  while(i_offset <= offset || text[i_offset]?.match(common_js_variable_name_character)) {
     match_word += text[i_offset]
     i_offset++
   }
@@ -421,7 +423,7 @@ const transpile_service: ITranspileService = {
         if(index_match_by_word > -1)
             return js_matches[index_match_by_word]
       }
-      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(/[a-zA-Z_]/))
+      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(common_js_variable_name_character))
       if(index_match_by_is_char > -1)
         return js_matches[index_match_by_is_char]
       return [...js_matches]
