@@ -83,6 +83,11 @@ const transpile_service: ITranspileService = {
         logger.logDebug(`transform @ to this.valueOf() ${orig_coffee_doc.uri}`)
         return `this.valueOf()${ws}`
       })
+      //
+      .replaceAll(/\.(\n|$)/g, () => {
+        logger.logDebug(`transform .\n to .;\n/ ${orig_coffee_doc.uri}`)
+        return `.;\n`
+      })
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
