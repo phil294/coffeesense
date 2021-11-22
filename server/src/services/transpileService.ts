@@ -163,7 +163,8 @@ const transpile_service: ITranspileService = {
 				coffee_error_end ? coffee.slice(coffee_error_end) : ''
 			].join('')
 
-      let js_fake, source_map_fake
+      let js_fake: string | undefined
+      let source_map_fake: LineMap[] | undefined
       try {
         const response = compile(coffee_fake, { sourceMap: true, bare: true })
         logger.logDebug(`successfully compiled with fake line: ${orig_coffee_doc.uri}`)
@@ -193,22 +194,27 @@ const transpile_service: ITranspileService = {
         }
       }
       
-      if(js_fake && source_map_fake) {  
+      if(js_fake && source_map_fake) {
         // Fake coffee compilation succeeded, now inject the coffee line into js
 
         const coffee_fake_𒐩_position = mod_coffee_doc.positionAt(coffee_error_offset + error_line_indentation.length)
         
-        // Could also be calculated with js_fake.indexOf('𒐩'), given the user has not used the symbol
-        const js_fake_𒐩_line_no = this.position_coffee_to_js({ source_map: source_map_fake }, coffee_fake_𒐩_position, mod_coffee_doc)?.line
-        if(js_fake_𒐩_line_no == null)
-          throw new Error('could not map back js 𒐩 line')
-        
-        const js_fake_arr = js_fake.split('\n')
-        // if(js_fake_arr[js_fake_𒐩_line_no].match(/\s*\S.*{𒐩: 𒐩};/))
         const coffee_error_line_modified = coffee_error_line
           // Requires special cursor handling in doComplete() yet again
           .replaceAll('@', 'this.')
+        
+        const js_fake_arr = js_fake.split('\n')
+        // Could also be calculated using:
+        // this.position_coffee_to_js({ source_map: source_map_fake }, coffee_fake_𒐩_position, mod_coffee_doc)?.line
+        // but source maps are less reliable than the chance of the user not typing 𒐩 themselves
+        const js_fake_𒐩_line_no = js_fake_arr.findIndex(line => line.indexOf('𒐩') > -1)
+        if(js_fake_𒐩_line_no < 0)
+          throw new Error('could not map back js 𒐩 line')
         js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
+        // Source map contains lines that refer to the now again removed `𒐩`s.
+        // Fixing them is important when `coffee_error_line_modified` is not empty:
+        source_map_fake[js_fake_𒐩_line_no]?.columns.forEach(col =>
+          col.sourceColumn = coffee_error_line.length)
         js_fake = js_fake_arr.join('\n')
 
         result.fake_line = coffee_fake_𒐩_position.line
