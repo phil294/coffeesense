@@ -55,6 +55,11 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.4
+##### 2021-11-22
+- Fix autocomplete after dot `.` when next line is a comment
+- Fix autocompleting object properties in non-empty lines
+
 #### 1.1.3
 ##### 2021-11-16
 - Fix GoTo when variable name contains dollar sign `$`
