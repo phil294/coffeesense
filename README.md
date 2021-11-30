@@ -37,6 +37,35 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - [ ] *missing* Rename file
 - [ ] *missing* Syntactic folding ranges
 
+### Setup
+
+The following VSCode extension options are available. The default values are set.
+
+```jsonc
+{
+  // Some TypeScript errors don't make a lot of sense in CS context (see main README), you can ignore them here by supplying their IDs.
+  // Some error code suggestions you might want to add here:
+  // 7030: Not all code paths return a value
+  // 7023: 'your_var' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+  "coffeesense.ignoredTypescriptErrorCodes": [],
+  // CoffeeSense will warn about not setup correctly for the project. You can disable it.
+  "coffeesense.ignoreProjectWarning": false,
+  // Use dependencies from workspace package.json. Currently only for TypeScript.
+  "coffeesense.useWorkspaceDependencies": false,
+  // Traces the communication between VS Code and CoffeeSense Language Server.
+  "coffeesense.trace.server": "off", // Possible values: "off", "messages", "verbose"
+  // Path to lsp for CoffeeSense developers. There are two ways of using it.   
+  // 1. Clone phil294/coffeesense from GitHub, build it and point it to the ABSOLUTE path of `/server`.
+  // 2. `yarn global add coffeesense-language-server` and point CoffeeSense to the installed location (`yarn global dir` + node_modules/coffeesense-language-server)
+  "coffeesense.dev.lspPath": null,
+  // The port that the lsp listens to. Can be used for attaching to the LSP Node process for debugging / profiling.
+  "coffeesense.dev.lspPort": null,
+  // Log level for the lsp"
+  "coffeesense.dev.logLevel": "INFO" // Possible values: "INFO", "DEBUG"
+}
+```
+
+
 ### Why
 
 Overall, this implementation works, but is not optimal. It is eagerly waiting to be replaced by a native, feature-complete `coffeescript-language-server` or the like some day, but so far, no one has done that yet, so it seems this is the best we have for now.
@@ -54,6 +83,10 @@ Please feel free to open an issue if you find bugs, but be aware some might be s
 If you'd like to contribute or simply wonder how this works, check out [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ### Changelog
+
+#### 1.1.5
+##### 2021-11-30
+- Move VSCode extension options explanation section ("Setup") from `setup.md` to the README so they are visible in the marketplace
 
 #### 1.1.4
 ##### 2021-11-22
