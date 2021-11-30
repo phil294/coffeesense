@@ -84,9 +84,13 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.6
+##### 2021-11-30
+- Fix autocomplete in empty lines when using space indentation
+
 #### 1.1.5
 ##### 2021-11-30
-- Move VSCode extension options explanation section ("Setup") from `setup.md` to the README so they are visible in the marketplace
+- Docs: Move VSCode extension options explanation section ("Setup") from `setup.md` to the README so they are visible in the marketplace
 
 #### 1.1.4
 ##### 2021-11-22
