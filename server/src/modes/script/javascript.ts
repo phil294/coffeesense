@@ -921,6 +921,12 @@ function convertRange(document: TextDocument, span: ts.TextSpan): Range {
 
 // Parameter must to be string, Otherwise I don't like it semantically.
 function getTsTriggerCharacter(triggerChar: string) {
+  // Sometimes autocomplete does not work with spaces indented inside objects (empty line).
+  // Not sure why, but TS rejects space as a valid trigger character in these scenarios.
+  // This function does not make any sense anymore anyway in CoffeeScript land: Most of
+  // these tokens have a completely different meaning than in JS.
+  // Setting to `.` allows for completion, no matter what. (typescript.js: `isValidTrigger`)
+  return '.';
   const legalChars = ['@', '#', '.', '"', "'", '`', '/', '<', ' '];
   if (legalChars.includes(triggerChar)) {
     return triggerChar as ts.CompletionsTriggerCharacter;
