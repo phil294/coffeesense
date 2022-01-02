@@ -7,7 +7,7 @@ import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-language
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { logger } from '../log';
 
-const common_js_variable_name_character = /[a-zA-Z0-9_$]/
+export const common_js_variable_name_character = /[a-zA-Z0-9_$]/
 
 export function get_word_around_position(text: string, offset: number) {
   let i_offset = offset

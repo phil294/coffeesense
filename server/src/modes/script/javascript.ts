@@ -42,7 +42,7 @@ import * as Previewer from './previewer';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { EnvironmentService } from '../../services/EnvironmentService';
 import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
-import transpile_service, { get_word_around_position } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, get_word_around_position } from '../../services/transpileService';
 import { LineMap } from 'coffeescript';
 
 export async function getJavascriptMode(
@@ -185,7 +185,13 @@ export async function getJavascriptMode(
           }
           if(range.end.line < range.start.line || range.end.line === range.start.line && range.end.character < range.start.character)
             // end character is messed up (happens often). just use whole word instead
-            range.end = { line: range.start.line, character: range.start.character }
+            // Setting char end to start or to start+1 only highlights the first character.
+            // No idea how to properly highlight the full next word? Doing it the manual way:
+            range.end = { line: range.start.line, character: range.start.character + 1 }
+            while(coffee_doc.getText(Range.create(range.end, { line: range.end.line, character: range.end.character + 1}))
+                .match(common_js_variable_name_character)) {
+              range.end.character++;
+            }
         }
 
         // syntactic/semantic diagnostic always has start and length
