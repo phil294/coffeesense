@@ -84,6 +84,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.7
+##### 2022-01-02
+- Fix whole word error diagnostics range highlighting: Sometimes, predominantly with errors in method arguments, errors were only shown for the very first character in a word. Now it should expand up to the next whitespace etc.
+
 #### 1.1.6
 ##### 2021-11-30
 - Fix autocomplete in empty lines when using space indentation
