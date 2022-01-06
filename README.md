@@ -84,6 +84,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.8
+##### 2022-01-06
+- Fix autocomplete after dot in otherwise empty line, e.g. `abc\n.|`
+
 #### 1.1.7
 ##### 2022-01-02
 - Fix whole word error diagnostics range highlighting: Sometimes, predominantly with errors in method arguments, errors were only shown for the very first character in a word. Now it should expand up to the next whitespace etc.
