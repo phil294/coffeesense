@@ -215,8 +215,27 @@ const transpile_service: ITranspileService = {
         // Fixing them is important when `coffee_error_line_modified` is not empty:
         source_map_fake[js_fake_𒐩_line_no]?.columns.forEach(col =>
           col.sourceColumn = coffee_error_line.length)
-        js_fake = js_fake_arr.join('\n')
 
+        if(js_fake_𒐩_line_no > 0) {
+          let i = js_fake_𒐩_line_no - 1
+          while(js_fake_arr[i]?.match(/^\s*$/)) {
+            i--
+          }
+          const previous_line = js_fake_arr[i]!
+          if(previous_line[previous_line.length - 1] === ';') {
+            // This is necessary when the current coffee line is a continuation of the previous one,
+            // e.g.(only?) via dot: cs `[]\n.|` becomes js `[];\n\n𒐩 ;` and then `[];\n\n.;`.
+            // The first ; breaks autocomplete: remove it.
+            js_fake_arr[i] = previous_line.slice(0, -1) +' '
+            // Autocomplete after dot is always tricky and can still fail e.g. with `[]\n.|\n.y => 1`.
+            // It's complicated because fake line mechanism removes essential closing brackets, killing
+            // js syntax. This should rather be an edge case though (most likely to occur in FP),
+            // and I decided against fixing it with yet another hacky workaround because it's hard to do so:
+            // The cs compiler always tries to combine multiple lines into one
+          }
+        }
+
+        js_fake = js_fake_arr.join('\n')
         result.fake_line = coffee_fake_𒐩_position.line
         result.js = js_fake
         result.source_map = source_map_fake
