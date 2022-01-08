@@ -236,8 +236,9 @@ const transpile_service: ITranspileService = {
         js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
         // Source map contains lines that refer to the now again removed `𒐩`s.
         // Fixing them is important when `coffee_error_line_modified` is not empty:
+        const override_source_column = coffee_error_line[coffee_error_line.length-1] === ';' ? coffee_error_line.length - 1 : coffee_error_line.length
         source_map_fake[js_fake_𒐩_line_no]?.columns.forEach(col =>
-          col.sourceColumn = coffee_error_line.length)
+          col.sourceColumn = override_source_column)
 
         if(js_fake_𒐩_line_no > 0) {
           let i = js_fake_𒐩_line_no - 1
@@ -489,7 +490,17 @@ const transpile_service: ITranspileService = {
       .filter(c => c?.sourceColumn === coffee_position.character)
     if(js_matches_by_char.length)
       match = choose_match(js_matches_by_char)
-    else {
+    if(!match) {
+      const coffee_char = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
+      if(coffee_char === '.') {
+        // in javascript.ts doComplete, the triggerChar is omitted. Try exact match without it:
+        const js_matches_by_next_char = js_matches_by_line
+          .filter(c => c?.sourceColumn === coffee_position.character + 1)
+        if(js_matches_by_next_char.length)
+          match = choose_match(js_matches_by_next_char)
+      }
+    }
+    if(!match) {
       const next_smaller_source_column = Math.max(...js_matches_by_line
         .map(c => c.sourceColumn)
         .filter(c => c <= coffee_position.character))
@@ -497,11 +508,11 @@ const transpile_service: ITranspileService = {
         .filter(c => c?.sourceColumn === next_smaller_source_column)
       if(js_matches_by_next_smaller_char.length)
         match = choose_match(js_matches_by_next_smaller_char)
-      else {
-        match = js_matches_by_line.find(Boolean)
-        if(match)
-          match.column = Number.MAX_VALUE
-      }
+    }
+    if(!match) {
+      match = js_matches_by_line.find(Boolean)
+      if(match)
+        match.column = Number.MAX_VALUE
     }
     
     if(match && result.fake_line == coffee_position.line)
