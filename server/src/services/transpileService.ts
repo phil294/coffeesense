@@ -168,9 +168,10 @@ const transpile_service: ITranspileService = {
       // altering the underlying architecture of the extension.
 
       let coffee_error_line_no = l.first_line
-      if(normal_compilation_error.message === 'unexpected newline')
-        // Experimental
-        coffee_error_line_no++
+      // if(normal_compilation_error.message === 'unexpected newline')
+      //   // Experimental
+      // .. not sure about this. Was *not* a good idea inside object key creation
+      //   coffee_error_line_no++
       const coffee_error_offset = mod_coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
       const coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : undefined
