@@ -84,6 +84,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.10
+##### 2022-01-08
+- Fix autocomplete in rare cases after dot (test case: `=>\n\twindow.|\n\tx = 1`)
+
 #### 1.1.9
 ##### 2022-01-08
 - Fix syntax around empty yet indented lines under certain circumstances: `\t\n\t\tsomething` failed useful compilation because of the increasing indentation
