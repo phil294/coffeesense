@@ -57,7 +57,8 @@ const transpile_service: ITranspileService = {
       this.result_by_uri.set(orig_coffee_doc.uri, cached)
       return cached
     }
-    const coffee = text
+
+    const coffee1 = text
       // Dangling space = opening brace "(". This is pretty hacky but works surprisingly
       // well. Accidental dangling spaces results in "Missing )" errors which even
       // makes sense in CS syntax.
@@ -66,15 +67,6 @@ const transpile_service: ITranspileService = {
       .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
         logger.logDebug(`replace dangling space with opening brace ${orig_coffee_doc.uri}`)
         return `${c}(\n`
-      })
-      // Enable autocomplete on empty lines inside object properties.
-      // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
-      // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
-      // with the sole purpose of generating (properly indented) source maps.
-      // This tweak is separate from fake_line logic below.
-      .replaceAll(/^([ \t]+)$/mg, (spaces) => {
-        logger.logDebug(`append 𒐛 to empty line ${orig_coffee_doc.uri}`)
-        return `${spaces}𒐛:𒐛`
       })
       // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
       // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
@@ -88,6 +80,36 @@ const transpile_service: ITranspileService = {
         logger.logDebug(`transform .\n to .;\n/ ${orig_coffee_doc.uri}`)
         return `.;\n`
       })
+    // Enable autocomplete on empty lines inside object properties.
+    // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
+    // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
+    // with the sole purpose of generating (properly indented) source maps.
+    // But: This transform may only happen if the next text line is not an indentation child, as
+    // it otherwise changes the syntax of its surroundings.
+    // This tweak is separate from fake_line logic below.
+    let coffee2 = ''
+    let last_empty_line_eol = 0
+    const replace_string = '𒐛:𒐛'
+    for(const empty_line_match of coffee1.matchAll(/^([ \t]+)$/mg)) {
+      const empty_line_indentation = empty_line_match[0]!.length
+      const empty_line_eol = empty_line_match.index! + empty_line_indentation
+      const next_lines = coffee1.slice(empty_line_eol + 1).split('\n')
+      let i = 0
+      while(next_lines[i]?.match(/^[ \t]*$/))
+        i++
+      const next_textual_line = next_lines[i]
+      if(next_textual_line) {
+        const next_textual_line_indentation = next_textual_line.match(/^([ \t]*).*$/)![1]!.length
+        if(next_textual_line_indentation > empty_line_indentation)
+          continue
+      }
+      coffee2 += coffee1.slice(last_empty_line_eol, empty_line_eol) + replace_string
+      last_empty_line_eol = empty_line_eol
+    }
+    coffee2 += coffee1.slice(last_empty_line_eol)
+    
+    const coffee = coffee2
+
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
