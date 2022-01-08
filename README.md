@@ -84,6 +84,11 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.9
+##### 2022-01-08
+- Fix syntax around empty yet indented lines under certain circumstances: `\t\n\t\tsomething` failed useful compilation because of the increasing indentation
+- Fix (?) autocompletion inside objects while current line is invalid (while typing)
+
 #### 1.1.8
 ##### 2022-01-06
 - Fix autocomplete after dot in otherwise empty line, e.g. `abc\n.|`
