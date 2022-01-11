@@ -330,8 +330,8 @@ const transpile_service: ITranspileService = {
     // but that would need to happen inside `doComplete` where the position is known.
     // TextDocument contents need to be set *here* however, so this is not possible without
     // altering the underlying architecture of the extension.
-    // As fallback, `𒐩:𒐩` should work in objects
-    for(const fake_line_content of ['𒐩', '𒐩:𒐩']) {
+    // As fallbacks, `𒐩:𒐩` should work in objects and `if 𒐩` in lines with increased indentation after.
+    for(const fake_line_content of ['𒐩', '𒐩:𒐩', 'if 𒐩']) {
       if(!result.js) {
         with_fake_line = true
         const coffee_fake = [
