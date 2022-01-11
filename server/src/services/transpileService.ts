@@ -46,14 +46,10 @@ const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(18
 
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
-    // Dangling space = opening brace "(". This is pretty hacky but works surprisingly
-    // well. Accidental dangling spaces results in "Missing )" errors which even
-    // makes sense in CS syntax.
-    // To avoid unexpected syntax weirdness, we additionally show an unavoidable
-    // error below (TODO: integrate this replace into the matchAll() below to avoid duplicate work)
-    .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
-      logger.logDebug(`replace dangling space with opening brace ${coffee_doc.uri}`)
-      return `${c}(\n`
+    // Dangling space or opening brace = add braces "()"
+    .replace(/([a-zA-Z_])( |\()(\n|$)/g, (_,char) => {
+      logger.logDebug(`replace dangling space or opening brace with braces ${coffee_doc.uri}`)
+      return `${char}()\n`
     })
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
     // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
@@ -295,21 +291,6 @@ const transpile_service: ITranspileService = {
     const normal_compilation_diagnostics = result.diagnostics
     
     if(result.diagnostics) {
-      // see above @ dangling space
-      result.diagnostics.push(...[...orig_coffee_doc.getText()
-        .matchAll(/([a-zA-Z_]) (\n|$)/g)]
-        .map(m => {
-          const pos = orig_coffee_doc.positionAt(m.index||0+1)
-          return {
-            range:  Range.create(pos, pos),
-            severity: DiagnosticSeverity.Error,
-            message: 'Dangling space',
-            tags: [],
-            code: 0,
-            source: 'CoffeeSense'
-          }
-        }))
-      
       const coffee_error_line_no = result.diagnostics[0]!.range.start.line
       coffee_error_offset = mod_coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')

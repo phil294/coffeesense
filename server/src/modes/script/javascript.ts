@@ -553,21 +553,28 @@ export async function getJavascriptMode(
       }
       return { contents: [] };
     },
-    doSignatureHelp(doc: TextDocument, position: Position): SignatureHelp | null {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doSignatureHelp(coffee_doc: TextDocument, position: Position): SignatureHelp | null {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return NULL_SIGNATURE;
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return NULL_SIGNATURE
 
-      if(transpilation.source_map)
-        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
+      const prev_coffee_char = coffee_doc.getText(Range.create(Position.create(position.line, position.character - 1), position))
+      const next_coffee_char = coffee_doc.getText(Range.create(position, Position.create(position.line, position.character + 1)))
+      if(transpilation.source_map) {
+        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
+        if([' ', '('].includes(prev_coffee_char) && next_coffee_char === '\n') {
+          // js: 3 characters backwards from eol: `\n`, `;`, `)`: into ()
+          position.character = js_doc.positionAt(js_doc.offsetAt(Position.create(position.line, Number.MAX_VALUE)) - 3).character
+        }
+      }
 
-      const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
+      const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, js_doc.offsetAt(position), undefined);
       if (!signatureHelpItems) {
         return NULL_SIGNATURE;
       }
