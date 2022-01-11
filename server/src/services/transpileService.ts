@@ -395,7 +395,7 @@ const transpile_service: ITranspileService = {
       postprocess_js(result)
     }
     
-    if(!result.js && normal_compilation_diagnostics)
+    if(normal_compilation_diagnostics)
       result.diagnostics = normal_compilation_diagnostics
 
     transpilation_cache.set(hash, result)
