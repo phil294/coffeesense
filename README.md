@@ -87,6 +87,12 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.1.11
+##### 2022-01-13
+- Fix autocomplete in if-statements etc. if next line is indented
+- Fix signature help after dangling opening brace in some cases
+- Add Readme note about VSCode `trimAutoWhitespace` problems
+
 #### 1.1.10
 ##### 2022-01-08
 - Fix autocomplete in rare cases after dot (test case: `=>\n\twindow.|\n\tx = 1`)
