@@ -10,7 +10,8 @@
 
     "lib": ["es2021"],
     // Most classes in LSP are asynchronously initialized
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "skipLibCheck": true,
   },
   "include": [
     "src"
