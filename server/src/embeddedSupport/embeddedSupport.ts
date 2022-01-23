@@ -41,7 +41,7 @@ export interface CoffeescriptDocumentRegions {
 type RegionType = 'script' | 'custom';
 
 const defaultLanguageIdForBlockTypes: { [type: string]: string } = {
-  script: 'javascript'
+  script: 'typescript'
 };
 
 export function getCoffeescriptDocumentRegions(document: TextDocument): CoffeescriptDocumentRegions {

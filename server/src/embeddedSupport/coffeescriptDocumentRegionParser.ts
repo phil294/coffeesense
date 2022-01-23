@@ -14,7 +14,7 @@ export function parseCoffeescriptDocumentRegions(document: TextDocument) {
   const text = document.getText();
   const regions: EmbeddedRegion[] = [
     {
-      languageId: 'javascript',
+      languageId: 'typescript',
       start: 0,
       end: text.length,
       type: 'script'

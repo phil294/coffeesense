@@ -150,7 +150,7 @@ function postprocess_js(result: ITranspilationResult) {
   // declaration part (`var`) down to the variable's first implementation position.
   // This works only with easy implementations and single-variable array destructuring:
   /*
-  var a, b, c;
+  var a: number, b, c;
   a = 1;
   [b] = 2;
   ({c} = 3);
@@ -158,7 +158,7 @@ function postprocess_js(result: ITranspilationResult) {
   // Shall become:
   /*
   var c;
-  let a = 1;               // added let
+  let a: number = 1;               // added let
   let [b] = 2;             // added let
   ({c} = 3);               // unchanged because of surrounding braces
   */
@@ -171,8 +171,9 @@ function postprocess_js(result: ITranspilationResult) {
     .map(decl_line_no => {
       const match = js_lines[decl_line_no]!.match(/^(\s*)(var )(.+);$/)
       if(match) {
-        const var_decl_infos = match[3]!.split(', ').map(var_name => ({
-          var_name,
+        const var_decl_infos = match[3]!.split(', ').map(var_decl => ({
+          var_decl, // possibly including type definition
+          var_name: var_decl.split(': ')[0],
           decl_indent: match[1]!.length,
           decl_line_no,
         }))
@@ -190,7 +191,7 @@ function postprocess_js(result: ITranspilationResult) {
   const js_impl_line_changes = js_decl_lines_info
     .map(info => info!.var_decl_infos)
     .flat()
-    .map(({ var_name, decl_indent, decl_line_no }) => {
+    .map(({ var_decl, var_name, decl_indent, decl_line_no }) => {
       const js_line_nos_after_decl = js_line_nos.slice(decl_line_no)
       for(const impl_line_no of js_line_nos_after_decl) {
         const line = js_lines[impl_line_no]!
@@ -208,10 +209,11 @@ function postprocess_js(result: ITranspilationResult) {
             return null
           const rest_of_line = line.slice(impl_indent + var_impl_text.length)
           return {
+            var_decl,
             var_name,
             impl_line_no,
             decl_line_no,
-            new_line_content: `${impl_whitespace}let ${var_impl_text}${rest_of_line}`,
+            new_line_content: `${impl_whitespace}let ${var_decl} = ${rest_of_line}`,
             new_let_column: impl_indent,
           }
         }
@@ -233,9 +235,10 @@ function postprocess_js(result: ITranspilationResult) {
           ...map_current_impl_start,
           column: map_current_impl_start.column + i
       })))
-      for(let i = map_current_impl_start.column + "let ".length; i < map_columns.length + "let ".length; i++) {
+      const new_impl_length_diff = "let ".length + change!.var_decl.length - change!.var_name!.length
+      for(let i = map_current_impl_start.column + new_impl_length_diff; i < map_columns.length + new_impl_length_diff; i++) {
         if(map_columns[i])
-          map_columns[i]!.column += "let ".length // or = i
+          map_columns[i]!.column = i
       }
     }
   }
@@ -244,9 +247,9 @@ function postprocess_js(result: ITranspilationResult) {
   for(const decl_line_info of js_decl_lines_info) {
     let new_decl_line = decl_line_info!.var_decl_infos
       .filter(decl_info => ! js_impl_line_changes.some(impl_change =>
-        impl_change!.var_name === decl_info.var_name &&
+        impl_change!.var_decl === decl_info.var_decl &&
           impl_change!.decl_line_no === decl_info.decl_line_no))
-      .map(i => i.var_name)
+      .map(i => i.var_decl)
       .join(', ')
     if(new_decl_line)
       // Those that could not be changed
