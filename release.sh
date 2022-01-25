@@ -15,3 +15,4 @@ vsce package
 vsce publish
 git push origin master
 yarn
+sed -i 's/debugger;/\/\/ debugger;/' /b/coffeesense/server/node_modules/typescript/lib/typescript.js
