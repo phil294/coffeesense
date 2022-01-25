@@ -87,6 +87,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.2.0
+##### 2022-01-25
+- Improve automatic type detection at variable assignment time: Less error-prone, and now also supports more complex use cases such as loops and destructuring assignments. This was possible by switching the CoffeeScript compiler to a recent contribution by @edemaine at https://github.com/jashkenas/coffeescript/pull/5395
+
 #### 1.1.11
 ##### 2022-01-13
 - Fix autocomplete in if-statements etc. if next line is indented
