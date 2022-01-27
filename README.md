@@ -87,6 +87,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.2.1
+##### 2022-01-27
+- Improve diagnostics location of JSDoc comment errors: Show at next available code line instead of always beginning of file
+
 #### 1.2.0
 ##### 2022-01-25
 - Improve automatic type detection at variable assignment time: Less error-prone, and now also supports more complex use cases such as loops and destructuring assignments. This was possible by switching the CoffeeScript compiler to a recent contribution by @edemaine at https://github.com/jashkenas/coffeescript/pull/5395
