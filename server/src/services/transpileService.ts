@@ -274,10 +274,22 @@ const transpile_service: ITranspileService = {
         [0]
     if(!mapped)
       mapped = columns?.find(Boolean)
-    if(!mapped)
-      result = undefined
-    else
+    if(!mapped) {
+      let line_i = js_position.line + 1
+      while(line_i < source_map.length) {
+        const any_next_column = source_map[line_i]?.columns?.find(Boolean)
+        if(any_next_column) {
+          mapped = any_next_column
+          break
+        }
+        line_i++
+      }
+    }
+    
+    if(mapped)
       result = Position.create(mapped.sourceLine, mapped.sourceColumn)
+    else
+      result = undefined
     // logger.logDebug(`mapped JS => CS: ${js_position.line}:${js_position.character} => ${result?.line}:${result?.character}`)
     return result
   },
