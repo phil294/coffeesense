@@ -33,6 +33,24 @@
       "restart": true,
       "smartStep": true,
       "skipFiles": ["<node_internals>/**"]
-    }
+    },
+    {
+      "name": "E2E Test (LSP)",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/dist-test/test/lsp",
+        "--user-data-dir=${workspaceFolder}/test/lsp/data-dir",
+        "--disable-extensions",
+        "${workspaceFolder}/test/lsp/fixture"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/dist-test/test/**/*.js"],
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
   ]
 }
