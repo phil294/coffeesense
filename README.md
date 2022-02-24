@@ -1,13 +1,29 @@
 # CoffeeSense
 ## [CoffeeScript](https://coffeescript.org) [LSP](https://github.com/microsoft/language-server-protocol) implementation
 
+<p align="end">
+  <a href="https://github.com/phil294/coffeesense/actions?query=workflow%3A%22Node+CI%22">
+    <img src="https://img.shields.io/github/workflow/status/phil294/coffeesense/Node%20CI">
+  </a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense">
+    <img src="https://vsmarketplacebadge.apphb.com/version-short/phil294.coffeesense.svg">
+  </a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense">
+    <img src="https://vsmarketplacebadge.apphb.com/installs-short/phil294.coffeesense.svg?label=%20">
+  </a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense">
+    <img src="https://vsmarketplacebadge.apphb.com/rating-short/phil294.coffeesense.svg?label=%20">
+  </a>
+  <br>
+</p>
+
 ![Demo](https://github.com/phil294/coffeesense/blob/master/images/demo.gif?raw=true)
 
 ### What
 
 CoffeeSense gives you IntelliSense (autocompletion, go to implementation, etc.) for CoffeeScript. It is based on CoffeeScript's compiled JavaScript output. Because of this, this LSP implementation is and can **not** be feature-complete due to the limitations of its technical architecture. See further below for details.
 
-Source code derived from the great [Vetur](https://github.com/vuejs/vetur) project (but CoffeeSense has nothing to do with Vue.js otherwise).
+Source code derived from the great [Vetur](https://github.com/phil294/coffeesense) project (but CoffeeSense has nothing to do with Vue.js otherwise).
 
 ### How
 
