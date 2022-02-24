@@ -54,6 +54,7 @@ async function runAllTests(execPath: string) {
       await run(execPath, `test/${targetDir}`, mochaArgs);
     } catch (err) {
       console.error(err);
+      exitCode = 1;
     }
   } else {
     for (const dir of testDirs) {
