@@ -102,8 +102,6 @@ export class LSP {
 
     await Promise.all(workspaceFolders.map(workspace => this.addWorkspace(workspace)));
 
-    this.workspaceConfig = this.getLSPFullConfig({}, params.initializationOptions?.config);
-
     if (params.capabilities.workspace?.workspaceFolders) {
       this.setupWorkspaceListeners();
     }

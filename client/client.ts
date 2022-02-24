@@ -44,7 +44,6 @@ export function initializeLanguageClient(lspModulePath: string): LanguageClient 
       fileEvents: vscode.workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
     },
     initializationOptions: {
-      config
     },
     revealOutputChannelOn: RevealOutputChannelOn.Never
   };
