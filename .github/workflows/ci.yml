@@ -1,0 +1,81 @@
+name: Node CI
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - docs
+      - asset
+      - images
+      - .vscode
+      - .husky
+      - .github
+      - '*.md'
+
+  pull_request:
+    branches:
+      - '**'
+    paths-ignore:
+      - docs
+      - asset
+      - images
+      - .vscode
+      - .husky
+      - .github
+      - '*.md'
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+
+    # https://github.com/Dart-Code/Dart-Code/commit/612732d5879730608baa9622bf7f5e5b7b51ae65
+    # Do not run CI twice for PR opened from branches in phil294/coffeesense
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'phil294/coffeesense'
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - uses: actions/cache@v2
+        name: Yarn cache
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - uses: actions/cache@v2
+        name: .vscode-test cache
+        id: vscode-test-cache
+        with:
+          path: .vscode-test
+          key: ${{ runner.os }}-vscode-test
+          restore-keys: |
+            ${{ runner.os }}-vscode-test
+
+      - name: Install dependencies and build
+        run: |
+          yarn --frozen-lockfile
+          yarn compile
+
+      # https://github.com/microsoft/vscode/issues/106569#issuecomment-717450642
+      - name: Server and E2E test
+        uses: GabrielBB/xvfb-action@v1.4
+        with:
+          run: yarn test
