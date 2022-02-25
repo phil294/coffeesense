@@ -40,13 +40,13 @@ describe('Should find diagnostics', () => {
 		])
 	})
 
-	// issue #8. broke probably with 4137bac
+	// issue #8
 	it('succeeds coffee compilation', async () => {
 		const docUri = getDocUri('diagnostics/compiler-success.coffee')
 		// demonstrated by returning ts errors
 		await testDiagnostics(docUri, [
 			{
-				range: sameLineRange(2, 0, 14),
+				range: sameLineRange(7, 0, 20),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Type 'string' is not assignable to type 'number'."
 			}

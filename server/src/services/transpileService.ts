@@ -46,10 +46,11 @@ const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(18
 
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
-    // Dangling space or opening brace = add braces "()"
-    .replace(/([a-zA-Z_])( |\()(\n|$)/g, (_,char) => {
-      logger.logDebug(`replace dangling space or opening brace with braces ${coffee_doc.uri}`)
-      return `${char}()\n`
+    // Dangling space = 𝆮. This is replaced with an opening brace "(" in postprocess_js.
+    // Dangling brace cannot be replaced because it is valid CS (s.a. signature hint tests).
+    .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
+      logger.logDebug(`replace dangling space with 𝆮 ${coffee_doc.uri}`)
+      return `${c} 𝆮\n`
     })
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
     // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
@@ -125,10 +126,14 @@ function try_compile(coffee: string): ITranspilationResult {
 function postprocess_js(result: ITranspilationResult) {
   if(!result.js || !result.source_map)
     return
-  // See usage of 𒐛 above
-  // Note that outside of objects, this will leave empty objects behind
-  // but they do no harm and should go unnoticed
-  result.js = result.js.replaceAll(/𒐛: 𒐛,?/g, '')
+
+  result.js = result.js
+    // See usage of 𝆮 above
+    .replaceAll('(𝆮);\n', '(   \n')
+    // See usage of 𒐛 above
+    // Note that outside of objects, this will leave empty objects behind
+    // but they do no harm and should go unnoticed
+    .replaceAll(/𒐛: 𒐛,?/g, '')
 
   /* Prefer object method shorthand */
   result.js = result.js.replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
