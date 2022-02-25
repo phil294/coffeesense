@@ -108,6 +108,13 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.3.0
+##### 2022-02-25
+- Allow configuring additional file extensions other than `.coffee` using VSCode's setting `files.associations` or `coffeesense.fileExtensions` for other IDEs. (#9)
+- Fix syntax check for files with lines ending on an open brace `(` (#8)
+- Add list of known problems to the README
+- Debug: Add "Show JS" button to inspection popup
+
 #### 1.2.1
 ##### 2022-01-27
 - Improve diagnostics location of JSDoc comment errors: Show at next available code line instead of always beginning of file
