@@ -1,6 +1,19 @@
 # Setup
 
-## Advanced
+## File extensions
+To get full support for CoffeeScript for files with an extension other than `.coffee`, you can use VSCode's file association feature. For example, to add `.coffee2` files:
+```jsonc
+// settings.json
+{
+  // ...
+  "files.associations": {
+    "*.coffee2": "coffeescript"
+  }
+}
+```
+More sophisticated glob patterns other than exactly `"*.some-extension"` are not supported.
+
+## Multi-root
 If you use monorepo or VTI or `package.json` and `tsconfig.json/jsconfig.json` do not exist at project root, you can use `coffeesense.config.js` for advanced setting.
 
 Please add `coffeesense.config.js` at project root or monorepo project root.

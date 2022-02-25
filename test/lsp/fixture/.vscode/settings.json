@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "*.something-else-than-coffee": "coffeescript"
+    }
+}

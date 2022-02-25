@@ -13,7 +13,7 @@ import { ModuleResolutionCache } from './moduleResolutionCache';
 import { RuntimeLibrary } from '../dependencyService';
 import { EnvironmentService } from '../EnvironmentService';
 import { dirname } from 'path';
-import { FILE_EXTENSION, LANGUAGE_ID } from '../../language';
+import { LANGUAGE_ID } from '../../language';
 
 const NEWLINE = process.platform === 'win32' ? '\r\n' : '\n';
 
@@ -96,13 +96,13 @@ export function getServiceHost(
     projectFileSnapshots = new Map<string, ts.IScriptSnapshot>();
     moduleResolutionCache = new ModuleResolutionCache();
 
-    parsedConfig = getParsedConfig(tsModule, env.getProjectRoot(), env.getTsConfigPath());
+    parsedConfig = getParsedConfig(tsModule, env.getProjectRoot(), env.getTsConfigPath(), env.get_file_extensions());
     const initialProjectFiles = parsedConfig.fileNames;
     logger.logDebug(
       `Initializing ServiceHost with ${initialProjectFiles.length} files: ${JSON.stringify(initialProjectFiles)}`
     );
     scriptFileNameSet = new Set(initialProjectFiles);
-    coffeescriptSys = getCoffeescriptSys(tsModule, scriptFileNameSet);
+    coffeescriptSys = getCoffeescriptSys(tsModule, scriptFileNameSet, env);
     compilerOptions = getCompilerOptions();
 
     jsHost = createLanguageServiceHost(compilerOptions);
@@ -115,7 +115,7 @@ export function getServiceHost(
     const filePath = getFilePath(doc.uri);
     // When file is not in language service, add it
     if (!localScriptRegionDocuments.has(fileFsPath)) {
-      if (fileFsPath.endsWith(`.${FILE_EXTENSION}`)) {
+      if (env.get_file_extensions().some(ext => fileFsPath.endsWith(`.${ext}`))) {
         scriptFileNameSet.add(filePath);
       }
     }
@@ -194,7 +194,7 @@ export function getServiceHost(
           return (tsModule as any).getScriptKindFromFileName(fileName);
         }
 
-        if (isCoffeescriptFile(fileName)) {
+        if (isCoffeescriptFile(fileName, env)) {
           const uri = URI.file(fileName);
           const fileFsPath = normalizeFileNameToFsPath(fileName);
           let doc = localScriptRegionDocuments.get(fileFsPath);
@@ -223,7 +223,7 @@ export function getServiceHost(
         include?: ReadonlyArray<string>,
         depth?: number
       ): string[] {
-        const allExtensions = extensions ? extensions.concat([`.${FILE_EXTENSION}`]) : extensions;
+        const allExtensions = extensions ? extensions.concat(env.get_file_extensions().map(e => `.${e}`)) : extensions;
         return coffeescriptSys.readDirectory(path, allExtensions, exclude, include, depth);
       },
 
@@ -236,7 +236,7 @@ export function getServiceHost(
             return cachedResolvedModule;
           }
 
-          if (!isCoffeescriptFile(name)) {
+          if (!isCoffeescriptFile(name, env)) {
             const tsResolvedModule = tsModule.resolveModuleName(
               name,
               containingFile,
@@ -261,7 +261,7 @@ export function getServiceHost(
             return undefined;
           }
 
-          if (tsResolvedModule.resolvedFileName.endsWith(`.${FILE_EXTENSION}.ts`)) {
+          if (env.get_file_extensions().some(ext => tsResolvedModule.resolvedFileName.endsWith(`.${ext}.ts`))) {
             const resolvedFileName = tsResolvedModule.resolvedFileName.slice(0, -'.ts'.length);
             const uri = URI.file(resolvedFileName);
             const resolvedFileFsPath = normalizeFileNameToFsPath(resolvedFileName);
@@ -306,7 +306,7 @@ export function getServiceHost(
         const fileFsPath = normalizeFileNameToFsPath(fileName);
 
         // js/ts files in workspace
-        if (!isCoffeescriptFile(fileFsPath)) {
+        if (!isCoffeescriptFile(fileFsPath, env)) {
           if (projectFileSnapshots.has(fileFsPath)) {
             return projectFileSnapshots.get(fileFsPath);
           }
@@ -377,11 +377,12 @@ function getScriptKind(tsModule: RuntimeLibrary['typescript'], langId: string): 
 function getParsedConfig(
   tsModule: RuntimeLibrary['typescript'],
   projectRoot: string,
-  tsconfigPath: string | undefined
+  tsconfigPath: string | undefined,
+  file_extensions: string[]
 ) {
   const currentProjectPath = tsconfigPath ? dirname(tsconfigPath) : projectRoot;
   const configJson = (tsconfigPath && tsModule.readConfigFile(tsconfigPath, tsModule.sys.readFile).config) || {
-    include: [`**/*.${FILE_EXTENSION}`],
+    include: file_extensions.map(ext => `**/*.${ext}`),
     exclude: defaultIgnorePatterns(tsModule, currentProjectPath)
   };
   // existingOptions should be empty since it always takes priority
@@ -392,15 +393,13 @@ function getParsedConfig(
     /*existingOptions*/ {},
     tsconfigPath,
     /*resolutionStack*/ undefined,
-    [
-      {
-        extension: FILE_EXTENSION,
-        isMixedContent: true,
-        // Note: in order for parsed config to include *.FILE_EXTENSION files, scriptKind must be set to Deferred.
-        // tslint:disable-next-line max-line-length
-        // See: https://github.com/microsoft/TypeScript/blob/2106b07f22d6d8f2affe34b9869767fa5bc7a4d9/src/compiler/utilities.ts#L6356
-        scriptKind: tsModule.ScriptKind.Deferred
-      }
-    ]
+    file_extensions.map(ext => ({
+      extension: ext,
+      isMixedContent: true,
+      // Note: in order for parsed config to include *.ext files, scriptKind must be set to Deferred.
+      // tslint:disable-next-line max-line-length
+      // See: https://github.com/microsoft/TypeScript/blob/2106b07f22d6d8f2affe34b9869767fa5bc7a4d9/src/compiler/utilities.ts#L6356
+      scriptKind: tsModule.ScriptKind.Deferred
+    }))
   );
 }

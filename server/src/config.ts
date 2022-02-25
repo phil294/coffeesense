@@ -20,6 +20,11 @@ export interface LSPConfig {
 export interface LSPFullConfig extends LSPConfig {
   javascript?: any;
   typescript?: any;
+  files?: {
+    associations?: {
+      [extension_match: string]: string
+    }
+  }
 }
 
 export function getDefaultLSPConfig(): LSPFullConfig {

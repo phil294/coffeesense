@@ -30,17 +30,17 @@ import { URI } from 'vscode-uri';
  *
  * - macOS / Linux:
  * ```
- * > Uri.parse('file:///foo/bar.coffee').fsPath
- * '/foo/bar.coffee'
- * > Uri.parse('file:///foo/bar.coffee').path
- * '/foo/bar.coffee'
+ * > Uri.parse('file:///foo/bar.ext').fsPath
+ * '/foo/bar.ext'
+ * > Uri.parse('file:///foo/bar.ext').path
+ * '/foo/bar.ext'
  * ```
  * - Windows
  * ```
- * > Uri.parse('file:///c%3A/foo/bar.coffee').fsPath
- * 'c:\\foo\\bar.coffee' (\\ escapes to \)
- * > Uri.parse('file:///c%3A/foo/bar.coffee').path
- * '/c:/foo/bar.coffee'
+ * > Uri.parse('file:///c%3A/foo/bar.ext').fsPath
+ * 'c:\\foo\\bar.ext' (\\ escapes to \)
+ * > Uri.parse('file:///c%3A/foo/bar.ext').path
+ * '/c:/foo/bar.ext'
  * ```
  */
 

@@ -40,7 +40,7 @@ export function initializeLanguageClient(lspModulePath: string): LanguageClient 
   const clientOptions: LanguageClientOptions = {
     documentSelector,
     synchronize: {
-      configurationSection: ['coffeesense', 'javascript', 'typescript'],
+      configurationSection: ['coffeesense', 'javascript', 'typescript', 'files.associations'],
       fileEvents: vscode.workspace.createFileSystemWatcher('{**/*.js,**/*.ts,**/*.json}', false, false, true)
     },
     initializationOptions: {

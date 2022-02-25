@@ -1,13 +1,13 @@
 import type ts from 'typescript';
 import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
-import { FILE_EXTENSION } from '../../language';
+import { EnvironmentService } from '../EnvironmentService';
 
-export function isCoffeescriptFile(path: string) {
-  return path.endsWith(`.${FILE_EXTENSION}`);
+export function isCoffeescriptFile(path: string, env: EnvironmentService) {
+  return env.get_file_extensions().some(ext => path.endsWith(`.${ext}`))
 }
 
 /**
- * If the path ends with `.FILE_EXTENSION.ts`, it's a `.FILE_EXTENSION` file pre-processed by CoffeeSense
+ * If the path ends with `.ext.ts`, it's a `.ext` file pre-processed by CoffeeSense
  * to be used in TS Language Service
  *
  * Note: all files outside any node_modules folder are considered,
@@ -15,9 +15,9 @@ export function isCoffeescriptFile(path: string) {
  *
  * See languageModelCache for notes about virtual
  */
-export function isVirtualCoffeescriptFile(path: string, projectFiles: Set<string>) {
+export function isVirtualCoffeescriptFile(path: string, projectFiles: Set<string>, env: EnvironmentService) {
   return (
-    path.endsWith(`.${FILE_EXTENSION}.ts`) &&
+    env.get_file_extensions().some(ext => path.endsWith(`.${ext}.ts`)) &&
     (!path.includes('node_modules') || projectFiles.has(path.slice(0, -'.ts'.length)))
   );
 }
