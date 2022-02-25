@@ -13,6 +13,16 @@ To get full support for CoffeeScript for files with an extension other than `.co
 ```
 More sophisticated glob patterns other than exactly `"*.some-extension"` are not supported.
 
+If you are using another IDE where this setting does not exist, you can instead specify custom file extensions via hidden setting in `coffeesense.config.js` (see below):
+```js
+// coffeesense.config.js
+module.exports = {
+  settings: {
+    "coffeesense.fileExtensions": [ "coffee2" ]
+  }
+}
+```
+
 ## Multi-root
 If you use monorepo or VTI or `package.json` and `tsconfig.json/jsconfig.json` do not exist at project root, you can use `coffeesense.config.js` for advanced setting.
 

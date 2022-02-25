@@ -30,7 +30,8 @@ const setConfig = (config: LSPFullConfig) => {
         // so anything other than *.ext is ignored.
         // Other IDEs would not even have this config option at all.
         extension_match.match(/^\*\.[a-zA-Z_0-9-]+$/))
-      .map(dot_ext => dot_ext.slice(2))
+      .map(dot_ext => dot_ext.slice(2)),
+    ...$config.coffeesense.fileExtensions
   ])]
 }
 
