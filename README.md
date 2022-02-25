@@ -3,7 +3,7 @@
 
 <p align="end">
   <a href="https://github.com/phil294/coffeesense/actions?query=workflow%3A%22Node+CI%22">
-    <img src="https://img.shields.io/github/workflow/status/phil294/coffeesense/Node%20CI">
+    <img src="https://img.shields.io/github/workflow/status/phil294/coffeesense/Node%20CI?label=tests">
   </a>
   <a href="https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense">
     <img src="https://vsmarketplacebadge.apphb.com/version-short/phil294.coffeesense.svg">
