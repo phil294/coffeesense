@@ -148,11 +148,11 @@
     "shelljs": "^0.8.4",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.2",
-    "vscode-languageclient": "^7.0.0",
     "vscode-languageserver-types": "^3.16.0",
-    "vscode-test": "^1.5.2"
+    "vscode-test": "^1.5.2",
+    "generate-license-file": "^1.1.0"
   },
   "dependencies": {
-    "generate-license-file": "^1.1.0"
+    "vscode-languageclient": "^7.0.0"
   }
 }
