@@ -279,11 +279,10 @@ const transpile_service: ITranspileService = {
 
       if(js_fake_𒐩_line_no > 0) {
         let i = js_fake_𒐩_line_no - 1
-        while(js_fake_arr[i]?.match(/^\s*$/)) {
+        while(js_fake_arr[i]?.match(/^\s*$/))
           i--
-        }
-        const previous_line = js_fake_arr[i]!
-        if(previous_line[previous_line.length - 1] === ';') {
+        const previous_line = js_fake_arr[i]
+        if(previous_line?.[previous_line.length - 1] === ';') {
           // This is necessary when the current coffee line is a continuation of the previous one,
           // e.g.(only?) via dot: cs `[]\n.|` becomes js `[];\n\n𒐩 ;` and then `[];\n\n.;`.
           // The first ; breaks autocomplete: remove it.
