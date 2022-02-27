@@ -12,9 +12,13 @@ describe('Should autocomplete', () => {
 	const last_line_uri = getDocUri('completion/last-line.coffee')
 	const object_uri = getDocUri('completion/object.coffee')
 	const object_before_comment_uri = getDocUri('completion/object-before-comment.coffee')
-	const object_halfdefined_uri = getDocUri('completion/object-halfdefined.coffee')
 	const object_before_statement_uri = getDocUri('completion/object-before-statement.coffee')
+	const object_half_defined_uri = getDocUri('completion/object-half-defined.coffee')
+	const object_half_defined_above_uri = getDocUri('completion/object-half-defined-above.coffee')
 	const object_half_line_uri = getDocUri('completion/object-half-line.coffee')
+	const object_half_line_colon_uri = getDocUri('completion/object-half-line-colon.coffee')
+	const object_half_line_half_defined_uri = getDocUri('completion/object-half-line-half-defined.coffee')
+	const object_half_line_half_defined_above_uri = getDocUri('completion/object-half-line-half-defined-above.coffee')
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
 	const object_before_more_indent_uri = getDocUri('completion/object-before-more-indent.coffee')
 	const fake_line_uri = getDocUri('completion/fake-line.coffee')
@@ -79,19 +83,35 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes half defined object properties', async () => {
-		await testCompletion(object_halfdefined_uri, position(12, 4), ['obj_halfdefined_completion_prop_2'])
+		await testCompletion(object_half_defined_uri, position(12, 4), ['obj_halfdefined_completion_prop_2'])
+	})
+
+	it('completes half defined object properties above', async () => {
+		await testCompletion(object_half_defined_above_uri, position(11, 4), ['obj_halfdefined_above_completion_prop_1'])
 	})
 
 	// f5fa3af
-	// Possible solution: Try fake line content '𒐩:𒐩' before '𒐩' or even omit the second.
-	// Could be problematic because scoping in non-object lines though
 	it('completes object properties while current line is invalid', async () => {
-		await testCompletion(object_invalid_line_uri, position(11, 30), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
+		await testCompletion(object_invalid_line_uri, position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
 	})
 
-	// 2f3e655
-	it('completes object property when already partially typed', async () => {
+	// Known shortcoming - not supported
+	xit('completes partial object key with no sibling keys', async () => {
+		// This does not work because there is no way to know if the partial string is an object key
+		// or a full value by itself, so if this is even an object at all.
 		await testCompletion(object_half_line_uri, position(11, 33), ['obj_halfdefined_completion_prop_1', 'obj_halfdefined_completion_prop_2'])
+	})
+
+	it('completes partial object key with no sibling keys before colon', async () => {
+		await testCompletion(object_half_line_colon_uri, position(11, 39), ['obj_half_line_colon_completion_prop_1', 'obj_half_line_colon_completion_prop_2'])
+	})
+
+	it('completes half defined object property when already partially typed', async () => {
+		await testCompletion(object_half_line_half_defined_uri, position(12, 47), ['obj_half_line_half_defined_completion_prop_2'])
+	})
+
+	it('completes half defined object property when already partially typed below', async () => {
+		await testCompletion(object_half_line_half_defined_above_uri, position(11, 53), ['obj_half_line_half_defined_above_completion_prop_1'])
 	})
 
 	it('completes object properties before a statement', async () => {
@@ -101,6 +121,7 @@ describe('Should autocomplete', () => {
 	// 5fede02
 	it('maintains proper compilation when an empty line in object is followed by another line with even more indent follows', async () => {
 		// this is not really a completion test, more of a syntax check:
+		// (a check that '𒐛:𒐛' isn't inserted due to indent follow)
 		await testCompletion(object_before_more_indent_uri, position(6, 75), ['sub_prop'])
 	})
 

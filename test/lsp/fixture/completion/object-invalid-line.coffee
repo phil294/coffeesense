@@ -9,4 +9,4 @@
 #
 ###* @type {Obj_invalid_line_completion_interface} ###
 obj_invalid_line_completion =
-    obj_invalid_line_completion_p :
+    obj_invalid_line_completion_p : ~~var

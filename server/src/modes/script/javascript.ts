@@ -259,9 +259,7 @@ export async function getJavascriptMode(
       }
 
       let js_offset = js_doc.offsetAt(position);
-      if(position.character > 1000) // End of line (Number.MAX_VALUE)
-        js_offset--
-        
+
       let char_offset = 0
       const js_text = js_doc.getText()
       const js_last_char = js_text[js_offset - 1]

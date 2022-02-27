@@ -15,10 +15,10 @@ export function get_word_around_position(text: string, offset: number) {
     i_offset--
   let match_word = ""
   while(i_offset <= offset || text[i_offset]?.match(common_js_variable_name_character)) {
-    match_word += text[i_offset]
+    match_word += text[i_offset] || ''
     i_offset++
   }
-  return match_word
+  return match_word.trim()
 }
 
 interface ITranspilationResult {
@@ -61,8 +61,16 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     })
     //
     .replaceAll(/\.(\n|$)/g, () => {
-      logger.logDebug(`transform .\n to .;\n/ ${coffee_doc.uri}`)
-      return `.;\n`
+      logger.logDebug(`transform .\n to .;\n ${coffee_doc.uri}`)
+      return '.;\n'
+    })
+    // Enable object key autocomplete (that is, missing colon) below other key value mappings.
+    // The replaced syntax is always invalid so no harm is done by adding the colon.
+    // Without the colon, the error shows in the line before which doesn't make sense.
+    // With the colon, the line will still be invalid, but now the error is at the right place.
+    .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1[a-zA-Z0-9_$]+$/mg, (match) => {
+      logger.logDebug(`transform a:b\nc\n to a:b\nc:\n ${coffee_doc.uri}`)
+      return match + ':'
     })
   // Enable autocomplete on empty lines inside object properties.
   // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
@@ -71,31 +79,33 @@ function preprocess_coffee(coffee_doc: TextDocument) {
   // But: This transform may only happen if the next text line is not an indentation child, as
   // it otherwise changes the syntax of its surroundings.
   // This tweak is separate from fake_line logic below.
-  let coffee = ''
-  let last_empty_line_eol = 0
+  const tmp_lines = tmp.split('\n')
   const replace_string = '𒐛:𒐛'
-  for(const empty_line_match of tmp.matchAll(/^([ \t]+)$/mg)) {
-    const empty_line_indentation = empty_line_match[0]!.length
-    const empty_line_eol = empty_line_match.index! + empty_line_indentation
-    const next_lines = tmp.slice(empty_line_eol + 1).split('\n')
-    let i = 0
-    while(next_lines[i]?.match(/^[ \t]*$/))
-      i++
-    const next_textual_line = next_lines[i]
-    if(next_textual_line) {
-      const next_textual_line_indentation = next_textual_line.match(/^([ \t]*).*$/)![1]!.length
-      if(next_textual_line_indentation > empty_line_indentation)
-        continue
+  const object_tweak_coffee_lines: number[] = []
+  tmp_lines.forEach((line, line_i) => {
+    const empty_line_match = line.match(/^[ \t]+$/)
+    if(empty_line_match) {
+      const empty_line_indentation = empty_line_match[0]!
+      let i = line_i + 1
+      while(tmp_lines[i]?.match(/^[ \t]*$/))
+        i++
+      const next_textual_line = tmp_lines[i]
+      if(next_textual_line) {
+        const next_textual_line_indentation = next_textual_line.match(/^([ \t]*).*$/)![1]!.length
+        if(next_textual_line_indentation > empty_line_indentation.length)
+          return
+      }
+      tmp_lines[line_i] = empty_line_indentation + replace_string
+      object_tweak_coffee_lines.push(line_i)
     }
-    coffee += tmp.slice(last_empty_line_eol, empty_line_eol) + replace_string
-    last_empty_line_eol = empty_line_eol
-  }
-  coffee += tmp.slice(last_empty_line_eol)
-  return coffee
+  })
+  const coffee = tmp_lines.join('\n')
+  return { coffee, object_tweak_coffee_lines }
 }
 
 function try_compile(coffee: string): ITranspilationResult {
   try {
+    // takes about 1-4 ms
     const response = compile(coffee, { sourceMap: true, bare: true })
     return {
       source_map: response.sourceMap.lines,
@@ -123,22 +133,36 @@ function try_compile(coffee: string): ITranspilationResult {
  * Applies some transformations to the JS in result and updates source_map accordingly.
  * These transforms do not depend on any previous information.
  */
-function postprocess_js(result: ITranspilationResult) {
+function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[]) {
   if(!result.js || !result.source_map)
     return
 
   result.js = result.js
     // See usage of 𝆮 above
     .replaceAll('(𝆮);\n', '(   \n')
+
+    // Prefer object method shorthand
+    .replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
+      `${asynk || ''}${asterisk}${func_name}          (`)
+
+  const js_lines = result.js.split('\n')
+  for(const line of object_tweak_coffee_lines) {
+    result.source_map.forEach(x =>
+      x.columns.forEach(y => {
+        // This logic is equivalent to fake line source map fixing, explained there
+        if(y.sourceLine === line) {
+          if(!js_lines[y.line]?.match(/𒐛: 𒐛,?/))
+            y.sourceLine = -1 // effectively remove this source mapping
+          y.sourceColumn = 0
+          y.column = 0
+        }
+    }))
+  }
+  result.js = result.js
     // See usage of 𒐛 above
     // Note that outside of objects, this will leave empty objects behind
     // but they do no harm and should go unnoticed
     .replaceAll(/𒐛: 𒐛,?/g, '')
-
-  /* Prefer object method shorthand */
-  result.js = result.js.replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
-    `${asynk || ''}${asterisk}${func_name}          (`
-  )
 }
 
 const transpile_service: ITranspileService = {
@@ -154,22 +178,24 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const coffee = preprocess_coffee(orig_coffee_doc)
+    const { coffee, object_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
     
-    let coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = ''
+    let coffee_error_line_no = 0, coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = ''
     let with_fake_line = false
 
     let result: ITranspilationResult
     
     // Try normal compilation
     result = try_compile(coffee)
+    if(result.js)
+      logger.logDebug(`successful simple compilation ${orig_coffee_doc.uri}`)
     const normal_compilation_diagnostics = result.diagnostics
     
     if(result.diagnostics) {
-      const coffee_error_line_no = result.diagnostics[0]!.range.start.line
+      coffee_error_line_no = result.diagnostics[0]!.range.start.line
       coffee_error_offset = mod_coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
       const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
       coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : -1
@@ -190,7 +216,7 @@ const transpile_service: ITranspileService = {
     // TextDocument contents need to be set *here* however, so this is not possible without
     // altering the underlying architecture of the extension.
     // As fallbacks, `𒐩:𒐩` should work in objects and `if 𒐩` in lines with increased indentation after.
-    for(const fake_line_content of ['𒐩', '𒐩:𒐩', 'if 𒐩']) {
+    const try_fake_line_compilation = (fake_line_content: string) => {
       if(!result.js) {
         with_fake_line = true
         const coffee_fake = [
@@ -201,8 +227,16 @@ const transpile_service: ITranspileService = {
           coffee_error_end > -1 ? coffee.slice(coffee_error_end) : ''
         ].join('')
         result = try_compile(coffee_fake)
+        if(result.js)
+          logger.logDebug(`successful compilation with fake content '${fake_line_content}' ${orig_coffee_doc.uri}`)
       }
     }
+    if(coffee_error_line.includes(':'))
+      try_fake_line_compilation('𒐩:𒐩')
+    for(const fake_line_content of ['𒐩', 'if 𒐩'])
+      try_fake_line_compilation(fake_line_content)
+    if(!coffee_error_line.includes(':'))
+      try_fake_line_compilation('𒐩:𒐩')
 
     if(result.js && result.source_map && with_fake_line) {
       // Fake coffee compilation succeeded, now inject the coffee line into js
@@ -221,11 +255,21 @@ const transpile_service: ITranspileService = {
       if(js_fake_𒐩_line_no < 0)
         throw new Error('could not map back js 𒐩 line')
       js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
+
       // Source map contains lines that refer to the now again removed `𒐩`s.
-      // Fixing them is important when `coffee_error_line_modified` is not empty:
-      const override_source_column = coffee_error_line[coffee_error_line.length-1] === ';' ? coffee_error_line.length - 1 : coffee_error_line.length
-      result.source_map[js_fake_𒐩_line_no]?.columns.forEach(col =>
-        col.sourceColumn = override_source_column)
+      // Keep only one line reference for CS fake line which is JS fake line no,
+      // and remove all column mappings for it.
+      // The same position mapping effect could be achieved by removing all coffee_error_line_no
+      // referring entries and add a single one {sourceLine:coffee_error_line_no,sourceColumn:0,line:js_fake_𒐩_line_no,column:0}
+      result.source_map.forEach(x =>
+        x.columns.forEach(y => {
+          if(y.sourceLine === coffee_error_line_no) {
+            if(y.line !== js_fake_𒐩_line_no)
+              y.sourceLine = -1 // effectively remove this source mapping
+            y.sourceColumn = 0
+            y.column = 0
+          }
+        }))
 
       if(js_fake_𒐩_line_no > 0) {
         let i = js_fake_𒐩_line_no - 1
@@ -251,7 +295,7 @@ const transpile_service: ITranspileService = {
     }
 
     if(result.js && result.source_map) {
-      postprocess_js(result)
+      postprocess_js(result, object_tweak_coffee_lines)
     }
     
     if(normal_compilation_diagnostics)
@@ -312,9 +356,9 @@ const transpile_service: ITranspileService = {
    * Convert position in original CS to where it eventually turned out in the transpiled JS.
    * Tries to find by line and column, or if not found,
    * by line at the next smaller column,
-   * or if no column match, end of line `(Number.MAX_VALUE)`, or if no line match, undefined.
+   * or if no column match, any, or if no line match, undefined.
    * If multiple JS finds for a coffee line/col combination, try to find where JS match equals
-   * the word at `coffee_position`, else where JS is any word at all, else furthest down
+   * the word at `coffee_position`, else where JS is any word at all, else furthest down/right
    * in JS as possible.
    */
   position_coffee_to_js(result, coffee_position, coffee_doc) {
@@ -328,9 +372,11 @@ const transpile_service: ITranspileService = {
         // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => undefined`)
         return undefined
     }
+
+    const char_at_coffee_position = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
+    const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
     
     const choose_match = (js_matches: typeof js_matches_by_line) => {
-      const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
       const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
       const words_at_js_matches = js_matches.map(m =>
         result.js?.substr(
@@ -354,15 +400,20 @@ const transpile_service: ITranspileService = {
       .filter(c => c?.sourceColumn === coffee_position.character)
     if(js_matches_by_char.length)
       match = choose_match(js_matches_by_char)
-    if(!match) {
-      const coffee_char = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
-      if(coffee_char === '.') {
+    if(!match && char_at_coffee_position === '.') {
         // in javascript.ts doComplete, the triggerChar is omitted. Try exact match without it:
         const js_matches_by_next_char = js_matches_by_line
           .filter(c => c?.sourceColumn === coffee_position.character + 1)
         if(js_matches_by_next_char.length)
           match = choose_match(js_matches_by_next_char)
-      }
+    }
+    if(!match && char_at_coffee_position === undefined) {
+      // the coffee line was longer at compilation than it is now. Look for matches in the
+      // cut off area:
+      const js_matches_by_cut_off_chars = js_matches_by_line
+        .filter(c => c?.sourceColumn > coffee_position.character)
+      if(js_matches_by_cut_off_chars.length)
+        match = choose_match(js_matches_by_cut_off_chars)
     }
     if(!match) {
       const next_smaller_source_column = Math.max(...js_matches_by_line
@@ -373,23 +424,22 @@ const transpile_service: ITranspileService = {
       if(js_matches_by_next_smaller_char.length)
         match = choose_match(js_matches_by_next_smaller_char)
     }
-    if(!match) {
-      match = js_matches_by_line.find(Boolean)
-      if(match)
-        match.column = Number.MAX_VALUE
-    }
+    if(!match)
+      match = choose_match(js_matches_by_line)
     
+    const line = match?.line
+    let column = match?.column
     if(match && result.fake_line == coffee_position.line)
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
       // helpful but `column.column` does not make any sense, it contains only one column (where
       // the injected `𒐩` was placed). But since the error line was simply put into JS, we can
       // use the same pos:
-      match.column = coffee_position.character
+      column = coffee_position.character
 
     // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
-    if(!match)
+    if(line == null || column == null)
       return undefined
-    return Position.create(match.line, match.column)
+    return Position.create(line, column)
   },
 
   /** Convert range in original CS to where it eventually turned out in the transpiled JS.
