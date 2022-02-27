@@ -372,25 +372,52 @@ const transpile_service: ITranspileService = {
   position_coffee_to_js(result, coffee_position, coffee_doc) {
     if(!result.source_map)
       throw 'cannot reverse map position without source map'
-    const js_matches_by_line = result.source_map
-      .map(line => line?.columns
-        .filter(c => c?.sourceLine === coffee_position.line))
-      .flat()
-    if(!js_matches_by_line.length) {
-        // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => undefined`)
-        return undefined
-    }
 
     const char_at_coffee_position = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
-    const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
     
-    const choose_match = (js_matches: typeof js_matches_by_line) => {
+    const get_fitting_js_matches = () => {
+      const js_matches_by_line = result.source_map!
+        .map(line => line?.columns
+          .filter(c => c?.sourceLine === coffee_position.line))
+        .flat()
+      const js_matches_by_char = js_matches_by_line
+        .filter(c => c?.sourceColumn === coffee_position.character)
+      if(js_matches_by_char.length)
+        return js_matches_by_char
+      if(char_at_coffee_position === '.') {
+          // in javascript.ts doComplete, the triggerChar is omitted. Try exact match without it:
+          const js_matches_by_next_char = js_matches_by_line
+            .filter(c => c?.sourceColumn === coffee_position.character + 1)
+          if(js_matches_by_next_char.length)
+            return js_matches_by_next_char
+      }
+      if(char_at_coffee_position === undefined) {
+        // the coffee line was longer at compilation than it is now. Look for matches in the
+        // cut off area:
+        const js_matches_by_cut_off_chars = js_matches_by_line
+          .filter(c => c?.sourceColumn > coffee_position.character)
+        if(js_matches_by_cut_off_chars.length)
+          return js_matches_by_cut_off_chars
+      }
+      const next_smaller_source_column = Math.max(...js_matches_by_line
+        .map(c => c.sourceColumn)
+        .filter(c => c <= coffee_position.character))
+      const js_matches_by_next_smaller_char = js_matches_by_line
+        .filter(c => c?.sourceColumn === next_smaller_source_column)
+      if(js_matches_by_next_smaller_char.length)
+        return js_matches_by_next_smaller_char
+      return js_matches_by_line
+    }
+    const js_matches = get_fitting_js_matches()
+
+    const choose_js_match = () => {
+      const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
       const words_at_js_matches = js_matches.map(m =>
         get_word_around_position(result.js||'', js_doc_tmp.offsetAt({ line: m.line, character: m.column })))
       const index_match_by_word = words_at_js_matches.findIndex(m => m === word_at_coffee_position)
       if(index_match_by_word > -1)
-          return js_matches[index_match_by_word]
+        return js_matches[index_match_by_word]
       const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(common_js_variable_name_character))
       if(index_match_by_is_char > -1)
         return js_matches[index_match_by_is_char]
@@ -398,42 +425,11 @@ const transpile_service: ITranspileService = {
         .sort((a,b) => b.line - a.line || b.column - a.column)
         [0]
     }
-
-    let match
-    const js_matches_by_char = js_matches_by_line
-      .filter(c => c?.sourceColumn === coffee_position.character)
-    if(js_matches_by_char.length)
-      match = choose_match(js_matches_by_char)
-    if(!match && char_at_coffee_position === '.') {
-        // in javascript.ts doComplete, the triggerChar is omitted. Try exact match without it:
-        const js_matches_by_next_char = js_matches_by_line
-          .filter(c => c?.sourceColumn === coffee_position.character + 1)
-        if(js_matches_by_next_char.length)
-          match = choose_match(js_matches_by_next_char)
-    }
-    if(!match && char_at_coffee_position === undefined) {
-      // the coffee line was longer at compilation than it is now. Look for matches in the
-      // cut off area:
-      const js_matches_by_cut_off_chars = js_matches_by_line
-        .filter(c => c?.sourceColumn > coffee_position.character)
-      if(js_matches_by_cut_off_chars.length)
-        match = choose_match(js_matches_by_cut_off_chars)
-    }
-    if(!match) {
-      const next_smaller_source_column = Math.max(...js_matches_by_line
-        .map(c => c.sourceColumn)
-        .filter(c => c <= coffee_position.character))
-      const js_matches_by_next_smaller_char = js_matches_by_line
-        .filter(c => c?.sourceColumn === next_smaller_source_column)
-      if(js_matches_by_next_smaller_char.length)
-        match = choose_match(js_matches_by_next_smaller_char)
-    }
-    if(!match)
-      match = choose_match(js_matches_by_line)
+    const js_match = choose_js_match()
     
-    const line = match?.line
-    let column = match?.column
-    if(match && result.fake_line == coffee_position.line)
+    const line = js_match?.line
+    let column = js_match?.column
+    if(js_match && result.fake_line == coffee_position.line)
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
       // helpful but `column.column` does not make any sense, it contains only one column (where
       // the injected `𒐩` was placed). But since the error line was simply put into JS, we can
