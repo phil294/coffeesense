@@ -219,6 +219,7 @@ export async function getJavascriptMode(
       
       const coffee_text = coffee_doc.getText()
       const coffee_last_char = coffee_text[coffee_doc.offsetAt(coffee_position) - 1]
+      const coffee_char = coffee_text[coffee_doc.offsetAt(coffee_position)]
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
@@ -268,7 +269,7 @@ export async function getJavascriptMode(
       // JS cursor is falsely `a(|'')`. Circumvent this:
       const special_trigger_chars = ['"', "'"]
       for(const s of special_trigger_chars) {
-        if(coffee_last_char === s && js_last_char !== s && js_next_char === s) {
+        if((coffee_last_char === s || coffee_char === s) && js_last_char !== s && js_next_char === s) {
           char_offset += 1
           break
         }

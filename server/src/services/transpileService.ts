@@ -13,12 +13,13 @@ export function get_word_around_position(text: string, offset: number) {
   let i_offset = offset
   while(text[i_offset - 1]?.match(common_js_variable_name_character))
     i_offset--
-  let match_word = ""
-  while(i_offset <= offset || text[i_offset]?.match(common_js_variable_name_character)) {
-    match_word += text[i_offset] || ''
+  let match_word = "", char_match
+  while((char_match = text[i_offset]?.match(common_js_variable_name_character)) || i_offset <= offset) {
+    if(char_match)
+      match_word += text[i_offset]
     i_offset++
   }
-  return match_word.trim()
+  return match_word
 }
 
 interface ITranspilationResult {
@@ -183,7 +184,7 @@ const transpile_service: ITranspileService = {
     // we need to construct a new doc
     const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
     
-    let coffee_error_line_no = 0, coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = ''
+    let coffee_error_line_no = 0, coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = '', /*useful for debugging*/successful_coffee_fake = ''
     let with_fake_line = false
 
     let result: ITranspilationResult
@@ -227,8 +228,10 @@ const transpile_service: ITranspileService = {
           coffee_error_end > -1 ? coffee.slice(coffee_error_end) : ''
         ].join('')
         result = try_compile(coffee_fake)
-        if(result.js)
+        if(result.js) {
           logger.logDebug(`successful compilation with fake content '${fake_line_content}' ${orig_coffee_doc.uri}`)
+          successful_coffee_fake = coffee_fake
+        }
       }
     }
     if(coffee_error_line.includes(':'))
@@ -380,18 +383,14 @@ const transpile_service: ITranspileService = {
 
     const char_at_coffee_position = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
+    const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
     
     const choose_match = (js_matches: typeof js_matches_by_line) => {
-      const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
       const words_at_js_matches = js_matches.map(m =>
-        result.js?.substr(
-            js_doc_tmp.offsetAt({ line: m.line, character: m.column }),
-            word_at_coffee_position.length || 1))
-      if(word_at_coffee_position) {
-        const index_match_by_word = words_at_js_matches.findIndex(m => m === word_at_coffee_position)
-        if(index_match_by_word > -1)
-            return js_matches[index_match_by_word]
-      }
+        get_word_around_position(result.js||'', js_doc_tmp.offsetAt({ line: m.line, character: m.column })))
+      const index_match_by_word = words_at_js_matches.findIndex(m => m === word_at_coffee_position)
+      if(index_match_by_word > -1)
+          return js_matches[index_match_by_word]
       const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(common_js_variable_name_character))
       if(index_match_by_is_char > -1)
         return js_matches[index_match_by_is_char]

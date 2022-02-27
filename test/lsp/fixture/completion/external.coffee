@@ -1,3 +1,3 @@
-import * as lodash from 'lodash'
+import * as lodash_autocomplete_test from 'lodash'
 
-_.
+lodash_autocomplete_test.

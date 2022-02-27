@@ -4,6 +4,7 @@ import { getDocUri } from '../../path'
 
 describe('Should autocomplete', () => {
 	const import_uri = getDocUri('completion/import.coffee')
+	const string_uri = getDocUri('completion/string.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
 	const this_uri = getDocUri('completion/this.coffee')
 	const tab_uri = getDocUri('completion/tab.coffee')
@@ -29,12 +30,21 @@ describe('Should autocomplete', () => {
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
 	const if_uri = getDocUri('completion/if.coffee')
 
-	it('completes module names when importing', async () => {
+	it('completes import module names', async () => {
 		await testCompletion(import_uri, position(0, 8), ['lodash'])
 	})
 
-	it('completes for lodash methods with _.', async () => {
-		await testCompletion(external_uri, position(2, 2), ['curry', 'fill'])
+	it('completes partially typed import module names', async () => {
+		await testCompletion(import_uri, position(1, 10), ['lodash'])
+	})
+
+	it('completes strings', async () => {
+		await testCompletion(string_uri, position(2, 27), ['constant'])
+		await testCompletion(string_uri, position(5, 35), ['constant'])
+	})
+
+	it('completes for lodash methods', async () => {
+		await testCompletion(external_uri, position(2, 25), ['curry', 'fill'])
 	})
 
 	it('completes even when the line is invalid', async () => {
