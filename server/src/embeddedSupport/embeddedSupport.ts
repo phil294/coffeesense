@@ -110,8 +110,8 @@ export function getSingleTypeDocument(
 
   try {
     newContent = transpile_service.transpile(document).js || document.getText()
-  } catch(e) {
-    logger.logInfo('TRANSPILATION FAILED ' + document.uri + ' ' + JSON.stringify(e))
+  } catch(e: any) {
+    logger.logInfo('TRANSPILATION FAILED ' + document.uri + ' ' + JSON.stringify(e) + e.stack)
   }
   // now it's JS (or if failed, coffee as a fallback)
   // source map etc are saved in transpileService to be retrievable in js language service methods
