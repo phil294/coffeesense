@@ -17,6 +17,8 @@ describe('Should autocomplete', () => {
 	const object_half_defined_above_uri = getDocUri('completion/object-half-defined-above.coffee')
 	const object_half_line_uri = getDocUri('completion/object-half-line.coffee')
 	const object_half_line_colon_uri = getDocUri('completion/object-half-line-colon.coffee')
+	const object_half_line_with_braces_uri = getDocUri('completion/object-half-line-with-braces.coffee')
+	const object_half_line_with_open_brace_uri = getDocUri('completion/object-half-line-with-open-brace.coffee')
 	const object_half_line_half_defined_uri = getDocUri('completion/object-half-line-half-defined.coffee')
 	const object_half_line_half_defined_above_uri = getDocUri('completion/object-half-line-half-defined-above.coffee')
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
@@ -104,6 +106,14 @@ describe('Should autocomplete', () => {
 
 	it('completes partial object key with no sibling keys before colon', async () => {
 		await testCompletion(object_half_line_colon_uri, position(11, 39), ['obj_half_line_colon_completion_prop_1', 'obj_half_line_colon_completion_prop_2'])
+	})
+
+	it('completes partial object key with no sibling with braces', async () => {
+		await testCompletion(object_half_line_with_braces_uri, position(11, 45), ['obj_half_line_with_braces_completion_prop_1', 'obj_half_line_with_braces_completion_prop_2'])
+	})
+
+	it('completes partial object key when object closing brace is missing', async () => {
+		await testCompletion(object_half_line_with_open_brace_uri, position(11, 49), ['obj_half_line_with_open_brace_completion_prop_1', 'obj_half_line_with_open_brace_completion_prop_2'])
 	})
 
 	it('completes half defined object property when already partially typed', async () => {

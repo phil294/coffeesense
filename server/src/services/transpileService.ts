@@ -246,6 +246,12 @@ const transpile_service: ITranspileService = {
       const coffee_error_line_modified = coffee_error_line
         // Requires special cursor handling in doComplete() yet again
         .replaceAll('@', 'this.')
+        // Error at variable assignment location
+        .replaceAll(/^\s*[a-zA-Z0-9_-]+\s*=/g, (assignment) => {
+          // Rare case: object half line with open brace. Possibly other cases as well?
+          // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
+          return `let ${assignment}`
+        })
       
       const js_fake_arr = result.js.split('\n')
       // Could also be calculated using:

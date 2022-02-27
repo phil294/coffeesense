@@ -1,4 +1,4 @@
-import vscode from 'vscode';
+import vscode, { CompletionItemKind } from 'vscode';
 import assert from 'assert';
 import { CompletionItem, MarkdownString } from 'vscode';
 import { showFile } from './editorHelper';
@@ -31,6 +31,8 @@ export async function testCompletion(
     docUri,
     position
   )) as vscode.CompletionList;
+  // Sometimes text items are returned (only while testing though, no idea). Filter these out.
+  result.items = result.items.filter(item => item.kind !== CompletionItemKind.Text)
 
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {
