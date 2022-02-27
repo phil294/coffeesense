@@ -32,10 +32,9 @@ describe('Should autocomplete', () => {
 
 	it('completes import module names', async () => {
 		await testCompletion(import_uri, position(0, 8), ['lodash'])
-	})
-
-	it('completes partially typed import module names', async () => {
 		await testCompletion(import_uri, position(1, 10), ['lodash'])
+		await testCompletion(import_uri, position(2, 11), ['curry'])
+		await testCompletion(import_uri, position(3, 9), ['curry'])
 	})
 
 	it('completes strings', async () => {
