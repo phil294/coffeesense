@@ -15,13 +15,13 @@ describe('Should autocomplete via imports', () => {
 		const doc_uri = getDocUri('completion/autoimport.coffee')
 		await testCompletionResolve(
 			doc_uri,
-			position(1, 19),
+			position(1, 30),
 			[
 				{
 					label: 'createCallback',
 					additionalTextEdits: [
 						textEdit(sameLineRange(0, 0, 0), 'import { createCallback } from "lodash"\n'),
-						textEdit(sameLineRange(1, 19, 19), 'k'),
+						textEdit(sameLineRange(1, 30, 30), 'k'),
 					]
 				}
 			],

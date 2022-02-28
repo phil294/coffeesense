@@ -332,7 +332,7 @@ export async function getJavascriptMode(
             sortText: entry.sortText + index,
             kind: toCompletionItemKind(entry.kind),
             textEdit: range && TextEdit.replace(range, entry.insertText || entry.name),
-            insertText: entry.insertText,
+            insertText: entry.insertText?.replace(/^this\./, ''),
             data: {
               // data used for resolving item details (see 'doResolve')
               languageId: js_doc.languageId,

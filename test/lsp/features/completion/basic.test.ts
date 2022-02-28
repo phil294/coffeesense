@@ -65,7 +65,7 @@ describe('Should autocomplete', () => {
 
 	// bfa0645
 	it('completes for @', async () => {
-		await testCompletion(at_uri, position(3, 9), ['bbb', 'ccc'])
+		await testCompletion(at_uri, position(3, 9), [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'])
 	})
 
 	it('completes at end of fake line if it contains a @ somewhere earlier', async () => {
