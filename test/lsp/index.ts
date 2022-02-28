@@ -13,7 +13,7 @@ export function run(): Promise<void> {
 
   const mocha = new Mocha({
     ui: 'bdd',
-    timeout: 100000,
+    timeout: 10000,
     color: true,
     ...args
   });
