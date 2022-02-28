@@ -1,49 +1,28 @@
-import { LanguageModelCache, getLanguageModelCache } from '../../embeddedSupport/languageModelCache';
-import {
-  SymbolInformation,
-  CompletionItem,
-  Location,
-  SignatureHelp,
-  SignatureInformation,
-  ParameterInformation,
-  Definition,
-  TextEdit,
-  Diagnostic,
-  DiagnosticSeverity,
-  Range,
-  CompletionItemKind,
-  Hover,
-  MarkedString,
-  DocumentHighlight,
-  DocumentHighlightKind,
-  CompletionList,
-  Position,
-  DiagnosticTag,
-  MarkupContent,
-  CodeAction,
-  CodeActionKind,
-  CompletionItemTag,
-  CodeActionContext
-} from 'vscode-languageserver-types';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { LanguageMode } from '../../embeddedSupport/languageModes';
-import { CoffeescriptDocumentRegions, LanguageRange, LanguageId } from '../../embeddedSupport/embeddedSupport';
-import { getFileFsPath, getFilePath } from '../../utils/paths';
-
-import { URI } from 'vscode-uri';
 import type ts from 'typescript';
-
-import { NULL_SIGNATURE } from '../nullMode';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import {
+  CodeAction, CodeActionContext, CodeActionKind, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, Definition, Diagnostic,
+  DiagnosticSeverity, DiagnosticTag, DocumentHighlight,
+  DocumentHighlightKind, Hover, Location, MarkedString, MarkupContent, ParameterInformation, Position, Range, SignatureHelp,
+  SignatureInformation, SymbolInformation, TextEdit
+} from 'vscode-languageserver-types';
+import { URI } from 'vscode-uri';
+import { CoffeescriptDocumentRegions, LanguageId } from '../../embeddedSupport/embeddedSupport';
+import { getLanguageModelCache, LanguageModelCache } from '../../embeddedSupport/languageModelCache';
+import { LanguageMode } from '../../embeddedSupport/languageModes';
+import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
-import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
+import { EnvironmentService } from '../../services/EnvironmentService';
+import transpile_service, { common_js_variable_name_character, get_word_around_position } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
-import * as Previewer from './previewer';
+import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
-import { EnvironmentService } from '../../services/EnvironmentService';
-import { LANGUAGE_ID } from '../../language';
-import transpile_service, { common_js_variable_name_character, get_word_around_position } from '../../services/transpileService';
-import { LineMap } from 'coffeescript';
+import { getFileFsPath, getFilePath } from '../../utils/paths';
+import { NULL_SIGNATURE } from '../nullMode';
+import * as Previewer from './previewer';
+
+
 
 export async function getJavascriptMode(
   tsModule: RuntimeLibrary['typescript'],
@@ -702,7 +681,7 @@ export async function getJavascriptMode(
       items.forEach(item => collectSymbols(item));
       return result;
     },
-    findDefinition(coffee_doc: TextDocument, position: Position): Definition {
+    findDefinition(coffee_doc: TextDocument, coffee_position: Position): Definition {
       const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
       if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
@@ -713,12 +692,35 @@ export async function getJavascriptMode(
       if(!transpilation)
         return []
     
-      if(transpilation.source_map)
-        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
+      let position = coffee_position
+      if(transpilation.source_map) {
+        const js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position, coffee_doc)
+        if(js_position)
+          position = js_position
+      }
 
       const definitions = service.getDefinitionAtPosition(fileFsPath, js_doc.offsetAt(position));
-      if (!definitions) {
-        return [];
+      if (!definitions?.length) {
+        // Basic word match algorithm: Jump to the first previous occurence of varname = ..., if present.
+        const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
+        if(!word_at_coffee_position)
+          return []
+        const coffee_lines = coffee_doc.getText().split('\n')
+        let i = coffee_position.line
+        let var_assignment_match = null
+        while(coffee_lines[i-1]) {
+          i--
+          var_assignment_match = coffee_lines[i]?.match(new RegExp(`^(\\s*)(${word_at_coffee_position})\\s*=[^=]`))
+          if(var_assignment_match)
+            break
+        }
+        if(var_assignment_match) {
+          return [{
+            uri: coffee_doc.uri,
+            range: Range.create(i, var_assignment_match[1]!.length, i, var_assignment_match[1]!.length + var_assignment_match[2]!.length)
+          }]
+        }
+        return []
       }
 
       const definitionResults: Definition = [];

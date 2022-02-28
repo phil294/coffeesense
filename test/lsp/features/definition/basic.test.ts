@@ -17,7 +17,7 @@ describe('Should find definition', () => {
 	})
 
 	// comprehensions introduce coffee code that is absent in js, and as such cannot be reverse mapped as is
-	xit('finds definition in comprehension', async () => {
+	it('finds definition in comprehension', async () => {
 		await testDefinition(basic_uri, position(11, 37), sameLineLocation(basic_uri, 10, 0, 15))
 	})
 

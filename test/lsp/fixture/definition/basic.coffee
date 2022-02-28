@@ -7,3 +7,9 @@ definition_obj =
         this.bbb
 
 something_else_than_coffee
+
+comprehension_3 = [1, 2, 3]
+comprehension_4 = v * 2 for v in comprehension_3
+
+[comprehension_5] = [[1, 2, 3]]
+comprehension_6 = v * 2 for v in comprehension_5
