@@ -108,6 +108,19 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.4.0
+##### 2022-02-28
+- Improve object autocomplete and internals. Several small internal changes and improvements regarding objects
+- Add support for go tos in basic comprehensions. Go Tos now in general try to find the nearest previous variable assignment of the word the cursor is under, if no match could be found by asking tsserver. This is a primitive fallback method and can sometimes pont to wrong lines but works in most scenarios.
+- Fix error of different autocomplete results for subsequent requests
+- Enable autocomplete while building a brace syntax object, without having a valid closing brace yet
+- Improve/fix autocomplete for strings and imports, now also completes partial strings
+- Fix autocomplete inside empty import values braces `import {} from ...`
+- Revert `1.2.0` change (variable assignment detection logic change), as it does not yet handle comment blocks appropriately and messes up JSDoc sometimes
+- Fix wrong completion text at `@` (resolved falsely to `@this.theCompletionText`)
+- Add autocomplete for local import path completion
+- Internal: Added automatic tests for all known features of this extension
+
 #### 1.3.0
 ##### 2022-02-25
 - Allow configuring additional file extensions other than `.coffee` using VSCode's setting `files.associations` or `coffeesense.fileExtensions` for other IDEs. (#9)
