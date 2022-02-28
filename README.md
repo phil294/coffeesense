@@ -23,7 +23,7 @@
 
 CoffeeSense gives you IntelliSense (autocompletion, go to implementation, etc.) for CoffeeScript. It is based on CoffeeScript's compiled JavaScript output. Because of this, this LSP implementation is and can **not** be feature-complete due to the limitations of its technical architecture. See further below for details.
 
-Source code derived from the great [Vetur](https://github.com/phil294/coffeesense) project (but CoffeeSense has nothing to do with Vue.js otherwise).
+Source code derived from the great [Vetur](https://github.com/vuejs/vetur) project (but CoffeeSense has nothing to do with Vue.js otherwise).
 
 ### How
 
