@@ -53,12 +53,12 @@ describe('Should find diagnostics', () => {
 		])
 	})
 
-	// Will be fixed some time, see https://github.com/jashkenas/coffeescript/issues/5366#issuecomment-1021366654. Could go back to previous version in the meantime where the workaround for declaration typing was still in place
-	xit('pushes down variable declaration to assignment even with comment block before it', async () => {
+	// TODO: go back to new CS branch, https://github.com/jashkenas/coffeescript/issues/5366#issuecomment-1021366654
+	it('pushes down variable declaration to assignment even with comment block before it', async () => {
 		const docUri = getDocUri('diagnostics/declaration-with-commentblock.coffee')
 		await testDiagnostics(docUri, [
 			{
-				range: sameLineRange(3, 0, 14),
+				range: sameLineRange(3, 0, 15),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Type 'string' is not assignable to type 'number'."
 			}

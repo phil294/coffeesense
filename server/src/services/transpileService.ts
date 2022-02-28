@@ -159,6 +159,133 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
         }
     }))
   }
+
+  // console.time('var-decl-fix')
+  //////////////////////////////////////
+  ///////// Modify variable declarations to solve various TS compiler errors:
+  // Should not be error but is:
+  // xy = 123   # Error: Variable 'xy' implicitly has type 'any' in some locations where its type cannot be determined.CoffeeSense [TS](7034)
+  // => xy      # Error: Variable 'xy' implicitly has an 'any' type.CoffeeSense [TS](7005)
+  //////// and
+  // Should be error but is not:
+  // a = 1
+  // a = 'one'
+  /////// This is because the cs compiler puts variable declarations to the front:
+  // Translates to:
+  // var a;
+  // a = 1;
+  // a = 'one';
+  /////// and now `a` is of type `number | string` (https://github.com/microsoft/TypeScript/issues/45369). 
+  // Below is a hacky workaround that should fix these issues in most cases. It moves the
+  // declaration part (`var`) down to the variable's first implementation position.
+  // This works only with easy implementations and single-variable array destructuring:
+  /*
+  var a, b, c;
+  a = 1;
+  [b] = 2;
+  ({c} = 3);
+  */
+  // Shall become:
+  /*
+  var c;
+  let a = 1;               // added let
+  let [b] = 2;             // added let
+  ({c} = 3);               // unchanged because of surrounding braces
+  */
+  // similarly, array destructors with more than one variable cannot be changed.
+  // Returns stay untouched (return x = 1) too.
+  const js_line_nos = Array.from(Array(js_lines.length).keys())
+  // Part 1: Determine declaration areas (`   var x, y;`)
+  const js_decl_lines_info = js_line_nos
+    .map(decl_line_no => {
+      const match = js_lines[decl_line_no]!.match(/^(\s*)(var )(.+);$/)
+      if(match) {
+        const var_decl_infos = match[3]!.split(', ').map(var_name => ({
+          var_name,
+          decl_indent: match[1]!.length,
+          decl_line_no,
+        }))
+        return {
+          decl_line_no,
+          var_decl_infos,
+        }
+      }
+      return null
+    })
+    .filter(Boolean)
+  // Part 2: For each `var` decl, find fitting first impl statement
+  // (`x = 1`), if present, and return new line content (`let x = 1`).
+  // Might as well be `var x = 1` but this helps differentiating/debugging
+  const js_impl_line_changes = js_decl_lines_info
+    .map(info => info!.var_decl_infos)
+    .flat()
+    .map(({ var_name, decl_indent, decl_line_no }) => {
+      const js_line_nos_after_decl = js_line_nos.slice(decl_line_no)
+      for(const impl_line_no of js_line_nos_after_decl) {
+        const line = js_lines[impl_line_no]!
+        const impl_whitespace = line.match(/^\s*/)![0]!
+        const impl_indent = impl_whitespace.length
+        if(impl_indent < decl_indent)
+          // Parent block scope. Need to skip this variable then, no impl has been found
+          // before current block got closed. It is important to stop here, as otherwise
+          // it might later match an impl from *another* decl of the same var name
+          return null
+        const var_impl_text = `${var_name} = `
+        if(line.substr(impl_indent, var_impl_text.length) === var_impl_text) {
+          if(impl_indent > decl_indent)
+            // This is a conditional first value assignment and type can not safely be set
+            return null
+          const rest_of_line = line.slice(impl_indent + var_impl_text.length)
+          return {
+            var_name,
+            impl_line_no,
+            decl_line_no,
+            new_line_content: `${impl_whitespace}let ${var_impl_text}${rest_of_line}`,
+            new_let_column: impl_indent,
+          }
+        }
+      }
+      return null
+    }).filter(Boolean)
+  // Part 3: Apply Part 2 changes and update source maps of those lines
+  for(const change of js_impl_line_changes) {
+    js_lines[change!.impl_line_no] = change!.new_line_content
+    const map_columns = result.source_map[change!.impl_line_no]!.columns
+    const map_current_impl_start = map_columns[change!.new_let_column]!
+    // Can be null in cases where the variable is not user-set but e.g. a helper
+    // variable put there by the cs compiler itself and ignored otherwise
+    if(map_current_impl_start != null) {
+      map_columns.splice(
+        change!.new_let_column,
+        0,
+        ..."let ".split('').map((_, i) => ({
+          ...map_current_impl_start,
+          column: map_current_impl_start.column + i
+      })))
+      for(let i = map_current_impl_start.column + "let ".length; i < map_columns.length + "let ".length; i++) {
+        if(map_columns[i])
+          map_columns[i]!.column += "let ".length // or = i
+      }
+    }
+  }
+  // Part 4: Update decl lines (Part 1). Where no impl lines were found (Part 2),
+  // keep them. If all were modified, an empty line will be put.
+  for(const decl_line_info of js_decl_lines_info) {
+    let new_decl_line = decl_line_info!.var_decl_infos
+      .filter(decl_info => ! js_impl_line_changes.some(impl_change =>
+        impl_change!.var_name === decl_info.var_name &&
+          impl_change!.decl_line_no === decl_info.decl_line_no))
+      .map(i => i.var_name)
+      .join(', ')
+    if(new_decl_line)
+      // Those that could not be changed
+      new_decl_line = 'var ' + new_decl_line
+    js_lines[decl_line_info!.decl_line_no] = new_decl_line
+  }
+
+  result.js = js_lines.join('\n')
+  // console.timeEnd('var-decl-fix')
+
   result.js = result.js
     // See usage of 𒐛 above
     // Note that outside of objects, this will leave empty objects behind
