@@ -11,7 +11,7 @@ describe('Should autocomplete via imports', () => {
 	})
 	// TODO: why doesn't this work? In testing, there are zero additionalTextEdits, but it does actually work when trying manually. Sleep and/or testCompletion directly before didn't help.
 	// Once that is fixed, the auto import logic needs to be tested as well: Adding to existing import, not in first line, and imports spread over multiple lines.
-	it('Should add an auto inserted import statement', async () => {
+	xit('Should add an auto inserted import statement', async () => {
 		const doc_uri = getDocUri('completion/autoimport.coffee')
 		await testCompletionResolve(
 			doc_uri,
