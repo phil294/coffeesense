@@ -9,6 +9,7 @@ describe('Should autocomplete', () => {
 	const this_uri = getDocUri('completion/this.coffee')
 	const tab_uri = getDocUri('completion/tab.coffee')
 	const at_uri = getDocUri('completion/@.coffee')
+	const at_before_text_uri = getDocUri('completion/@-before-text.coffee')
 	const compilation_fail_uri = getDocUri('completion/compilation-fail.coffee')
 	const last_line_uri = getDocUri('completion/last-line.coffee')
 	const object_uri = getDocUri('completion/object.coffee')
@@ -65,6 +66,10 @@ describe('Should autocomplete', () => {
 	// bfa0645
 	it('completes for @', async () => {
 		await testCompletion(at_uri, position(3, 9), ['bbb', 'ccc'])
+	})
+
+	it('completes at end of fake line if it contains a @ somewhere earlier', async () => {
+		await testCompletion(at_before_text_uri, position(4, 32), ['abc'])
 	})
 
 	it('completes at the very end of file', async () => {
