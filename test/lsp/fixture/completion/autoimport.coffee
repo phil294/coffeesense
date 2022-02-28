@@ -1,2 +1,2 @@
-aaa = 1
-bbb = createCallbac
+autoimport_aaa = 1
+autoimport_bbb = createCallbac
