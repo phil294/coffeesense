@@ -259,10 +259,17 @@ export async function getJavascriptMode(
         position = coffee_position
       }
 
+      const js_text = js_doc.getText()
+
+      const js_line = js_text.slice(js_doc.offsetAt({ line: position.line, character:0 }), js_doc.offsetAt({ line: position.line, character: Number.MAX_VALUE }))
+      if(js_line.startsWith("import {} from ") && position.character === 7) {
+        // special case. There are no source maps pointing into {|}, so move it there
+        position.character = 8
+      }
+
       let js_offset = js_doc.offsetAt(position);
 
       let char_offset = 0
-      const js_text = js_doc.getText()
       const js_last_char = js_text[js_offset - 1]
       const js_next_char = js_text[js_offset]
       // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
