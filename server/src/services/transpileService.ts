@@ -503,6 +503,7 @@ const transpile_service: ITranspileService = {
     const char_at_coffee_position = coffee_doc.getText()[coffee_doc.offsetAt(coffee_position)]
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
     
+    // TODO: revise this function, maybe this should be always all line matches by default instead
     const get_fitting_js_matches = () => {
       const js_matches_by_line = result.source_map!
         .map(line => line?.columns
@@ -527,13 +528,6 @@ const transpile_service: ITranspileService = {
         if(js_matches_by_cut_off_chars.length)
           return js_matches_by_cut_off_chars
       }
-      const next_smaller_source_column = Math.max(...js_matches_by_line
-        .map(c => c.sourceColumn)
-        .filter(c => c <= coffee_position.character))
-      const js_matches_by_next_smaller_char = js_matches_by_line
-        .filter(c => c?.sourceColumn === next_smaller_source_column)
-      if(js_matches_by_next_smaller_char.length)
-        return js_matches_by_next_smaller_char
       return js_matches_by_line
     }
     const js_matches = get_fitting_js_matches()

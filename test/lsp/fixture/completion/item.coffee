@@ -1,2 +1,1 @@
-###* Item description ###
 export default {}

@@ -9,9 +9,8 @@ describe('Should do path completion for import', () => {
 	it('completes local file names when importing', async () => {
 		await testCompletion(doc_uri, position(0, 20), [
 			{
-				label: 'item',
-				kind: CompletionItemKind.File,
-				detail: 'Item description'
+				label: 'item.coffee',
+				kind: CompletionItemKind.File
 			}
 		])
 	})
