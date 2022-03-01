@@ -108,6 +108,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.4.1
+##### 2022-03-01
+- Fix syntax error at regular object shorthand field (`a = {\n  b\n}`)
+
 #### 1.4.0
 ##### 2022-02-28
 - Improve object autocomplete and internals. Several small internal changes and improvements regarding objects
