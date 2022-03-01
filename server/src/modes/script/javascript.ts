@@ -250,14 +250,20 @@ export async function getJavascriptMode(
 
       let char_offset = 0
       const js_last_char = js_text[js_offset - 1]
+      const js_second_last_char = js_text[js_offset - 2]
       const js_next_char = js_text[js_offset]
-      // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
-      // JS cursor is falsely `a(|'')`. Circumvent this:
-      const special_trigger_chars = ['"', "'"]
-      for(const s of special_trigger_chars) {
-        if((coffee_last_char === s || coffee_char === s) && js_last_char !== s && js_next_char === s) {
-          char_offset += 1
-          break
+      if(js_second_last_char === ':' && js_last_char === ' ' && js_next_char?.match(common_js_variable_name_character)) {
+        // source maps are wrong, cursor is in CS before : but in JS after :, fix this:
+        char_offset = -2
+      } else {
+        // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
+        // JS cursor is falsely `a(|'')`. Circumvent this:
+        const special_trigger_chars = ['"', "'"]
+        for(const s of special_trigger_chars) {
+          if((coffee_last_char === s || coffee_char === s) && js_last_char !== s && js_next_char === s) {
+            char_offset = 1
+            break
+          }
         }
       }
       js_offset += char_offset

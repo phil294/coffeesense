@@ -40,7 +40,7 @@ describe('Should find diagnostics', () => {
 		])
 	})
 
-	// issue #8
+	// issue #8, and generic issue for testing syntax problems
 	it('succeeds coffee compilation', async () => {
 		const docUri = getDocUri('diagnostics/compiler-success.coffee')
 		// demonstrated by returning ts errors

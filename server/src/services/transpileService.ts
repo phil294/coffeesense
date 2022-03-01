@@ -67,11 +67,12 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     })
     // Enable object key autocomplete (that is, missing colon) below other key value mappings.
     // The replaced syntax is always invalid so no harm is done by adding the colon.
+    // (Exception: Object inside braces where shorthand syntax exists (check below).)
     // Without the colon, the error shows in the line before which doesn't make sense.
     // With the colon, the line will still be invalid, but now the error is at the right place.
-    .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1[a-zA-Z0-9_$]+$/mg, (match) => {
-      logger.logDebug(`transform a:b\nc\n to a:b\nc:\n ${coffee_doc.uri}`)
-      return match + ':'
+    .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1([a-zA-Z0-9_$]+)$/mg, (match, _, key) => {
+      logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
+      return match + ':' + key
     })
   // Enable autocomplete on empty lines inside object properties.
   // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
