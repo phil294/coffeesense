@@ -91,7 +91,6 @@ There is lot of hacky code to get this all to work. One thing to keep in mind is
 
 #### Known problems
 - Types:
-  - Type inference of variables can sometimes fail if they are prefixed with a comment block, such as JSDoc. This is temporary and probably fixed soon.
   - Annotating constructor `@parameters` with JSDoc can not provide type hints when you use a variable with the same name outside ([issue](https://github.com/phil294/coffeesense/issues/5)). This will be fixed at some point.
 - Method parameters:
   - You can't get param hints in an *indented* line that ends with `(`. It does work in top level lines or inside `()` or with space instead of braces though.
