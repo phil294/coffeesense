@@ -1,20 +1,45 @@
 #!/bin/bash
 set -e
 
-# increase package.json version field beforehand in both . and ./server
+base_dir=$(dirname "$(readlink -f "$0")")
 
-# update changelog
+on_exit() {
+	sed -i 's/^\s*debugger;/\/\/ debugger; sdfsdf/' "$base_dir"/server/node_modules/typescript/lib/typescript.js
+}
+trap on_exit exit
+
+pause() {
+	read -r -n 1 -s -p 'Press any key to continue. . .'
+	echo
+}
+
+yarn upgrade
+cd server
+yarn upgrade
+cd ..
+
+echo 'update changelog'
+pause
+
+yarn test
+
+echo 'update package.json version in both . and ./server'
+pause
 
 cd server
 yarn preversion
 npm publish
+
 cd ..
 yarn compile
-yarn prepare-publish 
+yarn prepare-publish
 rm -rf server/node_modules/coffeescript/{docs,documentation,.github,test,src}
 rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
 vsce package
-vsce publish
+echo TODO: vsce publish
+# vsce publish
+pause
+
 git push origin master
+
 yarn
-sed -i 's/debugger;/\/\/ debugger;/' /b/coffeesense/server/node_modules/typescript/lib/typescript.js
