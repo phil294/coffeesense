@@ -107,6 +107,12 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+#### 1.5.0
+##### 2022-03-05
+- Upgrade all dependencies, most notably TypeScript 4.3 -> 4.6
+- CoffeeScript was updated from 2.5 to 2.6 in previous update 1.4.0, forgot to add this to the changelog
+- Some fixes were merged from upstream (Vetur): "Fix corner case when same monorepo folder start with.", "Fix load project too slow.", "Fix `property 'flags' of undefined`.", and "Add editor sdk setup notes to Yarn PnP section"
+
 #### 1.4.1
 ##### 2022-03-01
 - Fix syntax error at regular object shorthand field (`a = {\n  b\n}`)
@@ -120,6 +126,7 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 - Improve/fix autocomplete for strings and imports, now also completes partial strings
 - Fix autocomplete inside empty import values braces `import {} from ...`
 - Revert `1.2.0` change (variable assignment detection logic change), as it does not yet handle comment blocks appropriately and messes up JSDoc sometimes
+- Upgrade CoffeeScript from 2.5 to 2.6 ([Changelog](https://github.com/jashkenas/coffeescript/pull/5374))
 - Fix wrong completion text at `@` (resolved falsely to `@this.theCompletionText`)
 - Add autocomplete for local import path completion
 - Internal: Added automatic tests for all known features of this extension
