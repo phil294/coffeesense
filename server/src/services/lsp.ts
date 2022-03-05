@@ -282,7 +282,11 @@ export class LSP {
   private getProjectConfig(uri: DocumentUri): ProjectConfig | undefined {
     const projectConfigs = this.getAllProjectConfigs();
     const docFsPath = getFileFsPath(uri);
-    const projectConfig = projectConfigs.find(projectConfig => docFsPath.startsWith(projectConfig.rootFsPath));
+    const projectConfig = projectConfigs.find(
+      projectConfig =>
+        docFsPath.startsWith(projectConfig.rootFsPath) &&
+        ['/', '\\'].includes(docFsPath.substring(projectConfig.rootFsPath.length, projectConfig.rootFsPath.length + 1))
+    );
 
     return projectConfig;
   }
@@ -292,8 +296,12 @@ export class LSP {
     if (!projectConfig) {
       return undefined;
     }
+    const useWorkspaceDependencies = projectConfig.lspFullConfig.coffeesense.useWorkspaceDependencies;
     if (this.projects.has(projectConfig.rootFsPath)) {
-      return this.projects.get(projectConfig.rootFsPath);
+      const project = this.projects.get(projectConfig.rootFsPath);
+      if (project?.env.getConfig().coffeesense.useWorkspaceDependencies === useWorkspaceDependencies) {
+        return project;
+      }
     }
     // Load project once
     if (this.loadingProjects.includes(projectConfig.rootFsPath)) {
@@ -308,10 +316,11 @@ export class LSP {
     this.loadingProjects.push(projectConfig.rootFsPath);
     const workDoneProgress = await this.lspConnection.window.createWorkDoneProgress();
     workDoneProgress.begin(`Load project: ${projectConfig.rootFsPath}`, undefined);
-    const nodeModulePaths =
-      this.nodeModulesMap.get(projectConfig.rootPathForConfig) ??
-      createNodeModulesPaths(projectConfig.rootPathForConfig);
-    if (this.nodeModulesMap.has(projectConfig.rootPathForConfig)) {
+    const nodeModulePaths = useWorkspaceDependencies
+      ? this.nodeModulesMap.get(projectConfig.rootPathForConfig) ??
+        createNodeModulesPaths(projectConfig.rootPathForConfig)
+      : [];
+    if (useWorkspaceDependencies) {
       this.nodeModulesMap.set(projectConfig.rootPathForConfig, nodeModulePaths);
     }
     const dependencyService = await createDependencyService(

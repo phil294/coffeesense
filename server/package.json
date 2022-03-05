@@ -23,26 +23,26 @@
   "homepage": "https://github.com/phil294/coffeesense/tree/master/server",
   "dependencies": {
     "vscode-languageserver": "7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.1",
+    "vscode-languageserver-textdocument": "^1.0.2",
     "vscode-uri": "^3.0.2",
     "coffeescript": "^2.5.1",
     "jshashes": "^1.0.8",
-    "typescript": "^4.3.2",
+    "typescript": "^4.4.4",
     "volatile-map": "^1.0.2"
   },
   "resolutions": {
-    "typescript": "^4.3.2"
+    "typescript": "^4.4.4"
   },
   "devDependencies": {
     "@types/coffeescript": "^2.5.0",
-    "@types/lodash": "^4.14.170",
-    "@types/node": "^15.12.4",
-    "@types/resolve": "1.20.0",
+    "@types/lodash": "^4.14.176",
+    "@types/node": "^16.11.0",
+    "@types/resolve": "1.20.1",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
-    "core-js": "^3.15.1",
+    "core-js": "^3.19.1",
     "eslint": "^8.6.0",
-    "fast-glob": "^3.2.5",
+    "fast-glob": "^3.2.7",
     "lodash": "^4.17.21",
     "parse-gitignore": "^1.0.1",
     "rollup": "^2.52.2",

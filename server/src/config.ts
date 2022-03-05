@@ -110,7 +110,13 @@ export async function getCoffeeSenseFullConfig(
           : getFallbackTsconfigPath(projectRoot)
       } as CoffeeSenseProject;
     })
-    .sort((a, b) => getPathDepth(b.root, '/') - getPathDepth(a.root, '/'));
+    .sort((a, b) => {
+      const r = getPathDepth(b.root, '/') - getPathDepth(a.root, '/');
+      if (r !== 0) {
+        return r;
+      }
+      return b.root.length - a.root.length;
+    });
 
   return {
     settings: coffeesenseConfig.settings ?? {},

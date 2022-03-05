@@ -3,11 +3,12 @@ import fs from 'fs';
 import $ from 'shelljs';
 import minimist from 'minimist';
 
-import { downloadAndUnzipVSCode, runTests } from 'vscode-test';
+import { downloadAndUnzipVSCode, runTests } from '@vscode/test-electron';
 
 console.log('### CoffeeSense Integration Test ###');
 console.log('');
 
+const VSCODE_VERSION = '1.53.2';
 const EXT_ROOT = path.resolve(__dirname, '../../');
 
 async function run(execPath: string, testWorkspaceRelativePath: string, mochaArgs: any): Promise<number> {
@@ -25,7 +26,7 @@ async function run(execPath: string, testWorkspaceRelativePath: string, mochaArg
 
   return await runTests({
     vscodeExecutablePath: execPath,
-    version: '1.53.2',
+    version: VSCODE_VERSION,
     extensionDevelopmentPath: EXT_ROOT,
     extensionTestsPath: extTestPath,
     extensionTestsEnv: mochaArgs,
@@ -82,7 +83,7 @@ function installMissingDependencies(fixturePath: string) {
 }
 
 async function go() {
-  const execPath = await downloadAndUnzipVSCode('1.53.2');
+  const execPath = await downloadAndUnzipVSCode(VSCODE_VERSION);
   await runAllTests(execPath);
 }
 
