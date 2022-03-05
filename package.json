@@ -152,7 +152,7 @@
     "rollup-plugin-typescript2": "^0.30.0",
     "shelljs": "^0.8.4",
     "ts-node": "^10.4.0",
-    "typescript": "^4.4.4",
+    "typescript": "^4.6.2",
     "vscode-languageserver-types": "^3.16.0",
     "generate-license-file": "^1.1.0"
   },

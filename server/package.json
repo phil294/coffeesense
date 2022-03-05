@@ -27,11 +27,11 @@
     "vscode-uri": "^3.0.2",
     "coffeescript": "^2.5.1",
     "jshashes": "^1.0.8",
-    "typescript": "^4.4.4",
+    "typescript": "^4.6.2",
     "volatile-map": "^1.0.2"
   },
   "resolutions": {
-    "typescript": "^4.4.4"
+    "typescript": "^4.6.2"
   },
   "devDependencies": {
     "@types/coffeescript": "^2.5.0",
