@@ -22,30 +22,30 @@
   },
   "homepage": "https://github.com/phil294/coffeesense/tree/master/server",
   "dependencies": {
-    "coffeescript": "^2.5.1",
+    "coffeescript": "^2.6.1",
     "jshashes": "^1.0.8",
     "typescript": "^4.6.2",
-    "volatile-map": "^1.0.2",
+    "volatile-map": "^2.0.0",
     "vscode-languageserver": "7.0.0",
-    "vscode-languageserver-textdocument": "^1.0.2",
-    "vscode-uri": "^3.0.2"
+    "vscode-languageserver-textdocument": "^1.0.4",
+    "vscode-uri": "^3.0.3"
   },
   "resolutions": {
     "typescript": "^4.6.2"
   },
   "devDependencies": {
-    "@types/coffeescript": "^2.5.0",
-    "@types/lodash": "^4.14.176",
-    "@types/node": "^16.11.0",
+    "@types/coffeescript": "^2.5.1",
+    "@types/lodash": "^4.14.179",
+    "@types/node": "^17.0.21",
     "@types/resolve": "1.20.1",
-    "@typescript-eslint/eslint-plugin": "^5.9.0",
-    "@typescript-eslint/parser": "^5.9.0",
-    "core-js": "^3.19.1",
-    "eslint": "^8.6.0",
-    "fast-glob": "^3.2.7",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "core-js": "^3.21.1",
+    "eslint": "^8.10.0",
+    "fast-glob": "^3.2.11",
     "lodash": "^4.17.21",
     "parse-gitignore": "^1.0.1",
-    "rollup": "^2.52.2",
+    "rollup": "^2.69.1",
     "vscode-languageserver-types": "3.16.0"
   },
   "scripts": {
