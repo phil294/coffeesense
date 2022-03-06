@@ -3,6 +3,7 @@ import { testCompletion } from '../../../completionHelper'
 import { getDocUri } from '../../path'
 
 describe('Should autocomplete', () => {
+	const basic_uri = getDocUri('completion/basic.coffee')
 	const import_uri = getDocUri('completion/import.coffee')
 	const string_uri = getDocUri('completion/string.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
@@ -30,6 +31,14 @@ describe('Should autocomplete', () => {
 	const only_dot_uri = getDocUri('completion/only-dot.coffee')
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
 	const if_uri = getDocUri('completion/if.coffee')
+
+	it('completes basic properties after dot, partially typed (= no fake line mechanism)', async () => {
+		await testCompletion(basic_uri, position(2, 23), ['bbb'])
+		// Inside implicit function call braces
+		await testCompletion(basic_uri, position(4, 35), ['bbb'])
+		// Inside implicit function call braces, after ().
+		await testCompletion(basic_uri, position(6, 25), ['toISOString'])
+	})
 
 	it('completes import module names', async () => {
 		await testCompletion(import_uri, position(0, 8), ['lodash'])
