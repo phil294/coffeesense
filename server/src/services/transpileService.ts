@@ -13,10 +13,9 @@ export function get_word_around_position(text: string, offset: number) {
   let i_offset = offset
   while(text[i_offset - 1]?.match(common_js_variable_name_character))
     i_offset--
-  let match_word = "", char_match
-  while((char_match = text[i_offset]?.match(common_js_variable_name_character)) || i_offset <= offset) {
-    if(char_match)
-      match_word += text[i_offset]
+  let match_word = ""
+  while(text[i_offset]?.match(common_js_variable_name_character)) {
+    match_word += text[i_offset]
     i_offset++
   }
   return match_word
@@ -540,9 +539,6 @@ const transpile_service: ITranspileService = {
       const index_match_by_word = words_at_js_matches.findIndex(m => m === word_at_coffee_position)
       if(index_match_by_word > -1)
         return js_matches[index_match_by_word]
-      const index_match_by_is_char = words_at_js_matches.findIndex(m => m?.[0]?.match(common_js_variable_name_character))
-      if(index_match_by_is_char > -1)
-        return js_matches[index_match_by_is_char]
       return [...js_matches]
         .sort((a,b) => b.line - a.line || b.column - a.column)
         [0]
