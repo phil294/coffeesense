@@ -4,10 +4,13 @@ import { getDocUri } from '../../path'
 
 describe('Should autocomplete', () => {
 	const basic_uri = getDocUri('completion/basic.coffee')
+	const inline_callback_uri = getDocUri('completion/inline-callback.coffee')
+	const inline_callback_special_words_uri = getDocUri('completion/inline-callback-special-words.coffee')
 	const import_uri = getDocUri('completion/import.coffee')
 	const string_uri = getDocUri('completion/string.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
 	const this_uri = getDocUri('completion/this.coffee')
+	const assignment_uri = getDocUri('completion/assignment.coffee')
 	const tab_uri = getDocUri('completion/tab.coffee')
 	const at_uri = getDocUri('completion/@.coffee')
 	const at_before_text_uri = getDocUri('completion/@-before-text.coffee')
@@ -61,6 +64,18 @@ describe('Should autocomplete', () => {
 		// There is some "definitely_coffee_syntax" in there to avoid this test
 		// succeeding merely due to the plain javascript parsing fallback.
 		await testCompletion(fake_line_uri, position(1, 44), ['apply'])
+	})
+
+	it('completes a param on inline callback with implicit function braces and fake line mechanism', async () => {
+		// callback parens insertion in transpileService
+		await testCompletion(inline_callback_uri, position(0, 65), ['toFixed'])
+	})
+	it('completes a param on inline callback with implicit function braces and fake line mechanism and special coffee words like "unless"', async () => {
+		await testCompletion(inline_callback_special_words_uri, position(0, 128), ['toFixed'])
+	})
+
+	it('completes in assignment', async () => {
+		await testCompletion(assignment_uri, position(1, 56), ['bbb'])
 	})
 
 	it('completes for this.', async () => {

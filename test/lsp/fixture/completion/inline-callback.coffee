@@ -1,0 +1,1 @@
+if not [1,2,3].some (inline_callback_var) => inline_callback_var.

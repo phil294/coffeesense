@@ -66,7 +66,7 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     })
     // Enable object key autocomplete (that is, missing colon) below other key value mappings.
     // The replaced syntax is always invalid so no harm is done by adding the colon.
-    // (Exception: Object inside braces where shorthand syntax exists (check below).)
+    // (Exception: Object inside braces where shorthand syntax exists)
     // Without the colon, the error shows in the line before which doesn't make sense.
     // With the colon, the line will still be invalid, but now the error is at the right place.
     .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1([a-zA-Z0-9_$]+)$/mg, (match, _, key) => {
@@ -376,12 +376,16 @@ const transpile_service: ITranspileService = {
       const coffee_error_line_modified = coffee_error_line
         // Requires special cursor handling in doComplete() yet again
         .replaceAll('@', 'this.')
-        // Error at variable assignment location
-        .replaceAll(/^\s*[a-zA-Z0-9_-]+\s*=/g, (assignment) => {
-          // Rare case: object half line with open brace. Possibly other cases as well?
-          // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
-          return `let ${assignment}`
-        })
+        // Callback parens insertion: In callbacks, the variable type can not be inferred:
+        // JS does not understand that this is a function (because of the missing parens).
+        // E.g. `x (a) => a.` becomes `x((a) => a.`
+        .replaceAll(/ \(/g, '((')
+        // More special words that JS does not understand *so bad*, it cannot give suggestions
+        // anymore. && Seems to work in all cases, same as if, ! does not.
+        .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
+        // Rare case: object half line with open brace
+        // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
+        .replace(/^\s*[a-zA-Z0-9_-]+\s*=\s*\{$/g, (line) => `let ${line}`)
       
       const js_fake_arr = result.js.split('\n')
       // Could also be calculated using:
