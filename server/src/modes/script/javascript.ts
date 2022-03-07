@@ -272,7 +272,7 @@ export async function getJavascriptMode(
         if(js_text.substr(js_offset, 14) === 'this.valueOf()') {
           // CS cursor: `...@|`
           js_offset += 'this.'.length
-        } else if(transpilation.fake_line !== undefined) {
+        } else if(transpilation.fake_line !== undefined && transpilation.fake_line_mechanism === 'coffee_in_js') {
           const coffee_line_until_cursor = coffee_text.slice(coffee_doc.offsetAt({ line:coffee_position.line, character:0 }), coffee_doc.offsetAt(coffee_position))
           // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
           // the `@`s to `this` conversions need to be considered because fake lines are
@@ -708,7 +708,7 @@ export async function getJavascriptMode(
       const definitions = service.getDefinitionAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (!definitions?.length) {
         // Basic word match algorithm: Jump to the first previous occurence of varname = ..., if present.
-        const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
+        const { word: word_at_coffee_position } = get_word_around_position(coffee_doc.getText(), coffee_doc.offsetAt(coffee_position))
         if(!word_at_coffee_position)
           return []
         const coffee_lines = coffee_doc.getText().split('\n')
