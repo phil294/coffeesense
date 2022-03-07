@@ -139,7 +139,10 @@ export async function testCompletionResolve(
     if (typeof ei === 'string') {
       assert.ok(
         result.items.some(i => {
-          return i.label === ei;
+          return i.label === ei &&
+            // Omit standard matches like variable, parameter as these primarily yield false positives.
+            // If these are really required, they can be passed separately.
+            [CompletionItemKind.Function, CompletionItemKind.Property].includes(i.kind || -1);
         }),
         `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(
           result.items,
