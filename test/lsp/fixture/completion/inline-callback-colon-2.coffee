@@ -1,0 +1,1 @@
+[abc: 123].some (inline_callback_colon_2_var) => inline_callback_colon_2_var.

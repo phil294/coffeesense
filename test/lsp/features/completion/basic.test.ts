@@ -6,6 +6,8 @@ describe('Should autocomplete', () => {
 	const basic_uri = getDocUri('completion/basic.coffee')
 	const inline_callback_uri = getDocUri('completion/inline-callback.coffee')
 	const inline_callback_special_words_uri = getDocUri('completion/inline-callback-special-words.coffee')
+	const inline_callback_colon_uri = getDocUri('completion/inline-callback-colon.coffee')
+	const inline_callback_colon_2_uri = getDocUri('completion/inline-callback-colon-2.coffee')
 	const import_uri = getDocUri('completion/import.coffee')
 	const string_uri = getDocUri('completion/string.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
@@ -72,6 +74,16 @@ describe('Should autocomplete', () => {
 	})
 	it('completes a param on inline callback with implicit function braces and fake line mechanism and special coffee words like "unless"', async () => {
 		await testCompletion(inline_callback_special_words_uri, position(0, 128), ['toFixed'])
+	})
+	it('completes a param on inline callback with implicit function braces and fake line mechanism and colon in line outside of object', async () => {
+		await testCompletion(inline_callback_colon_uri, position(0, 75), ['abc'])
+	})
+	// Known shortcoming - not supported
+	xit('completes a param on inline callback with implicit function braces and fake line mechanism and colon in line outside of object with syntax non-understandable to tsserver', async () => {
+		// `[abc: 123]` isn't parsable to tsserver so this test needs to be skipped. The only realistic way around this
+		// is attempting to compile without the trailing dot and append it afterwards, but the normal fake line
+		// mechanism is much more generic and powerful than that, and not specific to trailing dot
+		await testCompletion(inline_callback_colon_2_uri, position(0, 77), ['abc'])
 	})
 
 	it('completes in assignment', async () => {
