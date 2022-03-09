@@ -39,6 +39,7 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - [x] **Autocompletion**: Works even when a line / the current line is invalid syntax (so, while typing, basically). Autocomplete is based on TypeScript.
   - Methods, properties, object parameters etc.
   - Automatic imports
+  - There is a constantly growing set of automated completion [tests](https://github.com/phil294/coffeesense/tree/master/test/lsp/fixture) covering all known use cases, so please don't hesitate to aggressively test and report missing or wrong completions
 - [x] **Hover information**
 - [x] **Signature type hints** Trigger characters are both `(` and ` `  (space)
 - [x] **Document highlight**
@@ -107,6 +108,17 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
+<sub>(A `|` anywhere below refers to the respective cursor position)</sub>
+
+#### 1.6.0
+##### 2022-03-10
+- Fix autocomplete after `()` inside implicit braces (`console.log new Date().to|`)
+- Fix autocomplete in inline callbacks, in assignment object dot access, and in some cases with special keywords unless, not, and, is, isnt, then
+- Fix autocomplete on lines ending with dot `.` that also include block related characters like braces (e.g. ...`\n].some (a) => a.|`)
+- Fix autocomplete in special case of FP: `[]\n.|\n.x => 1`
+- Fix autocomplete in special case: Outside of object if line contains a colon, `x = [{a: 1}].|`
+- Yet another revision of internal logic regarding autocompletion on erroneous coffee lines, with more edge cases working out of the box
+
 #### 1.5.0
 ##### 2022-03-05
 - Upgrade all dependencies, most notably TypeScript 4.3 -> 4.6
@@ -124,10 +136,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 - Fix error of different autocomplete results for subsequent requests
 - Enable autocomplete while building a brace syntax object, without having a valid closing brace yet
 - Improve/fix autocomplete for strings and imports, now also completes partial strings
-- Fix autocomplete inside empty import values braces `import {} from ...`
+- Fix autocomplete inside empty import values braces `import {|} from ...`
 - Revert `1.2.0` change (variable assignment detection logic change), as it does not yet handle comment blocks appropriately and messes up JSDoc sometimes
 - Upgrade CoffeeScript from 2.5 to 2.6 ([Changelog](https://github.com/jashkenas/coffeescript/pull/5374))
-- Fix wrong completion text at `@` (resolved falsely to `@this.theCompletionText`)
+- Fix wrong completion text at `@|` (resolved falsely to `@this.theCompletionText`)
 - Add autocomplete for local import path completion
 - Internal: Added automatic tests for all known features of this extension
 
@@ -196,7 +208,7 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 #### 1.1.0
 ##### 2021-09-05
-- Add autocompletion at `@`
+- Add autocompletion at `@|`
 
 #### 1.0.0
 ##### 2021-09-04
