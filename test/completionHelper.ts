@@ -135,6 +135,12 @@ export async function testCompletionResolve(
     itemResolveCount
   )) as vscode.CompletionList;
 
+  // We never want to see global suggestions, like DOM:
+  // This is because 1. it can yield false positives from import suggestions
+  // for fields that should have been suggested from other sources instead, and
+  // 2. it almost always means that some scoping is wrong.
+  assert.ok(! result.items.some(i => i.label === 'AbortController'))
+
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {
       assert.ok(
