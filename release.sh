@@ -13,10 +13,12 @@ pause() {
 	echo
 }
 
+yarn
 yarn upgrade
 cd server
 yarn upgrade
 cd ..
+pause
 
 echo 'update changelog'
 pause
