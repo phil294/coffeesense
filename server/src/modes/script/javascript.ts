@@ -241,7 +241,7 @@ export async function getJavascriptMode(
       const js_text = js_doc.getText()
 
       const js_line = js_text.slice(js_doc.offsetAt({ line: position.line, character:0 }), js_doc.offsetAt({ line: position.line, character: Number.MAX_VALUE }))
-      if(js_line.startsWith("import {} from ") && position.character === 7) {
+      if(js_line.startsWith("import {} from ") && (position.character === 7 || position.character === 9)) {
         // special case. There are no source maps pointing into {|}, so move it there
         position.character = 8
       }
