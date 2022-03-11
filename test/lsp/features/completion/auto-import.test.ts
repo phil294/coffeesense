@@ -3,7 +3,7 @@ import { position, sameLineRange, sleep, textEdit } from '../../../util'
 import { getDocUri } from '../../path'
 
 describe('Should autocomplete via imports', () => {
-	it('Should suggest a leaflet export', async () => {
+	it('Should suggest a lodash export', async () => {
 		const doc_uri = getDocUri('completion/autoimport.coffee')
 		await testCompletion(doc_uri, position(1, 19), [
 			'createCallback'
