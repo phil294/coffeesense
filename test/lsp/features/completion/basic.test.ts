@@ -52,7 +52,7 @@ describe('Should autocomplete', () => {
 		await testCompletion(import_uri, position(1, 10), ['lodash'])
 	})
 
-	for(const p of [[2,11], [3,9], [5,22], [5,23], [5,24], [6,52]]) {
+	for(const p of [[2,11], [3,9], [5,8], [5,22], [5,23], [5,24], [6,52]]) {
 		it('completes import module variable names at '+p, async () => {
 			await testCompletion(import_uri, position(p[0], p[1]), ['findLastIndex'])
 		})

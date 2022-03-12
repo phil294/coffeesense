@@ -214,7 +214,7 @@ export async function getJavascriptMode(
           let i = coffee_offset - 1
           while(['\t', ' '].includes(coffee_text[i]||''))
             i--
-          if(coffee_text[i] === ',')
+          if(['{', ','].includes(coffee_text[i]||''))
             // Last char was a comma.
             // CS compiler strips dangling commas in imports and also does not have super accurate
             // source maps in between import modules names, so when adding a new module, move cursor
