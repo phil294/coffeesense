@@ -22,7 +22,8 @@ export async function testCompletion(
   docUri: vscode.Uri,
   position: vscode.Position,
   expectedItems: (string | ExpectedCompletionItem)[],
-  matchFn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean
+  matchFn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean,
+  allow_globals = false,
 ) {
   await showFile(docUri);
 
@@ -31,14 +32,22 @@ export async function testCompletion(
     docUri,
     position
   )) as vscode.CompletionList;
-  // Sometimes text items are returned (only while testing though, no idea). Filter these out.
-  result.items = result.items.filter(item => item.kind !== CompletionItemKind.Text)
+
+  if(!allow_globals)
+    // We never want to see global suggestions, like DOM:
+    // This is because 1. it can yield false positives from import suggestions
+    // for fields that should have been suggested from other sources instead, and
+    // 2. it almost always means that some scoping is wrong.
+    assert.ok(! result.items.some(i => i.label === 'AbortController'))
 
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {
       assert.ok(
         result.items.some(i => {
-          return i.label === ei;
+          return i.label === ei &&
+            // Omit standard matches like variable as these primarily yield false positives.
+            // If these are really required, they can be passed separately.
+            [CompletionItemKind.Function, CompletionItemKind.Property, CompletionItemKind.Field].includes(i.kind || -1)
         }),
         `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(
           result.items,
@@ -135,21 +144,10 @@ export async function testCompletionResolve(
     itemResolveCount
   )) as vscode.CompletionList;
 
-  // We never want to see global suggestions, like DOM:
-  // This is because 1. it can yield false positives from import suggestions
-  // for fields that should have been suggested from other sources instead, and
-  // 2. it almost always means that some scoping is wrong.
-  assert.ok(! result.items.some(i => i.label === 'AbortController'))
-
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {
       assert.ok(
-        result.items.some(i => {
-          return i.label === ei &&
-            // Omit standard matches like variable, parameter as these primarily yield false positives.
-            // If these are really required, they can be passed separately.
-            [CompletionItemKind.Function, CompletionItemKind.Property].includes(i.kind || -1);
-        }),
+        result.items.some(i => i.label === ei),
         `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(
           result.items,
           null,
