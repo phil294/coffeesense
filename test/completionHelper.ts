@@ -33,12 +33,15 @@ export async function testCompletion(
     position
   )) as vscode.CompletionList;
 
-  if(!allow_globals)
+  if(!allow_globals) {
     // We never want to see global suggestions, like DOM:
     // This is because 1. it can yield false positives from import suggestions
     // for fields that should have been suggested from other sources instead, and
     // 2. it almost always means that some scoping is wrong.
     assert.ok(! result.items.some(i => i.label === 'AbortController' || i.label === 'encodeURIComponent'))
+    // With lodash, there can be as many as 396 (2022-03)
+    assert.ok(result.items.length < 450)
+  }
 
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {
