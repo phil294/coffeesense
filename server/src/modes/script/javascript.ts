@@ -197,8 +197,10 @@ export async function getJavascriptMode(
         return { isIncomplete: false, items: [] }
       
       const coffee_text = coffee_doc.getText()
-      const coffee_last_char = coffee_text[coffee_doc.offsetAt(coffee_position) - 1]
-      const coffee_char = coffee_text[coffee_doc.offsetAt(coffee_position)]
+      const coffee_offset = coffee_doc.offsetAt(coffee_position)
+      const coffee_last_char = coffee_text[coffee_offset - 1]
+      const coffee_char = coffee_text[coffee_offset]
+      const { word: coffee_word } = get_word_around_position(coffee_text, coffee_offset)
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
@@ -273,7 +275,7 @@ export async function getJavascriptMode(
           // CS cursor: `...@|`
           js_offset += 'this.'.length
         } else if(transpilation.fake_line !== undefined && transpilation.fake_line_mechanism === 'coffee_in_js') {
-          const coffee_line_until_cursor = coffee_text.slice(coffee_doc.offsetAt({ line:coffee_position.line, character:0 }), coffee_doc.offsetAt(coffee_position))
+          const coffee_line_until_cursor = coffee_text.slice(coffee_doc.offsetAt({ line:coffee_position.line, character:0 }), coffee_offset)
           // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
           // the `@`s to `this` conversions need to be considered because fake lines are
           // CS only.
@@ -293,9 +295,13 @@ export async function getJavascriptMode(
       if (!completions) {
         return { isIncomplete: false, items: [] };
       }
+      let completion_entries = completions.entries
+      if(coffee_last_char?.match(common_js_variable_name_character)) {
+        completion_entries = completion_entries.filter(e => e.name.includes(coffee_word))
+      }
       return {
         isIncomplete: false,
-        items: completions.entries.map((entry, index) => {
+        items: completion_entries.map((entry, index) => {
           let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
           if(range) {
             if(transpilation.source_map)
