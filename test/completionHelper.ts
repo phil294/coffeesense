@@ -131,7 +131,7 @@ export async function testCompletionResolve(
   docUri: vscode.Uri,
   position: vscode.Position,
   expectedItems: CompletionItem[],
-  itemResolveCount: number,
+  itemResolveCount = 1,
   matchFn?: (ei: CompletionItem) => (result: CompletionItem) => boolean
 ) {
   await showFile(docUri);

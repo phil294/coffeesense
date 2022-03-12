@@ -490,7 +490,8 @@ export async function getJavascriptMode(
                   range,
                   newText: text_change.newText.replace(/;/g,'')
                 }
-          }))).flat().flat()
+          }).filter(c => !! c.newText)
+          )).flat().flat()
 
           item.additionalTextEdits = textEdits;
 
