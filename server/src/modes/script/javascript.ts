@@ -198,18 +198,30 @@ export async function getJavascriptMode(
       
       const coffee_text = coffee_doc.getText()
       const coffee_offset = coffee_doc.offsetAt(coffee_position)
-      const coffee_last_char = coffee_text[coffee_offset - 1]
       const coffee_char = coffee_text[coffee_offset]
+      const coffee_last_char = coffee_text[coffee_offset - 1]
       const { word: coffee_word } = get_word_around_position(coffee_text, coffee_offset)
+      const coffee_line = coffee_text.slice(coffee_doc.offsetAt({ line: coffee_position.line, character:0 }), coffee_doc.offsetAt({ line: coffee_position.line, character: Number.MAX_VALUE }))
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
         // Otherwise, the source map does not know what you're talking of
-        const coffee_position_excl_trigger_char = {
+        const coffee_position_tweaked = {
           line: coffee_position.line,
           character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
         }
-        let js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_excl_trigger_char, coffee_doc)
+        if(coffee_line.startsWith("import {") && [' ', '}'].includes(coffee_char||'')) {
+          let i = coffee_offset - 1
+          while(['\t', ' '].includes(coffee_text[i]||''))
+            i--
+          if(coffee_text[i] === ',')
+            // Last char was a comma.
+            // CS compiler strips dangling commas in imports and also does not have super accurate
+            // source maps in between import modules names, so when adding a new module, move cursor
+            // to start of first existing import which gives correct results:
+            coffee_position_tweaked.character = 9
+        }
+        let js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_tweaked, coffee_doc)
         if(!js_position) {
           // The following works great in principle, but is not useful as cs indentation is wrong,
           // comma is missing, scope is mostly simply wrong

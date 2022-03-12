@@ -47,12 +47,16 @@ describe('Should autocomplete', () => {
 		await testCompletion(basic_uri, position(6, 25), ['toISOString'])
 	})
 
-	it('completes import module names', async () => {
+	it('completes import modules', async () => {
 		await testCompletion(import_uri, position(0, 8), ['lodash'])
 		await testCompletion(import_uri, position(1, 10), ['lodash'])
-		await testCompletion(import_uri, position(2, 11), ['curry'])
-		await testCompletion(import_uri, position(3, 9), ['curry'])
 	})
+
+	for(const p of [[2,11], [3,9], [5,22], [5,23], [5,24], [6,52]]) {
+		it('completes import module variable names at '+p, async () => {
+			await testCompletion(import_uri, position(p[0], p[1]), ['findLastIndex'])
+		})
+	}
 
 	it('completes strings', async () => {
 		await testCompletion(string_uri, position(2, 27), ['constant'])
