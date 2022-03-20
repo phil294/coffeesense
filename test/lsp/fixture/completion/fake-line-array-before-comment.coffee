@@ -1,0 +1,1 @@
+fakeline_array_before_comment_var = [abc: 123]. # abc

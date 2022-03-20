@@ -419,6 +419,8 @@ const transpile_service: ITranspileService = {
           // Rare case of error in assignment: object half line with open brace, or open string
           // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
           .replace(/^\s*[a-zA-Z0-9_-]+\s*=([^=]|$)/g, (line) => `let ${line}`)
+          // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
+          .replaceAll(' #', '//')
         
         js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
 
