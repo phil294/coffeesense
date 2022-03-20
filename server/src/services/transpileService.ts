@@ -382,8 +382,8 @@ const transpile_service: ITranspileService = {
     }
     // Always try `𒐩:𒐩` but if object, do so at first because `𒐩` can sometimes translate to the wrong output
     // e.g. object-invalid-line.coffee - doesn't happen often though.
-    // This regex does not match variable keys `[x]:y` but it rightfully excludes stuff like `b=[{a:1}].`
-    const coffee_error_line_is_in_object = !!coffee_error_line.match(/^\s*[a-zA-Z0-9_$]+\s*:/)
+    // This regex matches object key definitions but rightfully excludes stuff like `b=[{a:1}].`
+    const coffee_error_line_is_in_object = !!coffee_error_line.match(/^\s*[a-zA-Z0-9_$[\]]+\s*:/)
     if(!result.js && coffee_error_line_is_in_object)
       try_fake_line_compilation('𒐩:𒐩')
     for(const fake_line_content of ['𒐩', 'if 𒐩']) {
