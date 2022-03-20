@@ -111,9 +111,27 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 <sub style="color:grey">
 <details>
   <summary>legend</summary>
-  A <code>|</code> anywhere below refers to the respective cursor position.<br>This changelog follows semver versioning. <code>Fix</code> generally refers to features that should have already worked / regressions (resulting in patch version bump). <code>Add</code> (minor version bump) refers to new features or subfeatures: For example autocomplete cases that haven't worked before are <code>Add</code> (new feature), as CoffeeSense does not yet officially "support autocomplete", just parts of it. (valid since 1.2.0)
+  <p>A <code>|</code> anywhere below refers to the respective cursor position.
+  <p>Features like "autocomplete" mostly refer to the setup, not the actual results. Just because CoffeeSense supports autocomplete at <code>a = "|</code>, this obviously does not mean you'll actually see suggestions: It also requires that <code>a</code> has a defined string union type, usually via JSDoc.
+  <p>This changelog follows semver versioning. <code>Fix</code> generally refers to features that should have already worked / regressions (resulting in patch version bump). <code>Add</code> (minor version bump) refers to new features or subfeatures: For example autocomplete cases that haven't worked before are <code>Add</code>, as CoffeeSense does not yet officially "support autocomplete", just parts of it. (valid since 1.2.0)
 </details>
 </sub>
+
+#### 1.7.0
+##### 2022-03-20
+- Add autocomplete inside imports after comma, e.g. `import { a, | } from '...'`
+- Add autocomplete to add another import module inside existing import line directly after opening brace, e.g. `import {| a } from '...'`
+- Fix import module name: global vars such as DOM objects where falsely suggested in e.g. `import {|} from 'some-lib'`
+- Add autocomplete after open (not yet closed) quote, e.g. `a = "|`
+- Add autocomplete after dot before comment on same line, e.g. `b.| # abc`
+- Fixing completion inserts that modify text to the left of the cursor. Known use cases:
+  - Add object key autocompletion with space/special chars in name, e.g. completes `a.|` to `a["the completion"]`
+  - Add question after array element if it is strictly optional because of noUncheckedIndexedAccess:true, e.g. completes `[0].` to `[0]?.theCompletion`
+- Auto-import: when import mapping failed, only insert at pos 0/0 if it actually starts with `import `, as it's otherwise garbage
+- Auto-import: when range mapping failed and line does not start with import, try to find identical line in cs and insert there if found (#10)
+- When autocompleting a word, only suggest completions that actually contain that very word (already worked in VSCode)
+- Fix edge case of autocomplete inside object property on a selfcontained key-value line that does *not* end with `.` but is invalid anyways *and* whose key is defined with brackets syntax because of spaces etc
+- Small Readme improvements
 
 #### 1.6.0
 ##### 2022-03-10
