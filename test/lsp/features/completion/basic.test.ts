@@ -44,6 +44,7 @@ describe('Should autocomplete', () => {
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
 	const if_uri = getDocUri('completion/if.coffee')
 	const if_assignment_uri = getDocUri('completion/if-assignment.coffee')
+	const quoted_object_key_uri = getDocUri('completion/quoted-object-key.coffee')
 
 	it('completes basic properties after dot, partially typed (= no fake line mechanism)', async () => {
 		await testCompletion(basic_uri, position(2, 23), ['bbb'])
@@ -229,3 +230,11 @@ describe('Should autocomplete', () => {
 	it('completes a variable that has been assigned to inline a if-statement', async () => {
 		await testCompletion(if_assignment_uri, position(2, 24), ['abc'])
 	})
+
+	it('properly replaces the . with [] when autocompleting a complex property that e.g. contains spaces', async () => {
+		await testCompletion(quoted_object_key_uri, position(2, 22), [{
+			label: 'a b',
+			insertTextValue: '["a b"]',
+			textEdit: TextEdit.replace(new Range(new Position(2, 21), new Position(2, 22)), '["a b"]')
+		}])
+	})})

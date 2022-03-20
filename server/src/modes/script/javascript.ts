@@ -308,11 +308,23 @@ export async function getJavascriptMode(
         items: completion_entries.map((entry, index) => {
           let range = entry.replacementSpan && convertRange(js_doc, entry.replacementSpan);
           if(range) {
+            // This is a rare occurrence: Normally, replacements are only specified as insertText or label.
+            // With replacementSpan, more complicated insertions are bound to happen: Insertions outside of
+            // cursor position (e.g. `].|` becoming `]?.completionText`.
             if(transpilation.source_map)
               range = transpile_service.range_js_to_coffee(transpilation.source_map, range)  || range
             range.start.character += char_offset
             range.end.character += char_offset
-            // Or maybe do not calculate range at all, just set to coffee_position + entry length? Should work too
+            // VSCode fails to show this completion item when the cursor is not inside that very range and is arguably
+            // right to do so as that is probably always an error. So check for containment and move
+            // to cursor otherwise.
+            if(coffee_position.line !== range.end.line || coffee_position.line !== range.start.line || coffee_position.character < range.start.character || coffee_position.character > range.end.character) {
+              range = Range.create(Position.create(coffee_position.line, coffee_position.character), Position.create(coffee_position.line, coffee_position.character))
+              if(coffee_last_char === '.' && entry.insertText?.startsWith('[')) {
+                // Special case
+                range.start.character--
+              }
+            }
           }
           
           const { label, detail } = calculateLabelAndDetailTextForPathImport(entry);

@@ -126,6 +126,14 @@ export async function testCompletion(
           assert.strictEqual(match.insertText, ei.insertTextValue);
         }
       }
+
+      if (ei.textEdit) {
+        assert.strictEqual(match.textEdit?.newText, ei.textEdit.newText)
+        assert.strictEqual(match.textEdit?.range.start.line, ei.textEdit.range.start.line)
+        assert.strictEqual(match.textEdit?.range.start.character, ei.textEdit.range.start.character)
+        assert.strictEqual(match.textEdit?.range.end.line, ei.textEdit.range.end.line)
+        assert.strictEqual(match.textEdit?.range.end.character, ei.textEdit.range.end.character)
+      }
     }
   });
 }
