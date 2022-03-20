@@ -1,6 +1,7 @@
 import { position } from '../../../util'
 import { testCompletion } from '../../../completionHelper'
 import { getDocUri } from '../../path'
+import { Position, Range, TextEdit } from 'vscode'
 
 describe('Should autocomplete', () => {
 	const basic_uri = getDocUri('completion/basic.coffee')
@@ -12,6 +13,8 @@ describe('Should autocomplete', () => {
 	const fake_combined_line_uri = getDocUri('completion/fake-combined-line.coffee')
 	const import_uri = getDocUri('completion/import.coffee')
 	const string_uri = getDocUri('completion/string.coffee')
+	const open_string_uri = getDocUri('completion/open-string.coffee')
+	const open_string_2_uri = getDocUri('completion/open-string-2.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
 	const this_uri = getDocUri('completion/this.coffee')
 	const assignment_uri = getDocUri('completion/assignment.coffee')
@@ -61,6 +64,10 @@ describe('Should autocomplete', () => {
 	it('completes strings', async () => {
 		await testCompletion(string_uri, position(2, 27), ['constant'])
 		await testCompletion(string_uri, position(5, 35), ['constant'])
+	})
+	it('completes unclosed strings', async () => {
+		await testCompletion(open_string_uri, position(2, 19), ['abc'])
+		await testCompletion(open_string_2_uri, position(2, 21), ['abc'])
 	})
 
 	it('completes for lodash methods', async () => {

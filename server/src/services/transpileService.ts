@@ -406,8 +406,8 @@ const transpile_service: ITranspileService = {
         throw new Error('could not map back js 𒐩 line')
   
       if(fake_line_mechanism === 'coffee_in_js') {
+        // Below modifications that change the line length are handled in position_coffee_to_js.
         const coffee_error_line_modified = coffee_error_line
-          // Requires special cursor handling in doComplete() yet again
           .replaceAll('@', 'this.')
           // Callback parens insertion: In callbacks, the variable type can not be inferred:
           // JS does not understand that this is a function (because of the missing parens).
@@ -416,9 +416,9 @@ const transpile_service: ITranspileService = {
           // More special words that JS does not understand *so bad*, it cannot give suggestions
           // anymore. && Seems to work in all cases, same as if, ! does not.
           .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
-          // Rare case: object half line with open brace
+          // Rare case of error in assignment: object half line with open brace, or open string
           // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
-          .replace(/^\s*[a-zA-Z0-9_-]+\s*=\s*\{$/g, (line) => `let ${line}`)
+          .replace(/^\s*[a-zA-Z0-9_-]+\s*=([^=]|$)/g, (line) => `let ${line}`)
         
         js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
 
@@ -545,6 +545,7 @@ const transpile_service: ITranspileService = {
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_position_offset)
     const coffee_position_is_at_end_of_word = word_at_coffee_position.offset === coffee_position_offset - word_at_coffee_position.word.length
     const coffee_position_at_start_of_word = coffee_doc.positionAt(word_at_coffee_position.offset)
+    const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
     
     // TODO: revise this function, maybe this should be always all line matches by default instead
     const get_fitting_js_matches = () => {
@@ -583,7 +584,6 @@ const transpile_service: ITranspileService = {
 
     /** Return match where there is a match by word at position, or by char position, possibly adjusting column */
     const choose_js_match = () => {
-      const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
       const bottom_right_match = (matches: LineMap["columns"]) =>
         [...matches].sort((a,b) => b.line - a.line || b.column - a.column)
         [0]
@@ -611,12 +611,25 @@ const transpile_service: ITranspileService = {
     
     const line = js_match?.line
     let column = js_match?.column
-    if(js_match && result.fake_line == coffee_position.line && result.fake_line_mechanism === 'coffee_in_js')
+    if(js_match && line != null && result.fake_line == coffee_position.line && result.fake_line_mechanism === 'coffee_in_js') {
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
       // helpful but `column.column` does not make any sense, it contains only one column (where
       // the injected `𒐩` was placed). But since the error line was simply put into JS, we can
       // use the same pos:
       column = coffee_position.character
+      // Note however that *most* of the time, fake_line_mechanism will be 'modified_js' instead.
+      // See coffee_error_line_modified: Some position adjustments for the coffee in js fake line
+      const js_line = js_doc_tmp.getText().slice(js_doc_tmp.offsetAt({ line, character: 0 }), js_doc_tmp.offsetAt({ line, character: Number.MAX_VALUE }))
+      if(js_line.startsWith('let '))
+        column += 'let '.length
+      const coffee_line_until_cursor = coffee_doc.getText().slice(coffee_doc.offsetAt({ line: coffee_position.line, character: 0 }), coffee_doc.offsetAt({ line: coffee_position.line, character: coffee_position.character }))
+      // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
+      // the `@`s to `this` conversions need to be considered because fake lines are
+      // CS only.
+      // Possible error: current_line != fake_line (so current_line is JS) and
+      // current_line.includes('@'), but let's ignore that
+      column += (coffee_line_until_cursor.split('@').length - 1) * ('this.'.length - '@'.length)
+    }
 
     // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
     if(line == null || column == null)
