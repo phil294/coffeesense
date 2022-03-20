@@ -435,16 +435,17 @@ export async function getJavascriptMode(
 
         if (details.codeActions) {
           // auto imports
+          const coffee_lines = coffee_doc.getText().split('\n')
           const textEdits = details.codeActions.map(action =>
             action.changes.map(change =>
               change.textChanges.map(text_change => {
-                let range
+                const js_range = convertRange(js_doc, text_change.span)
+                let range: Range | undefined
                 if(transpilation.source_map) {
-                  range = convertRange(js_doc, text_change.span)
-                  const js_range = range
+                  range = js_range
                   let coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, js_range)
                   if(coffee_range) {
-                    const coffee_line = coffee_doc.getText().split('\n')[coffee_range.start.line]!
+                    const coffee_line = coffee_lines[coffee_range.start.line]!
                     let coffee_range_end_of_named_group
                     let coffee_end_of_named_group_col = coffee_line.indexOf('}')
                     if(coffee_end_of_named_group_col > -1) {
@@ -488,13 +489,19 @@ export async function getJavascriptMode(
                   }
                   range = coffee_range
                 }
+                if(!range) {
+                  if(text_change. newText.startsWith('import')) {
+                    range = Range.create(0, 0, 0, 0)
+                  }
+                }
                 if(!range)
-                  range = Range.create(0, 0, 0, 0)
+                  // Failed! Do not add import, it would only be messy.
+                  return {}
                 return {
                   range,
                   newText: text_change.newText.replace(/;/g,'')
                 }
-          }).filter(c => !! c.newText)
+          }).filter((c): c is TextEdit => !! c.newText)
           )).flat().flat()
 
           item.additionalTextEdits = textEdits;
