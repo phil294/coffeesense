@@ -46,7 +46,7 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - **Document symbols**: Usable but not great. Check out [Yorkxin's extension](https://github.com/yorkxin/vscode-coffeescript-support), it provides much better symbols if you need that
 - [x] **Find definition**
 - [x] **Find references**
-- **Code actions**: Organize imports only. Probably only rarely works as you intend it to.
+- **Code actions**: Organize imports only. Probably only rarely works as you intend it to. Auto imports: Not implemented as code actions, but works while autocompleting.
 - [ ] *missing* Quick fix, refactor
 - [ ] *missing* Formatting
 - [ ] *missing* Rename var
