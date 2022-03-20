@@ -20,6 +20,11 @@ yarn upgrade
 cd ..
 pause
 
+changes=$(git log --reverse ed36f9.. --pretty=format:"%B" |grep . |sed -E 's/^(.)/- \U\1/')
+echo 'CHANGES:'
+echo "$changes"
+echo "---- (put into clipboard)"
+echo "$changes" |xclip -sel c
 echo 'update changelog'
 pause
 
