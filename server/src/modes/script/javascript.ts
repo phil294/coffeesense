@@ -320,7 +320,7 @@ export async function getJavascriptMode(
             // to cursor otherwise.
             if(coffee_position.line !== range.end.line || coffee_position.line !== range.start.line || coffee_position.character < range.start.character || coffee_position.character > range.end.character) {
               range = Range.create(Position.create(coffee_position.line, coffee_position.character), Position.create(coffee_position.line, coffee_position.character))
-              if(coffee_last_char === '.' && entry.insertText?.startsWith('[')) {
+              if(coffee_last_char === '.' && (entry.insertText?.startsWith('?.') || entry.insertText?.startsWith('['))) {
                 // Special case
                 range.start.character--
               }

@@ -1,0 +1,22 @@
+{
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dists",
+    "todo*",
+    ".vscode",
+    "docs"
+  ],
+  "compilerOptions": {
+    "checkJs": true,
+    "lib": [
+      "esnext", "dom"
+    ],
+    "module": "ESNext",
+    "target": "ESNext",
+    "strict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true, 
+    "strictNullChecks": true
+  }
+}

@@ -44,6 +44,7 @@ describe('Should autocomplete', () => {
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
 	const if_uri = getDocUri('completion/if.coffee')
 	const if_assignment_uri = getDocUri('completion/if-assignment.coffee')
+	const array_access_with_no_unchecked_index_access_uri = getDocUri('completion/array-access-with-no-unchecked-index-access.coffee')
 	const quoted_object_key_uri = getDocUri('completion/quoted-object-key.coffee')
 
 	it('completes basic properties after dot, partially typed (= no fake line mechanism)', async () => {
@@ -229,6 +230,15 @@ describe('Should autocomplete', () => {
 
 	it('completes a variable that has been assigned to inline a if-statement', async () => {
 		await testCompletion(if_assignment_uri, position(2, 24), ['abc'])
+	})
+
+	it('properly inserts a ? before the . when autocompleting with no-unchecked-index-access:true', async () => {
+		// the mentioned setting is active for all tests, in jsconfig.json
+		await testCompletion(array_access_with_no_unchecked_index_access_uri, position(1, 51), [{
+			label: 'abc',
+			insertTextValue: '?.abc',
+			textEdit: TextEdit.replace(new Range(new Position(1, 50), new Position(1, 51)), '?.abc')
+		}])
 	})
 
 	it('properly replaces the . with [] when autocompleting a complex property that e.g. contains spaces', async () => {
