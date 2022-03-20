@@ -153,7 +153,7 @@
     "rollup-plugin-typescript2": "^0.31.2",
     "shelljs": "^0.8.5",
     "ts-node": "^10.6.0",
-    "typescript": "^4.6.2",
+    "typescript": "https://typescript.visualstudio.com/cf7ac146-d525-443c-b23c-0d58337efebc/_apis/build/builds/121842/artifacts?artifactName=tgz&fileId=BC8F78CBCF3D3B551A34EA6659FA5D670D458543ADE83DD287314B98C2CEFF7A02&fileName=/typescript-4.7.0-insiders.20220315.tgz",
     "vscode-languageserver-types": "^3.16.0"
   },
   "dependencies": {
