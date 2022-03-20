@@ -49,4 +49,29 @@ describe('Should autocomplete via imports', () => {
 			}]
 		)
 	})
+
+	// issue #10
+	it('[JSX fake line test] Should auto add a jsx import to an existing import statement without messing up previous imports when the current line is invalid due to an open brace (non-fixable by fake line insertion)', async () => {
+		const doc_uri = getDocUri('completion/autoimport-add-jsx.coffee')
+		await testCompletionResolve(
+			doc_uri,
+			position(6, 17),
+			[{
+					label: 'JSXItem2',
+					additionalTextEdits: [ textEdit(sameLineRange(1, 17, 17), ', JSXItem2') ]
+			}]
+		)
+	})
+
+	it('[JSX fake line test] Should auto add a jsx import to an existing yet manually altered (spaces etc) import statement without messing up previous imports when the current line is invalid due to an open brace (non-fixable by fake line insertion)', async () => {
+		const doc_uri = getDocUri('completion/autoimport-add-jsx-altered-import.coffee')
+		await testCompletionResolve(
+			doc_uri,
+			position(6, 17),
+			[{
+					label: 'JSXItem2',
+					additionalTextEdits: [ textEdit(sameLineRange(1, 16, 16), ', JSXItem2') ]
+			}]
+		)
+	})
 })

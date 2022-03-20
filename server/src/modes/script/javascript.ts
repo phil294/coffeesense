@@ -492,11 +492,17 @@ export async function getJavascriptMode(
                 if(!range) {
                   if(text_change. newText.startsWith('import')) {
                     range = Range.create(0, 0, 0, 0)
+                  } else {
+                    const js_line = js_doc.getText().slice(js_doc.offsetAt({ line: js_range.start.line, character: 0 }), js_doc.offsetAt({ line: js_range.start.line, character: Number.MAX_VALUE })).trim()
+                    const equiv_coffee_line_no = coffee_lines.findIndex(l => l === js_line)
+                    if(js_line.startsWith('import ') && equiv_coffee_line_no > -1)
+                      // Fallback import matching, mostly when cs compilation failed and the import comes from ts by parsing cs directly with no source maps available
+                      range = Range.create(equiv_coffee_line_no, js_range.start.character, equiv_coffee_line_no, js_range.end.character)
+                    else
+                      // Failed! Do not add import, it would only be messy.
+                      return {}
                   }
                 }
-                if(!range)
-                  // Failed! Do not add import, it would only be messy.
-                  return {}
                 return {
                   range,
                   newText: text_change.newText.replace(/;/g,'')
