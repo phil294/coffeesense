@@ -42,6 +42,7 @@ describe('Should autocomplete', () => {
 	const only_dot_uri = getDocUri('completion/only-dot.coffee')
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
 	const if_uri = getDocUri('completion/if.coffee')
+	const if_assignment_uri = getDocUri('completion/if-assignment.coffee')
 
 	it('completes basic properties after dot, partially typed (= no fake line mechanism)', async () => {
 		await testCompletion(basic_uri, position(2, 23), ['bbb'])
@@ -219,4 +220,7 @@ describe('Should autocomplete', () => {
 	it('completes in if-statement if next line is indented', async () => {
 		await testCompletion(if_uri, position(1, 10), ['if_obj_prop'])
 	})
-})
+
+	it('completes a variable that has been assigned to inline a if-statement', async () => {
+		await testCompletion(if_assignment_uri, position(2, 24), ['abc'])
+	})
