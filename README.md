@@ -108,15 +108,20 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
-<sub>(A `|` anywhere below refers to the respective cursor position)</sub>
+<sub style="color:grey">
+<details>
+  <summary>legend</summary>
+  A <code>|</code> anywhere below refers to the respective cursor position.<br>This changelog follows semver versioning. <code>Fix</code> generally refers to features that should have already worked / regressions (resulting in patch version bump). <code>Add</code> (minor version bump) refers to new features or subfeatures: For example autocomplete cases that haven't worked before are <code>Add</code> (new feature), as CoffeeSense does not yet officially "support autocomplete", just parts of it. (valid since 1.2.0)
+</details>
+</sub>
 
 #### 1.6.0
 ##### 2022-03-10
-- Fix autocomplete after `()` inside implicit braces (`console.log new Date().to|`)
-- Fix autocomplete in inline callbacks, in assignment object dot access, and in some cases with special keywords unless, not, and, is, isnt, then
-- Fix autocomplete on lines ending with dot `.` that also include block related characters like braces (e.g. ...`\n].some (a) => a.|`)
-- Fix autocomplete in special case of FP: `[]\n.|\n.x => 1`
-- Fix autocomplete in special case: Outside of object if line contains a colon, `x = [{a: 1}].|`
+- Add autocomplete after `()` inside implicit braces (`console.log new Date().to|`)
+- Add autocomplete in inline callbacks, in assignment object dot access, and in some cases with special keywords unless, not, and, is, isnt, then
+- Add autocomplete on lines ending with dot `.` that also include block related characters like braces (e.g. ...`\n].some (a) => a.|`)
+- Add autocomplete in special case of FP: `[]\n.|\n.x => 1`
+- Add autocomplete in special case: Outside of object if line contains a colon, `x = [{a: 1}].|`
 - Yet another revision of internal logic regarding autocompletion on erroneous coffee lines, with more edge cases working out of the box
 
 #### 1.5.0
@@ -136,7 +141,7 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 - Fix error of different autocomplete results for subsequent requests
 - Enable autocomplete while building a brace syntax object, without having a valid closing brace yet
 - Improve/fix autocomplete for strings and imports, now also completes partial strings
-- Fix autocomplete inside empty import values braces `import {|} from ...`
+- Add autocomplete inside empty import values braces `import {|} from ...`
 - Revert `1.2.0` change (variable assignment detection logic change), as it does not yet handle comment blocks appropriately and messes up JSDoc sometimes
 - Upgrade CoffeeScript from 2.5 to 2.6 ([Changelog](https://github.com/jashkenas/coffeescript/pull/5374))
 - Fix wrong completion text at `@|` (resolved falsely to `@this.theCompletionText`)
@@ -146,7 +151,7 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 #### 1.3.0
 ##### 2022-02-25
 - Allow configuring additional file extensions other than `.coffee` using VSCode's setting `files.associations` or `coffeesense.fileExtensions` for other IDEs. (#9)
-- Fix syntax check for files with lines ending on an open brace `(` (#8)
+- Fix syntax check for lines ending on an open brace `(` (#8)
 - Add list of known problems to the README
 - Debug: Add "Show JS" button to inspection popup
 
@@ -160,22 +165,22 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 #### 1.1.11
 ##### 2022-01-13
-- Fix autocomplete in if-statements etc. if next line is indented
+- Add autocomplete in if-statements etc. if next line is indented
 - Fix signature help after dangling opening brace in some cases
 - Add Readme note about VSCode `trimAutoWhitespace` problems
 
 #### 1.1.10
 ##### 2022-01-08
-- Fix autocomplete in rare cases after dot (test case: `=>\n\twindow.|\n\tx = 1`)
+- Add autocomplete in rare cases after dot (test case: `=>\n\twindow.|\n\tx = 1`)
 
 #### 1.1.9
 ##### 2022-01-08
-- Fix syntax around empty yet indented lines under certain circumstances: `\t\n\t\tsomething` failed useful compilation because of the increasing indentation
+- Add syntax around empty yet indented lines under certain circumstances: `\t\n\t\tsomething` failed useful compilation because of the increasing indentation
 - Fix (?) autocompletion inside objects while current line is invalid (while typing)
 
 #### 1.1.8
 ##### 2022-01-06
-- Fix autocomplete after dot in otherwise empty line, e.g. `abc\n.|`
+- Add autocomplete after dot in otherwise empty line, e.g. `abc\n.|`
 
 #### 1.1.7
 ##### 2022-01-02
@@ -191,12 +196,12 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 #### 1.1.4
 ##### 2021-11-22
-- Fix autocomplete after dot `.` when next line is a comment
-- Fix autocompleting object properties in non-empty lines
+- Add autocomplete after dot `.` when next line is a comment
+- Add autocompleting object properties in non-empty lines
 
 #### 1.1.3
 ##### 2021-11-16
-- Fix GoTo when variable name contains dollar sign `$`
+- Add GoTo when variable name contains dollar sign `$`
 
 #### 1.1.2
 ##### 2021-10-14
