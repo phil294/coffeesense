@@ -21,6 +21,7 @@ describe('Should autocomplete', () => {
 	const tab_uri = getDocUri('completion/tab.coffee')
 	const at_uri = getDocUri('completion/@.coffee')
 	const at_before_text_uri = getDocUri('completion/@-before-text.coffee')
+	const at_before_text_before_nonsense_uri = getDocUri('completion/@-before-text-before-nonsense.coffee')
 	const compilation_fail_uri = getDocUri('completion/compilation-fail.coffee')
 	const last_line_uri = getDocUri('completion/last-line.coffee')
 	const object_uri = getDocUri('completion/object.coffee')
@@ -131,6 +132,10 @@ describe('Should autocomplete', () => {
 
 	it('completes at end of fake line if it contains a @ somewhere earlier', async () => {
 		await testCompletion(at_before_text_uri, position(4, 32), ['abc'])
+	})
+
+	it('completes at end of fake line if it contains a @ somewhere earlier and dot is NOT the last char in line but followed by some more content', async () => {
+		await testCompletion(at_before_text_before_nonsense_uri, position(4, 48), ['abc'])
 	})
 
 	it('completes at the very end of file', async () => {
