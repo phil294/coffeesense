@@ -1,0 +1,1 @@
+fakeline_array_before_nonsense_var = [abc: 123]. ( var [ { %

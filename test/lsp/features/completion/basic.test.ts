@@ -37,6 +37,7 @@ describe('Should autocomplete', () => {
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
 	const object_before_more_indent_uri = getDocUri('completion/object-before-more-indent.coffee')
 	const fake_line_uri = getDocUri('completion/fake-line.coffee')
+	const fake_line_array_before_nonsense_uri = getDocUri('completion/fake-line-array-before-nonsense.coffee')
 	const dot_before_comment_uri = getDocUri('completion/dot-before-comment.coffee')
 	const only_dot_uri = getDocUri('completion/only-dot.coffee')
 	const ae7693d_uri = getDocUri('completion/ae7693d.coffee')
@@ -79,6 +80,10 @@ describe('Should autocomplete', () => {
 		// There is some "definitely_coffee_syntax" in there to avoid this test
 		// succeeding merely due to the plain javascript parsing fallback.
 		await testCompletion(fake_line_uri, position(1, 44), ['apply'])
+	})
+
+	it('completes coffee-only syntax (implicit array) property after dot in fake line when dot is NOT the last char in line but followed by some more content', async () => {
+		await testCompletion(fake_line_array_before_nonsense_uri, position(0, 48), ['flatMap'])
 	})
 
 	it('completes a param on inline callback with implicit function braces and fake line mechanism', async () => {
