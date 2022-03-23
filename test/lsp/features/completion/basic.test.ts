@@ -36,6 +36,7 @@ describe('Should autocomplete', () => {
 	const object_half_line_half_defined_uri = getDocUri('completion/object-half-line-half-defined.coffee')
 	const object_half_line_half_defined_above_uri = getDocUri('completion/object-half-line-half-defined-above.coffee')
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
+	const inline_object_param_key_uri = getDocUri('completion/inline-object-param-key.coffee')
 	const jsdoc_spacing_uri = getDocUri('completion/jsdoc-spacing.coffee')
 	const object_before_more_indent_uri = getDocUri('completion/object-before-more-indent.coffee')
 	const fake_line_uri = getDocUri('completion/fake-line.coffee')
@@ -178,6 +179,33 @@ describe('Should autocomplete', () => {
 	// f5fa3af
 	it('completes object properties while current line is invalid', async () => {
 		await testCompletion(object_invalid_line_uri, position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
+	})
+
+	it('completes inline object property keys as function params even without a colon, while also suggesting local vars', async () => {
+		await testCompletion(
+			inline_object_param_key_uri,
+			position(14, 28),
+			[
+				'obj_inline_param_key_prop_1',
+				'obj_inline_param_key_unrelated_var'
+			],
+			undefined,
+			true,
+			[ 'obj_inline_param_key_prop_2' ]
+		)
+		await testCompletion(
+			inline_object_param_key_uri,
+			position(16, 32),
+			[
+				'obj_inline_param_key_prop_2',
+				'obj_inline_param_key_unrelated_var'
+			],
+			undefined,
+			true,
+			[
+				'obj_inline_param_key_prop_1',
+			]
+		)
 	})
 
 	it('does not apply transforms onto jsdoc (exclude comments)', async () => {

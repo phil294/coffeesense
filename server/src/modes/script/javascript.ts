@@ -13,7 +13,7 @@ import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import transpile_service, { common_js_variable_name_character, get_word_around_position } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, dangling_param_regex, get_word_around_position } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
@@ -198,7 +198,7 @@ export async function getJavascriptMode(
       
       const coffee_text = coffee_doc.getText()
       const coffee_offset = coffee_doc.offsetAt(coffee_position)
-      const coffee_char = coffee_text[coffee_offset]
+      const coffee_next_char = coffee_text[coffee_offset]
       const coffee_last_char = coffee_text[coffee_offset - 1]
       const { word: coffee_word } = get_word_around_position(coffee_text, coffee_offset)
       const coffee_line = coffee_text.slice(coffee_doc.offsetAt({ line: coffee_position.line, character:0 }), coffee_doc.offsetAt({ line: coffee_position.line, character: Number.MAX_VALUE }))
@@ -210,7 +210,7 @@ export async function getJavascriptMode(
           line: coffee_position.line,
           character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
         }
-        if(coffee_line.startsWith("import {") && [' ', '}'].includes(coffee_char||'')) {
+        if(coffee_line.startsWith("import {") && [' ', '}'].includes(coffee_next_char||'')) {
           let i = coffee_offset - 1
           while(['\t', ' '].includes(coffee_text[i]||''))
             i--
@@ -274,7 +274,7 @@ export async function getJavascriptMode(
         // JS cursor is falsely `a(|'')`. Circumvent this:
         const special_trigger_chars = ['"', "'"]
         for(const s of special_trigger_chars) {
-          if((coffee_last_char === s || coffee_char === s) && js_last_char !== s && js_next_char === s) {
+          if((coffee_last_char === s || coffee_next_char === s) && js_last_char !== s && js_next_char === s) {
             char_offset = 1
             break
           }
@@ -288,13 +288,30 @@ export async function getJavascriptMode(
           js_offset += 'this.'.length
         }
       }
-      
-      const completions = service.getCompletionsAtPosition(fileFsPath, js_offset, {
+
+      const completion_options = {
         ...getUserPreferences(js_doc),
         triggerCharacter: getTsTriggerCharacter(coffee_last_char || ''),
         includeCompletionsWithInsertText: true,
         includeCompletionsForModuleExports: true
-      });
+      }
+      let completions = service.getCompletionsAtPosition(fileFsPath, js_offset, completion_options);
+      
+      if(coffee_line.match(dangling_param_regex)) {
+        if(js_next_char === '}' && js_last_char === '{') {
+          // Special case: `{}` was inserted by transpileService to get items for *possible* object param keys.
+          // However, it must also be possible to insert normal variable references here - at this point, it is
+          // impossible to predict whether the user wants to define a new object here or insert a var.
+          // Get suggestions for both:
+          const completions_outside_object = service.getCompletionsAtPosition(fileFsPath, js_offset - 1, completion_options);
+          if(completions_outside_object) {
+            if(completions)
+              completions.entries.push(...completions_outside_object.entries)
+            else
+              completions = completions_outside_object
+          }
+        }
+      }
 
       if (!completions) {
         return { isIncomplete: false, items: [] };

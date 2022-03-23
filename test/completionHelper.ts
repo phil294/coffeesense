@@ -24,6 +24,7 @@ export async function testCompletion(
   expectedItems: (string | ExpectedCompletionItem)[],
   matchFn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean,
   allow_globals = false,
+  unexpected_items?: string[],
 ) {
   await showFile(docUri);
 
@@ -42,6 +43,10 @@ export async function testCompletion(
     // With lodash, there can be as many as 396 (2022-03)
     assert.ok(result.items.length < 450)
   }
+
+  if(unexpected_items?.length)
+    // @ts-ignore
+    assert.ok(! result.items.some(i => unexpected_items.includes(i.label.label? i.label.label : i.label)))
 
   expectedItems.forEach(ei => {
     if (typeof ei === 'string') {

@@ -46,14 +46,10 @@ interface ITranspileService {
 const MD5 = new jshashes.MD5()
 const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(180000)
 
+export const dangling_param_regex = /^[^#]*[^ #] $/mg
+
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
-    // Dangling space = 𝆮. This is replaced with an opening brace "(" in postprocess_js.
-    // Dangling brace cannot be replaced because it is valid CS (s.a. signature hint tests).
-    .replace(/^[^#]*[a-zA-Z_] $/mg, (c) => {
-      logger.logDebug(`replace dangling space with 𝆮 ${coffee_doc.uri}`)
-      return `${c} 𝆮\n`
-    })
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
     // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
     // adds a `valueOf()` afterwards. Cursor needs to be adjusted properly in doComplete()
@@ -76,17 +72,26 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
       return match + ':' + key
     })
-  // Enable autocomplete on empty lines inside object properties.
-  // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
-  // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
-  // with the sole purpose of generating (properly indented) source maps.
-  // But: This transform may only happen if the next text line is not an indentation child, as
-  // it otherwise changes the syntax of its surroundings.
-  // This tweak is separate from fake_line logic below.
   const tmp_lines = tmp.split('\n')
-  const replace_string = '𒐛:𒐛'
   const object_tweak_coffee_lines: number[] = []
+  const space_tweak_coffee_lines: { line: string, line_i: number }[] = []
   tmp_lines.forEach((line, line_i) => {
+    if(line.match(dangling_param_regex)) {
+      // Dangling spaces = `{𝆮}`. Something to make the line not error, and `{}` to get autocomplete with params inline object keys.
+      // Handled in in postprocess_js and gets special handling in doComplete().
+      // Dangling bracket on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
+      logger.logDebug(`replace dangling space with {𝆮} ${coffee_doc.uri}`)
+      space_tweak_coffee_lines.push({ line_i, line })
+      tmp_lines[line_i] = `${line}{𝆮}`
+      return
+    }
+    // Enable autocomplete on empty lines inside object properties.
+    // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
+    // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
+    // with the sole purpose of generating (properly indented) source maps.
+    // But: This transform may only happen if the next text line is not an indentation child, as
+    // it otherwise changes the syntax of its surroundings.
+    // This tweak is separate from fake_line logic below.
     const empty_line_match = line.match(/^[ \t]+$/)
     if(empty_line_match) {
       const empty_line_indentation = empty_line_match[0]!
@@ -99,12 +104,12 @@ function preprocess_coffee(coffee_doc: TextDocument) {
         if(next_textual_line_indentation > empty_line_indentation.length)
           return
       }
-      tmp_lines[line_i] = empty_line_indentation + replace_string
+      tmp_lines[line_i] = empty_line_indentation + '𒐛:𒐛'
       object_tweak_coffee_lines.push(line_i)
     }
   })
   const coffee = tmp_lines.join('\n')
-  return { coffee, object_tweak_coffee_lines }
+  return { coffee, object_tweak_coffee_lines, space_tweak_coffee_lines }
 }
 
 function try_compile(coffee: string): ITranspilationResult {
@@ -137,31 +142,54 @@ function try_compile(coffee: string): ITranspilationResult {
  * Applies some transformations to the JS in result and updates source_map accordingly.
  * These transforms do not depend on any previous information.
  */
-function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[]) {
+function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[], space_tweak_coffee_lines: { line: string, line_i: number }[]) {
   if(!result.js || !result.source_map)
     return
 
   result.js = result.js
-    // See usage of 𝆮 above
-    .replaceAll('(𝆮);\n', '(   \n')
-
     // Prefer object method shorthand
     .replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
       `${asynk || ''}${asterisk}${func_name}          (`)
 
   const js_lines = result.js.split('\n')
-  for(const line of object_tweak_coffee_lines) {
-    result.source_map.forEach(x =>
-      x.columns.forEach(y => {
-        // This logic is equivalent to fake line source map fixing, explained there
-        if(y.sourceLine === line) {
-          if(!js_lines[y.line]?.match(/𒐛: 𒐛,?/))
-            y.sourceLine = -1 // effectively remove this source mapping
-          y.sourceColumn = 0
-          y.column = 0
+
+  result.source_map.forEach(source_map_line => {
+    source_map_line.columns.forEach(source_map_entry => {
+      // See usage of 𝆮 above
+      for(const space_tweak_coffee_line of space_tweak_coffee_lines) {
+        if(source_map_entry.sourceLine === space_tweak_coffee_line.line_i) {
+          const js_line = js_lines[source_map_entry.line]!
+          const invocation_match = js_line.match(/\(\{𝆮\}\);$/)
+          if(invocation_match) {
+            js_lines[source_map_entry.line] = js_line.slice(0, invocation_match.index) + '({}   '
+            source_map_entry.sourceColumn = space_tweak_coffee_line.line.length
+            source_map_entry.column = invocation_match.index! + 2
+          } else {
+            const comma_param_match = js_line.match(/, \{𝆮\}\);$/)
+            if(comma_param_match) {
+              js_lines[source_map_entry.line] = js_line.slice(0, comma_param_match.index) + ', {})  '
+              source_map_entry.sourceColumn = space_tweak_coffee_line.line.length
+              source_map_entry.column = comma_param_match.index! + 3
+            } else {
+              // Don't completely remove other mappings for this line so maybe go-tos might still work,
+              // but they can't take precedence over the match at the end of the line due to no word match
+              source_map_entry.sourceColumn = 0
+            }
+          }
         }
-    }))
-  }
+      }
+      // See usage of 𒐛 above
+      for(const obj_tweak_coffee_line of object_tweak_coffee_lines) {
+        // This logic is equivalent to fake line source map fixing, explained there
+        if(source_map_entry.sourceLine === obj_tweak_coffee_line) {
+          if(!js_lines[source_map_entry.line]?.match(/𒐛: 𒐛,?/))
+            source_map_entry.sourceLine = -1 // effectively remove this source mapping
+          source_map_entry.sourceColumn = 0
+          source_map_entry.column = 0
+        }
+      }
+    })
+  })
 
   // console.time('var-decl-fix')
   //////////////////////////////////////
@@ -309,7 +337,7 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const { coffee, object_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
+    const { coffee, object_tweak_coffee_lines, space_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
@@ -472,7 +500,7 @@ const transpile_service: ITranspileService = {
     }
 
     if(result.js && result.source_map) {
-      postprocess_js(result, object_tweak_coffee_lines)
+      postprocess_js(result, object_tweak_coffee_lines, space_tweak_coffee_lines)
     }
     
     if(normal_compilation_diagnostics)
@@ -545,7 +573,7 @@ const transpile_service: ITranspileService = {
     const coffee_position_offset = coffee_doc.offsetAt(coffee_position)
     const char_at_coffee_position = coffee_doc.getText()[coffee_position_offset]
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_position_offset)
-    const coffee_position_is_at_end_of_word = word_at_coffee_position.offset === coffee_position_offset - word_at_coffee_position.word.length
+    const coffee_position_is_at_end_of_word = word_at_coffee_position.word.length && word_at_coffee_position.offset === coffee_position_offset - word_at_coffee_position.word.length
     const coffee_position_at_start_of_word = coffee_doc.positionAt(word_at_coffee_position.offset)
     const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
     
