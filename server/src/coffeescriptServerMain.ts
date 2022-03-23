@@ -5,6 +5,7 @@ const connection = process.argv.length <= 2 ? createConnection(process.stdin, pr
 
 console.log = (...args: any[]) => connection.console.log(args.join(' '));
 console.error = (...args: any[]) => connection.console.error(args.join(' '));
+console.warn = (...args: any[]) => connection.console.error('[WARN] ' + args.join(' '));
 
 const cls = new LSP(connection);
 connection.onInitialize(async (params: InitializeParams): Promise<InitializeResult> => {
