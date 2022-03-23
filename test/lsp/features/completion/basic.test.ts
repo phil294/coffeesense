@@ -37,6 +37,7 @@ describe('Should autocomplete', () => {
 	const object_half_line_half_defined_above_uri = getDocUri('completion/object-half-line-half-defined-above.coffee')
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
 	const inline_object_param_key_uri = getDocUri('completion/inline-object-param-key.coffee')
+	const inline_object_open_brace_uri = getDocUri('completion/inline-object-open-brace.coffee')
 	const jsdoc_spacing_uri = getDocUri('completion/jsdoc-spacing.coffee')
 	const object_before_more_indent_uri = getDocUri('completion/object-before-more-indent.coffee')
 	const fake_line_uri = getDocUri('completion/fake-line.coffee')
@@ -181,7 +182,7 @@ describe('Should autocomplete', () => {
 		await testCompletion(object_invalid_line_uri, position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
 	})
 
-	it('completes inline object property keys as function params even without a colon, while also suggesting local vars', async () => {
+	it('completes inline object (implicit) property keys as function params even without a colon, while also suggesting local vars', async () => {
 		await testCompletion(
 			inline_object_param_key_uri,
 			position(14, 28),
@@ -206,6 +207,10 @@ describe('Should autocomplete', () => {
 				'obj_inline_param_key_prop_1',
 			]
 		)
+	})
+
+	it('completes inline object property keys as function params even without a colon, after opened but not yet closed brace', async () => {
+		await testCompletion(inline_object_open_brace_uri, position(10, 52), ['inline_obj_open_brace_prop_1'])
 	})
 
 	it('does not apply transforms onto jsdoc (exclude comments)', async () => {
