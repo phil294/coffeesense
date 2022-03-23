@@ -36,6 +36,7 @@ describe('Should autocomplete', () => {
 	const object_half_line_half_defined_uri = getDocUri('completion/object-half-line-half-defined.coffee')
 	const object_half_line_half_defined_above_uri = getDocUri('completion/object-half-line-half-defined-above.coffee')
 	const object_invalid_line_uri = getDocUri('completion/object-invalid-line.coffee')
+	const jsdoc_spacing_uri = getDocUri('completion/jsdoc-spacing.coffee')
 	const object_before_more_indent_uri = getDocUri('completion/object-before-more-indent.coffee')
 	const fake_line_uri = getDocUri('completion/fake-line.coffee')
 	const fake_line_array_before_nonsense_uri = getDocUri('completion/fake-line-array-before-nonsense.coffee')
@@ -177,6 +178,10 @@ describe('Should autocomplete', () => {
 	// f5fa3af
 	it('completes object properties while current line is invalid', async () => {
 		await testCompletion(object_invalid_line_uri, position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
+	})
+
+	it('does not apply transforms onto jsdoc (exclude comments)', async () => {
+		await testCompletion(jsdoc_spacing_uri, position(12, 4), ['obj_completion_with_jsdoc_spacing_prop_1', 'obj_completion_with_jsdoc_spacing_prop_2', 'obj_completion_with_jsdoc_spacing_prop_3'])
 	})
 
 	// Known shortcoming - not supported

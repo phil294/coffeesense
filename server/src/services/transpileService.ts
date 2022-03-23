@@ -50,22 +50,22 @@ function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
     // Dangling space = 𝆮. This is replaced with an opening brace "(" in postprocess_js.
     // Dangling brace cannot be replaced because it is valid CS (s.a. signature hint tests).
-    .replace(/([a-zA-Z_]) (\n|$)/g, (_,c) => {
+    .replace(/^[^#]*[a-zA-Z_] $/mg, (c) => {
       logger.logDebug(`replace dangling space with 𝆮 ${coffee_doc.uri}`)
       return `${c} 𝆮\n`
     })
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
     // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
     // adds a `valueOf()` afterwards. Cursor needs to be adjusted properly in doComplete()
-    .replaceAll(/@(\s|$)/g, (_, ws) => {
+    .replaceAll(/^([^#]*([^a-z-A-Z_]|^))@(\s|$)/mg, (_, c, __, ws) => {
       logger.logDebug(`transform @ to this.valueOf() ${coffee_doc.uri}`)
-      return `this.valueOf()${ws}`
+      return `${c}this.valueOf()${ws}`
     })
     // To avoid successful compilation where it should fail, e.g. `a.|\nconsole.log 1`
     // (debatable if this should actually be allowed though), and more importantly, fix `a.|\n#`
-    .replaceAll(/\.(\n|$)/g, () => {
+    .replaceAll(/^[^#]*\.$/mg, (c) => {
       logger.logDebug(`transform .\n to .;\n ${coffee_doc.uri}`)
-      return '.;\n'
+      return `${c};`
     })
     // Enable object key autocomplete (that is, missing colon) below other key value mappings.
     // The replaced syntax is always invalid so no harm is done by adding the colon.
