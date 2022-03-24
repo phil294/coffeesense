@@ -22,6 +22,10 @@ export function get_word_around_position(text: string, offset: number) {
   return { word: match_word, offset: start_offset }
 }
 
+export function get_line_at_line_no(doc: TextDocument, line_no: number) {
+  return doc.getText().slice(doc.offsetAt({ line: line_no, character: 0 }), doc.offsetAt({ line: line_no, character: Number.MAX_VALUE }))
+}
+
 interface ITranspilationResult {
   /** coffeescript compile diagnostics, if present, without considering `fake_line` */
   diagnostics?: Diagnostic[]
@@ -71,6 +75,10 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1([a-zA-Z0-9_$]+)$/mg, (match, _, key) => {
       logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
       return match + ':' + key
+    })
+    .replaceAll(/^[^"']*(["'])[^"']*$/mg, (c, quote) => {
+      logger.logDebug(`transform open string to closed one ${coffee_doc.uri}`)
+      return c + quote
     })
   const tmp_lines = tmp.split('\n')
   const object_tweak_coffee_lines: number[] = []
@@ -617,25 +625,37 @@ const transpile_service: ITranspileService = {
       const bottom_right_match = (matches: LineMap["columns"]) =>
         [...matches].sort((a,b) => b.line - a.line || b.column - a.column)
         [0]
-      const js_matches_by_word = js_matches.map(match => {
-        const match_offset = js_doc_tmp.offsetAt({ line: match.line, character: match.column })
-        const match_word_info = get_word_around_position(result.js||'', match_offset)
-        if(match_word_info.word !== word_at_coffee_position.word)
-          return null
-        const js_position_is_at_start_of_word = match_word_info.offset === match_offset
-        const ret = { ...match }
-        if(coffee_position_is_at_end_of_word && js_position_is_at_start_of_word)
-          ret.column += word_at_coffee_position.word.length
-        return ret
-      }).filter((match): match is LineMap["columns"][0] => !!match)
-      if(js_matches_by_word.length) {
-        const js_matches_by_char = js_matches_by_word.filter(m =>
+      const abcdefg = (matches: LineMap["columns"]) => { // TODO this stuff needs refactoring
+        const js_matches_by_char = matches.filter(m =>
           (result.js || '')[js_doc_tmp.offsetAt({ line: m.line, character: m.column })] === char_at_coffee_position)
         if(js_matches_by_char.length)
           return bottom_right_match(js_matches_by_char)
-        return bottom_right_match(js_matches_by_word)
+        return bottom_right_match(matches)
       }
-      return bottom_right_match(js_matches)
+      if(word_at_coffee_position.word) {
+        const js_matches_by_word = js_matches.map(match => {
+          const match_offset = js_doc_tmp.offsetAt({ line: match.line, character: match.column })
+          const match_word_info = get_word_around_position(result.js||'', match_offset)
+          if(match_word_info.word !== word_at_coffee_position.word)
+            return null
+          const js_position_is_at_start_of_word = match_word_info.offset === match_offset
+          const ret = { ...match }
+          if(coffee_position_is_at_end_of_word && js_position_is_at_start_of_word)
+            ret.column += word_at_coffee_position.word.length
+          return ret
+        }).filter((match): match is LineMap["columns"][0] => !!match)
+        if(js_matches_by_word.length)
+          return abcdefg(js_matches_by_word)
+        const js_matches_by_line_contains_word = js_matches.filter(match =>
+          get_line_at_line_no(js_doc_tmp, match.line).includes(word_at_coffee_position.word))
+        if(js_matches_by_line_contains_word.length)
+          return abcdefg(js_matches_by_line_contains_word)
+      }
+      const js_matches_by_line_contains_any_common_char = js_matches.filter(match =>
+        get_line_at_line_no(js_doc_tmp, match.line).match(common_js_variable_name_character))
+      if(js_matches_by_line_contains_any_common_char.length)
+        return abcdefg(js_matches_by_line_contains_any_common_char)
+      return abcdefg(js_matches)
     }
     const js_match = choose_js_match()
     
@@ -649,10 +669,10 @@ const transpile_service: ITranspileService = {
       column = coffee_position.character
       // Note however that *most* of the time, fake_line_mechanism will be 'modified_js' instead.
       // See coffee_error_line_modified: Some position adjustments for the coffee in js fake line
-      const js_line = js_doc_tmp.getText().slice(js_doc_tmp.offsetAt({ line, character: 0 }), js_doc_tmp.offsetAt({ line, character: Number.MAX_VALUE }))
+      const js_line = get_line_at_line_no(js_doc_tmp, line)
       if(js_line.startsWith('let '))
         column += 'let '.length
-      const coffee_line_until_cursor = coffee_doc.getText().slice(coffee_doc.offsetAt({ line: coffee_position.line, character: 0 }), coffee_doc.offsetAt({ line: coffee_position.line, character: coffee_position.character }))
+      const coffee_line_until_cursor = get_line_at_line_no(coffee_doc, coffee_position.line).slice(0, coffee_position.character)
       // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
       // the `@`s to `this` conversions need to be considered because fake lines are
       // CS only.

@@ -13,7 +13,7 @@ import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import transpile_service, { common_js_variable_name_character, dangling_param_regex, get_word_around_position } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, dangling_param_regex, get_line_at_line_no, get_word_around_position } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
@@ -142,8 +142,7 @@ export async function getJavascriptMode(
 
         let range = convertRange(js_doc, diag as ts.TextSpan)
 
-        if(js_text.slice(js_doc.offsetAt({ line: range.start.line, character: 0 }))
-          .match(/^\s*var /)) {
+        if(get_line_at_line_no(js_doc, range.start.line).match(/^\s*var /)) {
             // Position of errors shown at variable declaration are most often useless, it would
             // be better to show them at their (first) usage instead which implies declaration
             // in CS. Luckily, this is possible using highlight querying:
@@ -274,7 +273,7 @@ export async function getJavascriptMode(
         // JS cursor is falsely `a(|'')`. Circumvent this:
         const special_trigger_chars = ['"', "'"]
         for(const s of special_trigger_chars) {
-          if((coffee_last_char === s || coffee_next_char === s) && js_last_char !== s && js_next_char === s) {
+          if((coffee_last_char === s || [s, '\n', undefined].includes(coffee_next_char)) && js_last_char !== s && js_next_char === s) {
             char_offset = 1
             break
           }
@@ -510,7 +509,7 @@ export async function getJavascriptMode(
                   if(text_change. newText.startsWith('import')) {
                     range = Range.create(0, 0, 0, 0)
                   } else {
-                    const js_line = js_doc.getText().slice(js_doc.offsetAt({ line: js_range.start.line, character: 0 }), js_doc.offsetAt({ line: js_range.start.line, character: Number.MAX_VALUE })).trim()
+                    const js_line = get_line_at_line_no(js_doc, js_range.start.line).trim()
                     const equiv_coffee_line_no = coffee_lines.findIndex(l => l === js_line)
                     if(js_line.startsWith('import ') && equiv_coffee_line_no > -1)
                       // Fallback import matching, mostly when cs compilation failed and the import comes from ts by parsing cs directly with no source maps available
@@ -677,7 +676,7 @@ export async function getJavascriptMode(
             entry,
             range: convertRange(js_doc, entry.textSpan)
           })).filter(({ range }) =>
-            ! js_text.slice(js_doc.offsetAt({ line: range.start.line, character: 0 })).match(/^\s*var /)
+            ! get_line_at_line_no(js_doc, range.start.line).match(/^\s*var /)
           ).map(({ entry, range }) => {
             if(transpilation.source_map) {
               range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range

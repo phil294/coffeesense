@@ -15,6 +15,8 @@ describe('Should autocomplete', () => {
 	const string_uri = getDocUri('completion/string.coffee')
 	const open_string_uri = getDocUri('completion/open-string.coffee')
 	const open_string_2_uri = getDocUri('completion/open-string-2.coffee')
+	const open_string_as_inline_object_value_uri = getDocUri('completion/open-string-as-inline-object-value.coffee')
+	const open_empty_string_as_inline_object_value_uri = getDocUri('completion/open-empty-string-as-inline-object-value.coffee')
 	const external_uri = getDocUri('completion/external.coffee')
 	const this_uri = getDocUri('completion/this.coffee')
 	const assignment_uri = getDocUri('completion/assignment.coffee')
@@ -76,6 +78,13 @@ describe('Should autocomplete', () => {
 	it('completes unclosed strings', async () => {
 		await testCompletion(open_string_uri, position(2, 19), ['abc'])
 		await testCompletion(open_string_2_uri, position(2, 21), ['abc'])
+	})
+
+	it('completes open string as inline object value', async () => {
+		await testCompletion(open_string_as_inline_object_value_uri, position(0, 28), ['smooth'])
+	})
+	it('completes empty open string as inline object value', async () => {
+		await testCompletion(open_empty_string_as_inline_object_value_uri, position(0, 27), ['smooth', 'auto'])
 	})
 
 	it('completes for lodash methods', async () => {
