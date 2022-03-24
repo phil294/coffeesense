@@ -1,3 +1,4 @@
+import assert from 'assert'
 import { testDefinition } from '../../../definitionHelper'
 import { position, sameLineLocation } from '../../../util'
 import { getDocUri } from '../../path'
@@ -21,8 +22,8 @@ describe('Should find definition', () => {
 		await testDefinition(basic_uri, position(11, 37), sameLineLocation(basic_uri, 10, 0, 15))
 	})
 
-	xit('finds definition in comprehension when variable is not a simple assignment', async () => {
-		await testDefinition(basic_uri, position(14, 37), sameLineLocation(basic_uri, 13, 0, 15))
+	it('fails: finds definition in comprehension when variable is not a simple assignment', async () => {
+		await assert.rejects(testDefinition(basic_uri, position(14, 37), sameLineLocation(basic_uri, 13, 0, 15)))
 	})
 
 	// TODO: Currently impossible, looks like CS source maps bug, and is same bug without the `if`

@@ -22,12 +22,12 @@ describe('Should provide signature hints', () => {
 	})
 
 	// Known shortcoming - not supported
-	xit('suggests params in an indented function invocation with a dangling opened parentheses as trigger character', async () => {
+	it('fails: suggests params in an indented function invocation with a dangling opened parentheses as trigger character', async () => {
 		// This does not work because open braces are not replaced. They cannot be:
 		// Open braces are allowed and used in normal CoffeeScript (issue #8). Fake line hack
 		// also fails because the error line is further down than the brace line.
 		// This only happens in indented scenario though.
-		await testSignatureHints(doc_indented_dangling_brace, position(2, 39), 'signature_hint_indented_brace_func(param1: any, param2: any): void')
+		await assert.rejects(testSignatureHints(doc_indented_dangling_brace, position(2, 39), 'signature_hint_indented_brace_func(param1: any, param2: any): void'))
 	})
 })
 

@@ -2,6 +2,7 @@ import { position } from '../../../util'
 import { testCompletion } from '../../../completionHelper'
 import { getDocUri } from '../../path'
 import { Position, Range, TextEdit } from 'vscode'
+import assert from 'assert'
 
 describe('Should autocomplete', () => {
 	const basic_uri = getDocUri('completion/basic.coffee')
@@ -227,10 +228,10 @@ describe('Should autocomplete', () => {
 	})
 
 	// Known shortcoming - not supported
-	xit('completes partial object key with no sibling keys', async () => {
+	it('fails: completes partial object key with no sibling keys', async () => {
 		// This does not work because there is no way to know if the partial string is an object key
 		// or a full value by itself, so if this is even an object at all.
-		await testCompletion(object_half_line_uri, position(11, 33), ['obj_halfdefined_completion_prop_1', 'obj_halfdefined_completion_prop_2'])
+		await assert.rejects(testCompletion(object_half_line_uri, position(11, 33), ['obj_halfdefined_completion_prop_1', 'obj_halfdefined_completion_prop_2']))
 	})
 
 	it('completes partial object key with no sibling keys before colon', async () => {
