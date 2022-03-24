@@ -13,7 +13,7 @@ import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import transpile_service, { common_js_variable_name_character, dangling_param_regex, get_line_at_line_no, get_word_around_position } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, trailing_param_regex, get_line_at_line_no, get_word_around_position } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
@@ -215,7 +215,7 @@ export async function getJavascriptMode(
             i--
           if(['{', ','].includes(coffee_text[i]||''))
             // Last char was a comma.
-            // CS compiler strips dangling commas in imports and also does not have super accurate
+            // CS compiler strips trailing commas in imports and also does not have super accurate
             // source maps in between import modules names, so when adding a new module, move cursor
             // to start of first existing import which gives correct results:
             coffee_position_tweaked.character = 9
@@ -296,7 +296,7 @@ export async function getJavascriptMode(
       }
       let completions = service.getCompletionsAtPosition(fileFsPath, js_offset, completion_options);
       
-      if(coffee_line.match(dangling_param_regex)) {
+      if(coffee_line.match(trailing_param_regex)) {
         if(js_next_char === '}' && js_last_char === '{') {
           // Special case: `{}` was inserted by transpileService to get items for *possible* object param keys.
           // However, it must also be possible to insert normal variable references here - at this point, it is

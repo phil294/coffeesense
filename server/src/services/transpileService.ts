@@ -50,7 +50,7 @@ interface ITranspileService {
 const MD5 = new jshashes.MD5()
 const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(180000)
 
-export const dangling_param_regex = /^[^#]*[^ #] $/mg
+export const trailing_param_regex = /^[^#]*[^ #] $/mg
 
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
@@ -84,11 +84,11 @@ function preprocess_coffee(coffee_doc: TextDocument) {
   const object_tweak_coffee_lines: number[] = []
   const space_tweak_coffee_lines: { line: string, line_i: number }[] = []
   tmp_lines.forEach((line, line_i) => {
-    if(line.match(dangling_param_regex)) {
-      // Dangling spaces = `{𝆮}`. Something to make the line not error, and `{}` to get autocomplete with params inline object keys.
+    if(line.match(trailing_param_regex)) {
+      // Trailing spaces = `{𝆮}`. Something to make the line not error, and `{}` to get autocomplete with params inline object keys.
       // Handled in in postprocess_js and gets special handling in doComplete().
-      // Dangling bracket on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
-      logger.logDebug(`replace dangling space with {𝆮} ${coffee_doc.uri}`)
+      // Trailing bracket on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
+      logger.logDebug(`replace trailing space with {𝆮} ${coffee_doc.uri}`)
       space_tweak_coffee_lines.push({ line_i, line })
       tmp_lines[line_i] = `${line}{𝆮}`
       return
