@@ -108,14 +108,27 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 ### Changelog
 
-<sub style="color:grey">
+<div style="color:grey; font-size:x-small">
+<p>A <code>|</code> anywhere below refers to the respective cursor position.
 <details>
   <summary>legend</summary>
-  <p>A <code>|</code> anywhere below refers to the respective cursor position.
   <p>Features like "autocomplete" mostly refer to the setup, not the actual results. Just because CoffeeSense supports autocomplete at <code>a = "|</code>, this obviously does not mean you'll actually see suggestions: It also requires that <code>a</code> has a defined string union type, usually via JSDoc.
   <p>This changelog follows semver versioning. <code>Fix</code> generally refers to features that should have already worked / regressions (resulting in patch version bump). <code>Add</code> (minor version bump) refers to new features or subfeatures: For example autocomplete cases that haven't worked before are <code>Add</code>, as CoffeeSense does not yet officially "support autocomplete", just parts of it. (valid since 1.2.0)
 </details>
-</sub>
+</div>
+
+#### 1.8.0
+##### 2022-03-24
+- LSP protocol: Support `rootUri` besides `rootPath`
+- Prevent transforms to comments: Resulted sometimes e.g. in type errors when a JSDoc comment block line had a trailing space
+- Add autocomplete for inline fun param object keys, e.g. `a |` or `a b, |` will now correctly show fields of a possible first or second object argument to `a`, respectively. Example:
+    ```coffeescript
+    obj = {}
+    window.scrollTo |
+    ```
+    Will now suggest `left`, `top` and `behavior` (additionally to the usual local and global suggestions such as `obj`, imports, global vars etc.)
+    These new completions only pop up when you haven't typed anything though, so `behav` would *not* autocomplete to `behavior` and probably never will.
+- Add autocompletion for open strings as inline object value, e.g. `window.scrollTo behavior: "|` will now suggest `smooth` and `auto`, even without the closing quote.
 
 #### 1.7.0
 ##### 2022-03-20
