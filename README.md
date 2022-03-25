@@ -97,6 +97,7 @@ There is lot of hacky code to get this all to work. One thing to keep in mind is
   - You can't get param hints in an *indented* line that ends with `(`. It does work in top level lines or inside `()` or with space instead of braces though.
 - General:
   - Make sure you never leave any dangling indentation in your source code around, unless it's the line you are working on. In VSCode, this is the default - just make sure to **not** override `"editor.trimAutoWhitespace"` to `false`. Keep it at its default `true`. Same thing goes for other IDEs: Try not to have more than one empty line with indentation. This is because CoffeeSense treats any line with indent as a possible place for you to define new object properties or arguments, as it is not aware of the cursor position while compiling. It injects certain characters at these lines which gets messy if you're on another line.
+  - Trailing whitespace is disallowed because it takes on special meaning while autocompleting
 
 Also, implicit any errors (7006) for variables named `_` are ignored.
 
