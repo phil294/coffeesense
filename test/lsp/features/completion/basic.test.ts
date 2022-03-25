@@ -36,11 +36,15 @@ describe('Should autocomplete', () => {
 		await testCompletion(getDocUri('completion/open-string-2.coffee'), position(2, 21), ['abc'])
 	})
 
-	it('completes open string as inline object value', async () => {
-		await testCompletion(getDocUri('completion/open-string-as-inline-object-value.coffee'), position(0, 28), ['smooth'])
+	it('completes open string as inline object assignment', async () => {
+		await testCompletion(getDocUri('completion/open-string-as-inline-object.coffee'), position(3, 38), ['def', 'ghi'])
 	})
-	it('completes empty open string as inline object value', async () => {
-		await testCompletion(getDocUri('completion/open-empty-string-as-inline-object-value.coffee'), position(0, 27), ['smooth', 'auto'])
+
+	it('completes open string as inline object param', async () => {
+		await testCompletion(getDocUri('completion/open-string-as-inline-object-param.coffee'), position(0, 28), ['smooth'])
+	})
+	it('completes empty open string as inline object param', async () => {
+		await testCompletion(getDocUri('completion/open-empty-string-as-inline-object-param.coffee'), position(0, 27), ['smooth', 'auto'])
 	})
 
 	it('completes for lodash methods', async () => {

@@ -57,13 +57,13 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
     // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
     // adds a `valueOf()` afterwards. Cursor needs to be adjusted properly in doComplete()
-    .replaceAll(/^([^#]*([^a-z-A-Z_]|^))@(\s|$)/mg, (_, c, __, ws) => {
+    .replaceAll(/^([^#\n]*([^a-z-A-Z_\n]|^))@(\s|$)/mg, (_, c, __, ws) => {
       logger.logDebug(`transform @ to this.valueOf() ${coffee_doc.uri}`)
       return `${c}this.valueOf()${ws}`
     })
     // To avoid successful compilation where it should fail, e.g. `a.|\nconsole.log 1`
     // (debatable if this should actually be allowed though), and more importantly, fix `a.|\n#`
-    .replaceAll(/^[^#]*\.$/mg, (c) => {
+    .replaceAll(/^[^#\n]*\.$/mg, (c) => {
       logger.logDebug(`transform .\n to .;\n ${coffee_doc.uri}`)
       return `${c};`
     })
@@ -75,10 +75,6 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     .replaceAll(/^(\s+)[a-zA-Z0-9_$]+\s*:\s*.+$\n\1([a-zA-Z0-9_$]+)$/mg, (match, _, key) => {
       logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
       return match + ':' + key
-    })
-    .replaceAll(/^[^"']*(["'])[^"']*$/mg, (c, quote) => {
-      logger.logDebug(`transform open string to closed one ${coffee_doc.uri}`)
-      return c + quote
     })
   const tmp_lines = tmp.split('\n')
   const object_tweak_coffee_lines: number[] = []
@@ -449,6 +445,10 @@ const transpile_service: ITranspileService = {
           // JS does not understand that this is a function (because of the missing parens).
           // E.g. `x (a) => a.` becomes `x((a) => a.`
           .replaceAll(/ \(/g, '((')
+          // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
+          .replaceAll(/([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'])/g, '$1($2')
+          // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`
+          .replaceAll(/([^\s{][ (])([a-zA-Z_][a-zA-Z0-9_$]* ?:) /g, '$1{$2')
           // More special words that JS does not understand *so bad*, it cannot give suggestions
           // anymore. && Seems to work in all cases, same as if, ! does not.
           .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
