@@ -118,6 +118,11 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.8.1
+##### 2022-03-24
+- Fix allowing multiline comments. coffeescript allows them, even with normal quotes `"\n\n\n"`
+- Fix: In inline object value string completions, prefer object key suggestions to scope variable completions
+
 #### 1.8.0
 ##### 2022-03-24
 - LSP protocol: Support `rootUri` besides `rootPath`
