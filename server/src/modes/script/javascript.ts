@@ -304,10 +304,12 @@ export async function getJavascriptMode(
           // Get suggestions for both:
           const completions_outside_object = service.getCompletionsAtPosition(fileFsPath, js_offset - 1, completion_options);
           if(completions_outside_object) {
-            if(completions)
+            if(completions) {
+              completions.entries.forEach(e => e.sortText = '0') // prefer inside to outside
               completions.entries.push(...completions_outside_object.entries)
-            else
+            } else {
               completions = completions_outside_object
+            }
           }
         }
       }
