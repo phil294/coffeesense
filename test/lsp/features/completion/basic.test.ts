@@ -148,7 +148,7 @@ describe('Should autocomplete', () => {
 
 	// f5fa3af
 	it('completes object properties while current line is invalid', async () => {
-		await testCompletion(getDocUri('completion/object-invalid-line.coffee'), position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_1'])
+		await testCompletion(getDocUri('completion/object-invalid-line.coffee'), position(11, 33), ['obj_invalid_line_completion_prop_1', 'obj_invalid_line_completion_prop_2'])
 	})
 
 	it('completes inline object (implicit) property keys as function params even without a colon, while also suggesting local vars', async () => {
