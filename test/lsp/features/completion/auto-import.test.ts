@@ -5,9 +5,9 @@ import { getDocUri } from '../../path'
 describe('Should autocomplete via imports', () => {
 	it('Should suggest a lodash export', async () => {
 		const doc_uri = getDocUri('completion/autoimport.coffee')
-		await testCompletion(doc_uri, position(1, 30), [
+		await testCompletion({ doc_uri, position: position(1, 30), expected_items: [
 			'createCallback'
-		]);
+		] });
 	})
 	it('Should insert an auto inserted import statement', async () => {
 		const doc_uri = getDocUri('completion/autoimport.coffee')

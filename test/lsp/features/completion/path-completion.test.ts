@@ -7,11 +7,11 @@ describe('Should do path completion for import', () => {
 	const doc_uri = getDocUri('completion/path.coffee')
 
 	it('completes local file names when importing', async () => {
-		await testCompletion(doc_uri, position(0, 20), [
+		await testCompletion({ doc_uri, position: position(0, 20), expected_items: [
 			{
 				label: 'item.coffee',
 				kind: CompletionItemKind.File
 			}
-		])
+		] })
 	})
 })

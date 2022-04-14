@@ -18,19 +18,19 @@ export interface ExpectedCompletionItem extends CompletionItem {
   insertTextValue?: string;
 }
 
-export async function testCompletion(
-  docUri: vscode.Uri,
+export async function testCompletion({ doc_uri, position, expected_items: expectedItems, match_fn: matchFn, allow_globals, unexpected_items }: {
+  doc_uri: vscode.Uri,
   position: vscode.Position,
-  expectedItems: (string | ExpectedCompletionItem)[],
-  matchFn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean,
-  allow_globals = false,
+  expected_items: (string | ExpectedCompletionItem)[],
   unexpected_items?: string[],
-) {
-  await showFile(docUri);
+  allow_globals?: boolean,
+  match_fn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean,
+}) {
+  await showFile(doc_uri);
 
   const result = (await vscode.commands.executeCommand(
     'vscode.executeCompletionItemProvider',
-    docUri,
+    doc_uri,
     position
   )) as vscode.CompletionList;
 
