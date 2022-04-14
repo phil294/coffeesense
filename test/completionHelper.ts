@@ -18,11 +18,12 @@ export interface ExpectedCompletionItem extends CompletionItem {
   insertTextValue?: string;
 }
 
-export async function testCompletion({ doc_uri, position, expected_items: expectedItems, match_fn: matchFn, allow_globals, unexpected_items }: {
+export async function testCompletion({ doc_uri, position, expected_items: expectedItems, match_fn: matchFn, allow_globals, unexpected_items, allow_unspecified }: {
   doc_uri: vscode.Uri,
   position: vscode.Position,
   expected_items: (string | ExpectedCompletionItem)[],
   unexpected_items?: string[],
+  allow_unspecified?: boolean,
   allow_globals?: boolean,
   match_fn?: (ei: string | ExpectedCompletionItem) => (result: CompletionItem) => boolean,
 }) {
@@ -33,6 +34,10 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
     doc_uri,
     position
   )) as vscode.CompletionList;
+
+  if(!allow_unspecified && !allow_globals)
+    //@ts-ignore
+    assert.equal(expectedItems.length, result.items.filter(i => i.label.label !== '#region' && i.label.label !== '#endregion').length)
 
   if(!allow_globals) {
     // We never want to see global suggestions, like DOM:

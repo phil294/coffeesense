@@ -1,8 +1,7 @@
 #
 ###*
 # @typedef {{
-#   inline_obj_open_brace_prop_1: number,
-#   inline_obj_open_brace_prop_2: string
+#   inline_obj_open_brace_prop_1: number
 # }} inline_obj_open_brace_interface
 ###
 

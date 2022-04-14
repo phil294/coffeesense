@@ -12,17 +12,17 @@ describe('Should autocomplete', () => {
 		// Inside implicit function call braces
 		await testCompletion({ doc_uri: basic_uri, position: position(4, 35), expected_items: ['bbb'] })
 		// Inside implicit function call braces, after ().
-		await testCompletion({ doc_uri: basic_uri, position: position(6, 25), expected_items: ['toISOString'] })
+		await testCompletion({ doc_uri: basic_uri, position: position(6, 25), expected_items: ['toISOString'], allow_unspecified: true, })
 	})
 
 	const import_uri = getDocUri('completion/import.coffee')
 	it('completes import modules', async () => {
-		await testCompletion({ doc_uri: import_uri, position: position(0, 8), expected_items: ['lodash'] })
-		await testCompletion({ doc_uri: import_uri, position: position(1, 10), expected_items: ['lodash'] })
+		await testCompletion({ doc_uri: import_uri, position: position(0, 8), expected_items: ['lodash'], allow_unspecified: true, })
+		await testCompletion({ doc_uri: import_uri, position: position(1, 10), expected_items: ['lodash'], allow_unspecified: true, })
 	})
 	for(const p of [[2,11], [3,9], [5,8], [5,22], [5,23], [5,24], [6,52]]) {
 		it('completes import module variable names at '+p, async () => {
-			await testCompletion({ doc_uri: import_uri, position: position(p[0], p[1]), expected_items: ['findLastIndex'] })
+			await testCompletion({ doc_uri: import_uri, position: position(p[0], p[1]), expected_items: ['findLastIndex'], allow_unspecified: true, })
 		})
 	}
 
@@ -32,8 +32,8 @@ describe('Should autocomplete', () => {
 		await testCompletion({ doc_uri: string_uri, position: position(5, 35), expected_items: ['constant'] })
 	})
 	it('completes unclosed strings', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/open-string.coffee'), position: position(2, 19), expected_items: ['abc'] })
-		await testCompletion({ doc_uri: getDocUri('completion/open-string-2.coffee'), position: position(2, 21), expected_items: ['abc'] })
+		await testCompletion({ doc_uri: getDocUri('completion/open-string.coffee'), position: position(2, 19), expected_items: ['abc', 'def'] })
+		await testCompletion({ doc_uri: getDocUri('completion/open-string-2.coffee'), position: position(2, 21), expected_items: ['abc', 'def'] })
 	})
 
 	it('completes open string as inline object assignment', async () => {
@@ -48,26 +48,26 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes for lodash methods', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/external.coffee'), position: position(2, 25), expected_items: ['curry', 'fill'] })
+		await testCompletion({ doc_uri: getDocUri('completion/external.coffee'), position: position(2, 25), expected_items: ['curry', 'fill'], allow_unspecified: true, })
 	})
 
 	it('completes even when the line is invalid', async () => {
 		// ...by substituting its contents using fake line logic
 		// There is some "definitely_coffee_syntax" in there to avoid this test
 		// succeeding merely due to the plain javascript parsing fallback.
-		await testCompletion({ doc_uri: getDocUri('completion/fake-line.coffee'), position: position(1, 44), expected_items: ['apply'] })
+		await testCompletion({ doc_uri: getDocUri('completion/fake-line.coffee'), position: position(1, 44), expected_items: ['apply'], allow_unspecified: true, })
 	})
 
 	it('completes coffee-only syntax (implicit array) property after dot in fake line when dot is NOT the last char in line but followed by some more content', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/fake-line-array-before-nonsense.coffee'), position: position(0, 48), expected_items: ['flatMap'] })
+		await testCompletion({ doc_uri: getDocUri('completion/fake-line-array-before-nonsense.coffee'), position: position(0, 48), expected_items: ['flatMap'], allow_unspecified: true, })
 	})
 
 	it('completes a param on inline callback with implicit function braces and fake line mechanism', async () => {
 		// callback parens insertion in transpileService
-		await testCompletion({ doc_uri: getDocUri('completion/inline-callback.coffee'), position: position(0, 65), expected_items: ['toFixed'] })
+		await testCompletion({ doc_uri: getDocUri('completion/inline-callback.coffee'), position: position(0, 65), expected_items: ['toFixed'], allow_unspecified: true, })
 	})
 	it('completes a param on inline callback with implicit function braces and fake line mechanism and special coffee words like "unless"', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/inline-callback-special-words.coffee'), position: position(0, 128), expected_items: ['toFixed'] })
+		await testCompletion({ doc_uri: getDocUri('completion/inline-callback-special-words.coffee'), position: position(0, 128), expected_items: ['toFixed'], allow_unspecified: true, })
 	})
 	it('completes a param on inline callback with implicit function braces and fake line mechanism and colon in line outside of object', async () => {
 		await testCompletion({ doc_uri: getDocUri('completion/inline-callback-colon.coffee'), position: position(0, 75), expected_items: ['abc'] })
@@ -96,7 +96,7 @@ describe('Should autocomplete', () => {
 
 	it('completes in fake line after dot even when this line is being combined with the next line by the CS compiler', async () => {
 		// This is a more complicated setup most commonly achieved in FP
-		await testCompletion({ doc_uri: getDocUri('completion/fake-combined-line.coffee'), position: position(1, 1), expected_items: ['flatMap'] })
+		await testCompletion({ doc_uri: getDocUri('completion/fake-combined-line.coffee'), position: position(1, 1), expected_items: ['flatMap'], allow_unspecified: true, })
 	})
 
 	// bfa0645
@@ -113,12 +113,12 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes at the very end of file', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/last-line.coffee'), position: position(1, 14), expected_items: ['toFixed'] })
+		await testCompletion({ doc_uri: getDocUri('completion/last-line.coffee'), position: position(1, 14), expected_items: ['toFixed'], allow_unspecified: true, })
 	})
 
 	// 4f6a2ed
 	it('completes before a comment', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/dot-before-comment.coffee'), position: position(1, 23), expected_items: ['toFixed'] })
+		await testCompletion({ doc_uri: getDocUri('completion/dot-before-comment.coffee'), position: position(1, 23), expected_items: ['toFixed'], allow_unspecified: true, })
 	})
 
 	// bfe46e9
@@ -127,7 +127,7 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes using javascript parsing fallback when cs compilation failed', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/compilation-fail.coffee'), position: position(3, 21), expected_items: ['toFixed'] })
+		await testCompletion({ doc_uri: getDocUri('completion/compilation-fail.coffee'), position: position(3, 21), expected_items: ['toFixed'], allow_unspecified: true, })
 	})
 
 	it('completes object properties', async () => {
@@ -178,7 +178,7 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes inline object property keys as function params even without a colon, after opened but not yet closed brace', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/inline-object-open-brace.coffee'), position: position(10, 52), expected_items: ['inline_obj_open_brace_prop_1'] })
+		await testCompletion({ doc_uri: getDocUri('completion/inline-object-open-brace.coffee'), position: position(9, 52), expected_items: ['inline_obj_open_brace_prop_1'] })
 	})
 
 	it('does not apply transforms onto jsdoc (exclude comments)', async () => {

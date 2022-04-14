@@ -12,6 +12,6 @@ describe('Should do path completion for import', () => {
 				label: 'item.coffee',
 				kind: CompletionItemKind.File
 			}
-		] })
+		], allow_unspecified: true })
 	})
 })
