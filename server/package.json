@@ -24,14 +24,14 @@
   "dependencies": {
     "coffeescript": "^2.6.1",
     "jshashes": "^1.0.8",
-    "typescript": "^4.6.2",
+    "typescript": "^4.7.0-beta",
     "volatile-map": "^2.0.0",
     "vscode-languageserver": "7.0.0",
     "vscode-languageserver-textdocument": "^1.0.4",
     "vscode-uri": "^3.0.3"
   },
   "resolutions": {
-    "typescript": "^4.6.2"
+    "typescript": "^4.7.0-beta"
   },
   "devDependencies": {
     "@types/coffeescript": "^2.5.1",
