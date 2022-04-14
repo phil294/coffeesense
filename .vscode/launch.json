@@ -14,7 +14,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        // "--disable-extensions"
+        "--disable-extensions"
       ],
       "internalConsoleOptions": "neverOpen",
       "sourceMaps": true,
