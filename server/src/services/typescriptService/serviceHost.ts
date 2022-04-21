@@ -14,6 +14,7 @@ import { RuntimeLibrary } from '../dependencyService';
 import { EnvironmentService } from '../EnvironmentService';
 import { dirname } from 'path';
 import { LANGUAGE_ID } from '../../language';
+import { ResolvedModuleFull } from 'typescript';
 
 const NEWLINE = process.platform === 'win32' ? '\r\n' : '\n';
 
@@ -236,8 +237,9 @@ export function getServiceHost(
             return cachedResolvedModule;
           }
 
+          let tsResolvedModule: ResolvedModuleFull | undefined
           if (!isCoffeescriptFile(name, env)) {
-            const tsResolvedModule = tsModule.resolveModuleName(
+            tsResolvedModule = tsModule.resolveModuleName(
               name,
               containingFile,
               options,
@@ -246,22 +248,36 @@ export function getServiceHost(
 
             if (tsResolvedModule) {
               moduleResolutionCache.setCache(name, containingFile, tsResolvedModule);
+              return tsResolvedModule;
             }
 
-            return tsResolvedModule;
+            // Not .coffee and also completely unknown to ts, so it's either an import to a cs file
+            // without specifying the extension such as `./some-file` or it is invalid.
+            // https://github.com/vuejs/vetur/issues/213#issuecomment-305018088
+            for(const file_ext of env.get_file_extensions()) {
+              tsResolvedModule = tsModule.resolveModuleName(
+                `${name}.${file_ext}`,
+                containingFile,
+                options,
+                coffeescriptSys
+              ).resolvedModule;
+              if(tsResolvedModule) {
+                break
+              }
+            }
+          } else {
+            tsResolvedModule = tsModule.resolveModuleName(
+              name,
+              containingFile,
+              options,
+              coffeescriptSys
+            ).resolvedModule;
           }
-
-          const tsResolvedModule = tsModule.resolveModuleName(
-            name,
-            containingFile,
-            options,
-            coffeescriptSys
-          ).resolvedModule;
           if (!tsResolvedModule) {
             return undefined;
           }
 
-          if (env.get_file_extensions().some(ext => tsResolvedModule.resolvedFileName.endsWith(`.${ext}.ts`))) {
+          if (env.get_file_extensions().some(ext => tsResolvedModule!.resolvedFileName.endsWith(`.${ext}.ts`))) {
             const resolvedFileName = tsResolvedModule.resolvedFileName.slice(0, -'.ts'.length);
             const uri = URI.file(resolvedFileName);
             const resolvedFileFsPath = normalizeFileNameToFsPath(resolvedFileName);

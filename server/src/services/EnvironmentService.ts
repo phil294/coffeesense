@@ -18,6 +18,7 @@ let $extensions: string[]
 const setConfig = (config: LSPFullConfig) => {
   $config = config;
 
+  // Order determines precedence in resolving imports without file extension
   $extensions = [...new Set([
     DEFAULT_FILE_EXTENSION,
     ...Object.entries($config.files?.associations || {})
