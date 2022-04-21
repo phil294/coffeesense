@@ -12,7 +12,7 @@ lodash@4.17.21:
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
-typescript@^4.1.3:
-  version "4.6.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.6.3.tgz#eefeafa6afdd31d725584c67a0eaba80f6fc6c6c"
-  integrity sha512-yNIatDa5iaofVozS/uQJEl3JRWLKKGJKh6Yaiv0GLGSuhpFJe7P3SbHZ8/yjAHRQwKRoA6YZqlfjXWmVzoVSMw==
+typescript@^4.7.0-beta:
+  version "4.7.0-dev.20220421"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.7.0-dev.20220421.tgz#34d0a3d3aab6e6394d75e5806d80ff85846110fa"
+  integrity sha512-SWMETCW3SwzpCE0eyfqqUDeiKV9hJIs/g4eT5eQU8qv32lk9QNrH7+4n68GTZNiX3bBfHfEUcuh/04afMDi3Kw==
