@@ -118,6 +118,11 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.9.0
+##### 2022-04-21
+- Allow importing relative coffee imports without specifying file extension (#12)
+- Upgrade TypeScript from 4.6 to 4.7-beta
+
 #### 1.8.1
 ##### 2022-03-24
 - Fix allowing multiline comments. coffeescript allows them, even with normal quotes `"\n\n\n"`
