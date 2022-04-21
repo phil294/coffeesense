@@ -37,7 +37,7 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
 
   if(!allow_unspecified && !allow_globals)
     //@ts-ignore
-    assert.equal(expectedItems.length, result.items.filter(i => i.label.label !== '#region' && i.label.label !== '#endregion').length)
+    assert.equal(expectedItems.length, result.items.filter(i => i.label.label !== '#region' && i.label.label !== '#endregion' && i.label !== '#region' && i.label !== '#endregion').length)
 
   if(!allow_globals) {
     // We never want to see global suggestions, like DOM:
