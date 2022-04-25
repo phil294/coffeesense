@@ -47,6 +47,19 @@ describe('Should autocomplete', () => {
 		await testCompletion({ doc_uri: getDocUri('completion/open-empty-string-as-inline-object-param.coffee'), position: position(0, 27), expected_items: ['smooth', 'auto'] })
 	})
 
+	it('completes open string as function param, indented', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/open-string-as-function-param-indented.coffee'), position: position(5, 85), expected_items: ['abc']})
+	})
+
+	it('completes open string as function param after opening brace, indented', async () => {
+		// TODO should probably specify target range (?) which is 1 char less, so 5,66 and 5,70 - because the `a` is already there
+		await testCompletion({ doc_uri: getDocUri('completion/open-string-as-function-param-brace-indented.coffee'), position: position(5, 67), expected_items: ['abc']})
+		await testCompletion({ doc_uri: getDocUri('completion/open-string-as-function-param-brace-indented-2.coffee'), position: position(5, 71), expected_items: ['abc']})
+	})
+	it('completes empty open string as function param after opening brace, indented', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/open-empty-string-as-function-param-brace-indented.coffee'), position: position(5, 72), expected_items: ['abc', 'def'] })
+	})
+
 	it('completes for lodash methods', async () => {
 		await testCompletion({ doc_uri: getDocUri('completion/external.coffee'), position: position(2, 25), expected_items: ['curry', 'fill'], allow_unspecified: true, })
 	})

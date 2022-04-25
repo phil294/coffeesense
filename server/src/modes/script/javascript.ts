@@ -200,7 +200,7 @@ export async function getJavascriptMode(
       const coffee_next_char = coffee_text[coffee_offset]
       const coffee_last_char = coffee_text[coffee_offset - 1]
       const { word: coffee_word } = get_word_around_position(coffee_text, coffee_offset)
-      const coffee_line = coffee_text.slice(coffee_doc.offsetAt({ line: coffee_position.line, character:0 }), coffee_doc.offsetAt({ line: coffee_position.line, character: Number.MAX_VALUE }))
+      const coffee_line = get_line_at_line_no(coffee_doc, coffee_position.line)
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
@@ -253,7 +253,7 @@ export async function getJavascriptMode(
 
       const js_text = js_doc.getText()
 
-      const js_line = js_text.slice(js_doc.offsetAt({ line: position.line, character:0 }), js_doc.offsetAt({ line: position.line, character: Number.MAX_VALUE }))
+      const js_line = get_line_at_line_no(js_doc, position.line)
       if(js_line.startsWith("import {} from ") && (position.character === 7 || position.character === 9)) {
         // special case. There are no source maps pointing into {|}, so move it there
         position.character = 8
@@ -269,12 +269,17 @@ export async function getJavascriptMode(
         // source maps are wrong, cursor is in CS before : but in JS after :, fix this:
         char_offset = -2
       } else {
-        // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
-        // JS cursor is falsely `a(|'')`. Circumvent this:
         const special_trigger_chars = ['"', "'"]
         for(const s of special_trigger_chars) {
+          // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
+          // JS cursor is falsely `a(|'')`. Circumvent this:
           if((coffee_last_char === s || [s, '\n', undefined].includes(coffee_next_char)) && js_last_char !== s && js_next_char === s) {
             char_offset = 1
+            break
+          // When adding closing brace using aggressive preprocessing, e.g. `("ab|`, JS is falsely
+          // at `("ab"|);`:
+          } else if(coffee_line.includes(s) && js_last_char === s && js_next_char === ')') {
+            char_offset = -1
             break
           }
         }
@@ -341,6 +346,9 @@ export async function getJavascriptMode(
               if(coffee_last_char === '.' && (entry.insertText?.startsWith('?.') || entry.insertText?.startsWith('['))) {
                 // Special case
                 range.start.character--
+              } else {
+                // Not perfect but good enough for most cases, e.g. open-string-as-function-param-brace-indented.coffee
+                range.start.character -= entry.replacementSpan?.length || 0
               }
             }
           }

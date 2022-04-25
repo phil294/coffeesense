@@ -117,6 +117,22 @@ function preprocess_coffee(coffee_doc: TextDocument) {
   return { coffee, object_tweak_coffee_lines, space_tweak_coffee_lines }
 }
 
+/** further transforms that *can break* cs compilation, to be used if compilation could not succeed without it anyway */
+function preprocess_coffee_aggressive(coffee_doc: TextDocument) {
+  return coffee_doc.getText()
+    // `abc "|\n` -> add another "
+    .replaceAll(/^[^"']*(["'])[^"']*$/mg, (c, quote) => {
+        logger.logDebug(`aggressively transform open string to closed one ${coffee_doc.uri}`)
+        return c + quote
+      })
+    // `abc(|\n` -> add ). This can break things because open braces are actually allowed
+    // and used in normal CoffeeScript (issue #8)
+    .replaceAll(/([a-zA-Z_$0-9])\(([^)\n]*)$/mg, (_,c, p) => {
+      logger.logDebug(`aggressively replace dangling space or opening brace with braces ${coffee_doc.uri}`)
+      return `${c}(${p})\n`
+    })
+}
+
 function try_compile(coffee: string): ITranspilationResult {
   try {
     // takes about 1-4 ms
@@ -520,7 +536,11 @@ const transpile_service: ITranspileService = {
     let mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, preprocessed_coffee)
     let result = try_translate_coffee(mod_coffee_doc)
 
-   
+    if(!result.js) {
+      const aggressively_preprocessed_coffee = preprocess_coffee_aggressive(mod_coffee_doc)
+      mod_coffee_doc = TextDocument.create(mod_coffee_doc.uri, 'coffeescript', 1, aggressively_preprocessed_coffee)
+      result = try_translate_coffee(mod_coffee_doc)
+    }
 
     if(result.js && result.source_map) {
       postprocess_js(result, object_tweak_coffee_lines, space_tweak_coffee_lines)
