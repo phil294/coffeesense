@@ -52,6 +52,7 @@ const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(18
 
 export const trailing_param_regex = /^[^#]*[^ #] $/mg
 
+/** The resulting coffee must still always be valid and parsable by the compiler */
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
     // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
@@ -83,7 +84,7 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     if(line.match(trailing_param_regex)) {
       // Trailing spaces = `{𝆮}`. Something to make the line not error, and `{}` to get autocomplete with params inline object keys.
       // Handled in in postprocess_js and gets special handling in doComplete().
-      // Trailing bracket on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
+      // Trailing open brace on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
       logger.logDebug(`replace trailing space with {𝆮} ${coffee_doc.uri}`)
       space_tweak_coffee_lines.push({ line_i, line })
       tmp_lines[line_i] = `${line}{𝆮}`
@@ -140,6 +141,178 @@ function try_compile(coffee: string): ITranspilationResult {
       }]
     }
   }
+}
+
+const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult => {
+  let result: ITranspilationResult = {}
+  let fake_line_mechanism: ITranspilationResult["fake_line_mechanism"]
+  let normal_compilation_diagnostics: Diagnostic[] | undefined
+
+  let coffee_error_line_no = 0, coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = '', /*useful for debugging*/successful_coffee_fake = '', fake_line_modified_js_end_removed = ''
+
+  const coffee = coffee_doc.getText()
+
+  // Try normal compilation
+  result = try_compile(coffee)
+
+  if(result.js) {
+    logger.logDebug(`successful simple compilation ${coffee_doc.uri}`)
+    return result
+  } else {
+    fake_line_mechanism = 'coffee_in_js'
+    normal_compilation_diagnostics = result.diagnostics
+  
+    coffee_error_line_no = result.diagnostics![0]!.range.start.line
+    coffee_error_offset = coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
+    const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
+    coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : -1
+    coffee_error_line = coffee.slice(coffee_error_offset, coffee_error_end > -1 ? coffee_error_end : undefined)
+    coffee_error_line_indentation = coffee_error_line.match(/^\s+/)?.[0] || ''
+  }
+
+  // It failed. Try another compilation with error line simplified. Used for completions etc.
+  // Proper lsp servers can handle autocompletion requests even when the surrounding code is invalid.
+  // This is not possible with this one so we temporarily replace the erroneous line (indented)
+  // with `𒐩`, reverse-map the location of that in the compiled JS (if successful) and insert the
+  // error line again at that position, as JS completion *can* be based on half-baked code.
+  // Reason for `𒐩`: Some random unicode character nobody uses. Might as well be `true` or `0` but
+  // it should be as short as possible to not exceed the original line's length. Exotic to avoid
+  // confusion with other user-set variables, should it somehow become visible. And it looks cool.
+  // It would be better to apply this fix to the current line instead of the error line(s),
+  // but that would need to happen inside `doComplete` where the position is known.
+  // TextDocument contents need to be set *here* however, so this is not possible without
+  // altering the underlying architecture of the extension.
+  // As fallbacks, `𒐩:𒐩` should work in objects and `if 𒐩` in lines with increased indentation after.
+  const try_fake_line_compilation = (fake_line_content: string) => {
+    const coffee_fake = [
+      coffee.substr(0, coffee_error_offset),
+      coffee_error_line_indentation,
+      fake_line_content,
+      ' '.repeat(Math.max(0,coffee_error_line.length - coffee_error_line_indentation.length - fake_line_content.length)),
+      coffee_error_end > -1 ? coffee.slice(coffee_error_end) : ''
+    ].join('')
+    result = try_compile(coffee_fake)
+    if(result.js) {
+      logger.logDebug(`successful compilation with fake content '${fake_line_content}' ${coffee_doc.uri}`)
+      successful_coffee_fake = coffee_fake
+      return true
+    }
+    return false
+  }
+
+  // Most common cause for failing line is probably a dot. Try without it. Anything more complicated
+  // can only be guessed and tried out with the other fake line contents below.
+  for(const end of ['.;', '[']) { // `;` comes from preprocess_coffee
+    if(coffee_error_line.endsWith(end)) {
+      if(!result.js)
+        // Still need the `𒐩` to detect the fake js line further below
+        if(try_fake_line_compilation(coffee_error_line.substring(0, coffee_error_line.length - end.length) + '𒐩')) {
+          fake_line_mechanism = 'modified_js'
+          fake_line_modified_js_end_removed = end
+        }
+      break
+    }
+  }
+  // Always try `𒐩:𒐩` but if object, do so at first because `𒐩` can sometimes translate to the wrong output
+  // e.g. object-invalid-line.coffee - doesn't happen often though.
+  // This regex matches object key definitions but rightfully excludes stuff like `b=[{a:1}].`
+  const coffee_error_line_is_in_object = !!coffee_error_line.match(/^\s*[a-zA-Z0-9_$[\]]+\s*:/)
+  if(!result.js && coffee_error_line_is_in_object)
+    try_fake_line_compilation('𒐩:𒐩')
+  for(const fake_line_content of ['𒐩', 'if 𒐩']) {
+    if(!result.js)
+      try_fake_line_compilation(fake_line_content)
+  }
+  if(!result.js && !coffee_error_line_is_in_object)
+    try_fake_line_compilation('𒐩:𒐩')
+
+
+  if(result.js && result.source_map && fake_line_mechanism) {
+
+    // Fake coffee compilation succeeded, now inject the fake line into js
+    const coffee_fake_𒐩_position = coffee_doc.positionAt(coffee_error_offset + coffee_error_line_indentation.length)
+    const js_fake_arr = result.js.split('\n')
+    // Could also be calculated using:
+    // this.position_coffee_to_js({ source_map: result.source_map }, coffee_fake_𒐩_position, coffee_doc)?.line
+    // but source maps are less reliable than the chance of the user not typing 𒐩 themselves
+    const js_fake_𒐩_line_no = js_fake_arr.findIndex(line => line.indexOf('𒐩') > -1)
+    if(js_fake_𒐩_line_no < 0)
+      throw new Error('could not map back js 𒐩 line')
+
+    if(fake_line_mechanism === 'coffee_in_js') {
+      // Below modifications that change the line length are handled in position_coffee_to_js.
+      const coffee_error_line_modified = coffee_error_line
+        .replaceAll('@', 'this.')
+        // Callback parens insertion: In callbacks, the variable type can not be inferred:
+        // JS does not understand that this is a function (because of the missing parens).
+        // E.g. `x (a) => a.` becomes `x((a) => a.`
+        .replaceAll(/ \(/g, '((')
+        // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
+        .replaceAll(/([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'])/g, '$1($2')
+        // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`
+        .replaceAll(/([^\s{][ (])([a-zA-Z_][a-zA-Z0-9_$]* ?:) /g, '$1{$2')
+        // More special words that JS does not understand *so bad*, it cannot give suggestions
+        // anymore. && Seems to work in all cases, same as if, ! does not.
+        .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
+        // Rare case of error in assignment: object half line with open brace, or open string
+        // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
+        .replace(/^\s*[a-zA-Z0-9_-]+\s*=([^=]|$)/g, (line) => `let ${line}`)
+        // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
+        .replaceAll(' #', '//')
+      
+      js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
+
+      // Source map contains lines that refer to the now again removed `𒐩`s.
+      // Keep only one line reference for CS fake line which is JS fake line no,
+      // and remove all column mappings for it.
+      // The same position mapping effect could be achieved by removing all coffee_error_line_no
+      // referring entries and add a single one {sourceLine:coffee_error_line_no,sourceColumn:0,line:js_fake_𒐩_line_no,column:0}
+      result.source_map.forEach(x =>
+        x.columns.forEach(y => {
+          if(y.sourceLine === coffee_error_line_no) {
+            if(y.line !== js_fake_𒐩_line_no)
+              y.sourceLine = -1 // effectively remove this source mapping
+            y.sourceColumn = 0
+            y.column = 0
+          }
+        }))
+
+    } else {
+      const fake_js_line = js_fake_arr[js_fake_𒐩_line_no]!
+      const 𒐩_index = fake_js_line.indexOf('𒐩')
+      const before_𒐩 = fake_js_line.slice(0, 𒐩_index)
+      const after_𒐩 = fake_js_line.slice(𒐩_index + 2) // 2 because 𒐩 is 2 chars in size?? Hopefully this is stable
+      let tail = ''
+        if(after_𒐩 !== ';') {
+        // This is not really expected but can sometimes happen when fake line is being
+        // unified with the followup line into a single line statement. Preserve this information:
+        tail = after_𒐩
+      }
+      js_fake_arr[js_fake_𒐩_line_no] = before_𒐩 + fake_line_modified_js_end_removed.replace(';', '') + tail
+    }
+
+    if(js_fake_𒐩_line_no > 0) {
+      let i = js_fake_𒐩_line_no - 1
+      while(js_fake_arr[i]?.match(/^\s*$/))
+        i--
+      const previous_line = js_fake_arr[i]
+      if(previous_line?.[previous_line.length - 1] === ';') {
+        // This is necessary when the current coffee line is a continuation of the previous one,
+        // e.g.(only?) via dot: cs `[]\n.|` becomes js `[];\n\n𒐩 ;` and then `[];\n\n.;`.
+        // The first ; breaks autocomplete: remove it.
+        js_fake_arr[i] = previous_line.slice(0, -1) +' '
+      }
+    }
+
+    result.js = js_fake_arr.join('\n')
+    result.fake_line = coffee_fake_𒐩_position.line
+    result.fake_line_mechanism = fake_line_mechanism
+  }
+
+  if(normal_compilation_diagnostics)
+    result.diagnostics = normal_compilation_diagnostics
+
+  return result
 }
 
 /**
@@ -341,178 +514,17 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const { coffee, object_tweak_coffee_lines, space_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
+    const { coffee: preprocessed_coffee, object_tweak_coffee_lines, space_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
-    const mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, coffee)
-    
-    let coffee_error_line_no = 0, coffee_error_offset = 0, coffee_error_end = -1, coffee_error_line = '', coffee_error_line_indentation = '', /*useful for debugging*/successful_coffee_fake = ''
+    let mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, preprocessed_coffee)
+    let result = try_translate_coffee(mod_coffee_doc)
 
-    let result: ITranspilationResult
-    let fake_line_mechanism: ITranspilationResult["fake_line_mechanism"]
-    let normal_compilation_diagnostics: Diagnostic[] | undefined
-    
-    // Try normal compilation
-    result = try_compile(coffee)
-    if(result.js) {
-      logger.logDebug(`successful simple compilation ${orig_coffee_doc.uri}`)
-    } else {
-      fake_line_mechanism = 'coffee_in_js'
-      normal_compilation_diagnostics = result.diagnostics
-    
-      coffee_error_line_no = result.diagnostics![0]!.range.start.line
-      coffee_error_offset = mod_coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
-      const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
-      coffee_error_end = coffee_error_next_newline_position > -1 ? coffee_error_offset + coffee_error_next_newline_position : -1
-      coffee_error_line = coffee.slice(coffee_error_offset, coffee_error_end > -1 ? coffee_error_end : undefined)
-			coffee_error_line_indentation = coffee_error_line.match(/^\s+/)?.[0] || ''
-    }
-  
-    // If failed, try another compilation with error line simplified. Used for completions etc.
-    // Proper lsp servers can handle autocompletion requests even when the surrounding code is invalid.
-    // This is not possible with this one so we temporarily replace the erroneous line (indented)
-    // with `𒐩`, reverse-map the location of that in the compiled JS (if successful) and insert the
-    // error line again at that position, as JS completion *can* be based on half-baked code.
-    // Reason for `𒐩`: Some random unicode character nobody uses. Might as well be `true` or `0` but
-    // it should be as short as possible to not exceed the original line's length. Exotic to avoid
-    // confusion with other user-set variables, should it somehow become visible. And it looks cool.
-    // It would be better to apply this fix to the current line instead of the error line(s),
-    // but that would need to happen inside `doComplete` where the position is known.
-    // TextDocument contents need to be set *here* however, so this is not possible without
-    // altering the underlying architecture of the extension.
-    // As fallbacks, `𒐩:𒐩` should work in objects and `if 𒐩` in lines with increased indentation after.
-    const try_fake_line_compilation = (fake_line_content: string) => {
-      const coffee_fake = [
-        coffee.substr(0, coffee_error_offset),
-        coffee_error_line_indentation,
-        fake_line_content,
-        ' '.repeat(Math.max(0,coffee_error_line.length - coffee_error_line_indentation.length - fake_line_content.length)),
-        coffee_error_end > -1 ? coffee.slice(coffee_error_end) : ''
-      ].join('')
-      result = try_compile(coffee_fake)
-      if(result.js) {
-        logger.logDebug(`successful compilation with fake content '${fake_line_content}' ${orig_coffee_doc.uri}`)
-        successful_coffee_fake = coffee_fake
-        return true
-      }
-      return false
-    }
-
-    let fake_line_modified_js_end_removed = ''
-    // Most common cause for failing line is probably a dot. Try without it. Anything more complicated
-    // can only be guessed and tried out with the other fake line contents below.
-    for(const end of ['.;', '[']) { // `;` comes from preprocess_coffee
-      if(coffee_error_line.endsWith(end)) {
-        if(!result.js)
-          // Still need the `𒐩` to detect the fake js line further below
-          if(try_fake_line_compilation(coffee_error_line.substring(0, coffee_error_line.length - end.length) + '𒐩')) {
-            fake_line_mechanism = 'modified_js'
-            fake_line_modified_js_end_removed = end
-          }
-        break
-      }
-    }
-    // Always try `𒐩:𒐩` but if object, do so at first because `𒐩` can sometimes translate to the wrong output
-    // e.g. object-invalid-line.coffee - doesn't happen often though.
-    // This regex matches object key definitions but rightfully excludes stuff like `b=[{a:1}].`
-    const coffee_error_line_is_in_object = !!coffee_error_line.match(/^\s*[a-zA-Z0-9_$[\]]+\s*:/)
-    if(!result.js && coffee_error_line_is_in_object)
-      try_fake_line_compilation('𒐩:𒐩')
-    for(const fake_line_content of ['𒐩', 'if 𒐩']) {
-      if(!result.js)
-        try_fake_line_compilation(fake_line_content)
-    }
-    if(!result.js && !coffee_error_line_is_in_object)
-      try_fake_line_compilation('𒐩:𒐩')
-
-    if(result.js && result.source_map && fake_line_mechanism) {
-
-      // Fake coffee compilation succeeded, now inject the fake line into js
-      const coffee_fake_𒐩_position = mod_coffee_doc.positionAt(coffee_error_offset + coffee_error_line_indentation.length)
-      const js_fake_arr = result.js.split('\n')
-      // Could also be calculated using:
-      // this.position_coffee_to_js({ source_map: result.source_map }, coffee_fake_𒐩_position, mod_coffee_doc)?.line
-      // but source maps are less reliable than the chance of the user not typing 𒐩 themselves
-      const js_fake_𒐩_line_no = js_fake_arr.findIndex(line => line.indexOf('𒐩') > -1)
-      if(js_fake_𒐩_line_no < 0)
-        throw new Error('could not map back js 𒐩 line')
-  
-      if(fake_line_mechanism === 'coffee_in_js') {
-        // Below modifications that change the line length are handled in position_coffee_to_js.
-        const coffee_error_line_modified = coffee_error_line
-          .replaceAll('@', 'this.')
-          // Callback parens insertion: In callbacks, the variable type can not be inferred:
-          // JS does not understand that this is a function (because of the missing parens).
-          // E.g. `x (a) => a.` becomes `x((a) => a.`
-          .replaceAll(/ \(/g, '((')
-          // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
-          .replaceAll(/([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'])/g, '$1($2')
-          // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`
-          .replaceAll(/([^\s{][ (])([a-zA-Z_][a-zA-Z0-9_$]* ?:) /g, '$1{$2')
-          // More special words that JS does not understand *so bad*, it cannot give suggestions
-          // anymore. && Seems to work in all cases, same as if, ! does not.
-          .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
-          // Rare case of error in assignment: object half line with open brace, or open string
-          // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
-          .replace(/^\s*[a-zA-Z0-9_-]+\s*=([^=]|$)/g, (line) => `let ${line}`)
-          // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
-          .replaceAll(' #', '//')
-        
-        js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
-
-        // Source map contains lines that refer to the now again removed `𒐩`s.
-        // Keep only one line reference for CS fake line which is JS fake line no,
-        // and remove all column mappings for it.
-        // The same position mapping effect could be achieved by removing all coffee_error_line_no
-        // referring entries and add a single one {sourceLine:coffee_error_line_no,sourceColumn:0,line:js_fake_𒐩_line_no,column:0}
-        result.source_map.forEach(x =>
-          x.columns.forEach(y => {
-            if(y.sourceLine === coffee_error_line_no) {
-              if(y.line !== js_fake_𒐩_line_no)
-                y.sourceLine = -1 // effectively remove this source mapping
-              y.sourceColumn = 0
-              y.column = 0
-            }
-          }))
-
-      } else {
-        const fake_js_line = js_fake_arr[js_fake_𒐩_line_no]!
-        const 𒐩_index = fake_js_line.indexOf('𒐩')
-        const before_𒐩 = fake_js_line.slice(0, 𒐩_index)
-        const after_𒐩 = fake_js_line.slice(𒐩_index + 2) // 2 because 𒐩 is 2 chars in size?? Hopefully this is stable
-        let tail = ''
-          if(after_𒐩 !== ';') {
-          // This is not really expected but can sometimes happen when fake line is being
-          // unified with the followup line into a single line statement. Preserve this information:
-          tail = after_𒐩
-        }
-        js_fake_arr[js_fake_𒐩_line_no] = before_𒐩 + fake_line_modified_js_end_removed.replace(';', '') + tail
-      }
-
-      if(js_fake_𒐩_line_no > 0) {
-        let i = js_fake_𒐩_line_no - 1
-        while(js_fake_arr[i]?.match(/^\s*$/))
-          i--
-        const previous_line = js_fake_arr[i]
-        if(previous_line?.[previous_line.length - 1] === ';') {
-          // This is necessary when the current coffee line is a continuation of the previous one,
-          // e.g.(only?) via dot: cs `[]\n.|` becomes js `[];\n\n𒐩 ;` and then `[];\n\n.;`.
-          // The first ; breaks autocomplete: remove it.
-          js_fake_arr[i] = previous_line.slice(0, -1) +' '
-        }
-      }
-
-      result.js = js_fake_arr.join('\n')
-      result.fake_line = coffee_fake_𒐩_position.line
-      result.fake_line_mechanism = fake_line_mechanism
-    }
+   
 
     if(result.js && result.source_map) {
       postprocess_js(result, object_tweak_coffee_lines, space_tweak_coffee_lines)
     }
-    
-    if(normal_compilation_diagnostics)
-      result.diagnostics = normal_compilation_diagnostics
 
     transpilation_cache.set(hash, result)
     this.result_by_uri.set(orig_coffee_doc.uri, result)
