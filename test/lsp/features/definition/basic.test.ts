@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { testDefinition } from '../../../definitionHelper'
-import { position, sameLineLocation } from '../../../util'
+import { location, position, sameLineLocation } from '../../../util'
 import { getDocUri } from '../../path'
 
 describe('Should find definition', () => {
@@ -12,7 +12,7 @@ describe('Should find definition', () => {
 
 	it('finds definition for lodash', async () => {
 		const lodashDtsUri = getDocUri('node_modules/@types/lodash/index.d.ts')
-		await testDefinition(basic_uri, position(0, 12), sameLineLocation(lodashDtsUri, 246, 12, 13))
+		await testDefinition(basic_uri, position(0, 12), location(lodashDtsUri, 243, 0, 20185, 0))
 	})
 
 	// comprehensions introduce coffee code that is absent in js, and as such cannot be reverse mapped,
