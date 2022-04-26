@@ -118,6 +118,14 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.10.0
+##### 2022-04-26
+- Add autocomplete in optional chaining, e.g. `a?.|`
+- Fix params and autocomplete after unclosed brace when indented, e.g. `### (...) ###\n\tmy_func("|\n# x`
+- Fix autocomplete after dot in implicit return, e.g. `do =>\ta b.|`
+- Improve automatic type detection at variable assignment time (again), see #1, 1.2.0, 1.4.0
+- Readme: Add new known problem: trailing dot/space in JSDoc
+
 #### 1.9.0
 ##### 2022-04-21
 - Allow importing relative coffee imports without specifying file extension (#12)
