@@ -390,6 +390,7 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
   // console.time('var-decl-fix')
   //////////////////////////////////////
   ///////// Modify variable declarations to solve various TS compiler errors:
+  ///////// Note: All of this is now only needed for when a CS assignment has a block comment before it (see issue #1)
   // Should not be error but is:
   // xy = 123   # Error: Variable 'xy' implicitly has type 'any' in some locations where its type cannot be determined.CoffeeSense [TS](7034)
   // => xy      # Error: Variable 'xy' implicitly has an 'any' type.CoffeeSense [TS](7005)

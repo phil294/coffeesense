@@ -18,7 +18,7 @@ describe('Should autocomplete via imports', () => {
 				{
 					label: 'createCallback',
 					additionalTextEdits: [
-						textEdit(sameLineRange(0, 0, 0), 'import { createCallback } from "lodash"\n'),
+						textEdit(sameLineRange(0, 0, 0), 'import { createCallback } from "lodash"\n\n'),
 					]
 				}
 			],

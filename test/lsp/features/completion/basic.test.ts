@@ -1,7 +1,7 @@
 import { position } from '../../../util'
 import { testCompletion } from '../../../completionHelper'
 import { getDocUri } from '../../path'
-import { Position, Range, TextEdit } from 'vscode'
+import { CompletionItemKind, Position, Range, TextEdit } from 'vscode'
 import assert from 'assert'
 
 describe('Should autocomplete', () => {
@@ -184,7 +184,7 @@ describe('Should autocomplete', () => {
 			position: position(14, 28),
 			expected_items: [
 				'obj_inline_param_key_prop_1',
-				'obj_inline_param_key_unrelated_var'
+				{ label: 'obj_inline_param_key_unrelated_var', kind: CompletionItemKind.Variable }
 			],
 			allow_globals: true,
 			unexpected_items: [ 'obj_inline_param_key_prop_2' ]
@@ -194,7 +194,7 @@ describe('Should autocomplete', () => {
 			position: position(16, 32),
 			expected_items: [
 				'obj_inline_param_key_prop_2',
-				'obj_inline_param_key_unrelated_var'
+				{ label: 'obj_inline_param_key_unrelated_var', kind: CompletionItemKind.Variable }
 			],
 			allow_globals: true,
 			unexpected_items: [
@@ -280,4 +280,10 @@ describe('Should autocomplete', () => {
 			insertTextValue: '["a b"]',
 			textEdit: TextEdit.replace(new Range(new Position(2, 21), new Position(2, 22)), '["a b"]')
 		}] })
-	})})
+	})
+
+	it('completes a destructured variable that had a comment block attached, inside a wrapper', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/destructuring-with-comment-block.coffee'), position: position(7, 8), expected_items: ['destructuring_with_comment_block_var_1'] })
+	})
+
+})

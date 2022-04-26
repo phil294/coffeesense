@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/phil294/coffeesense/tree/master/server",
   "dependencies": {
-    "coffeescript": "^2.6.1",
+    "coffeescript": "github:edemaine/coffeescript#var-assign",
     "jshashes": "^1.0.8",
     "typescript": "^4.7.0-beta",
     "volatile-map": "^2.0.0",
