@@ -23,6 +23,11 @@ describe('Should autocomplete', () => {
 		await testCompletion({ doc_uri, position: position(6, 36), expected_items: ['bbb1', 'bbb2'] })
 	})
 
+	it('completes in optional chaining', async () => {
+		const doc_uri = getDocUri('completion/optional-chaining.coffee')
+		await testCompletion({ doc_uri, position: position(1, 21), expected_items: ['aaa'] })
+	})
+
 	const import_uri = getDocUri('completion/import.coffee')
 	it('completes import modules', async () => {
 		await testCompletion({ doc_uri: import_uri, position: position(0, 8), expected_items: ['lodash'], allow_unspecified: true, })

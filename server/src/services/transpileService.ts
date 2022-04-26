@@ -218,15 +218,18 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
 
   // Most common cause for failing line is probably a dot. Try without it. Anything more complicated
   // can only be guessed and tried out with the other fake line contents below.
-  for(const end of ['.;', '[']) { // `;` comes from preprocess_coffee
-    if(coffee_error_line.endsWith(end)) {
-      if(!result.js)
+  for(let end of ['.;', '[']) { // `;` comes from preprocess_coffee
+    if(!result.js) {
+      if(coffee_error_line.endsWith(end)) {
+        if(coffee_error_line.endsWith('?' + end))
+          end = '?' + end
         // Still need the `𒐩` to detect the fake js line further below
         if(try_fake_line_compilation(coffee_error_line.substring(0, coffee_error_line.length - end.length) + '𒐩')) {
           fake_line_mechanism = 'modified_js'
           fake_line_modified_js_end_removed = end
         }
-      break
+        break
+      }
     }
   }
   // Always try `𒐩:𒐩` but if object, do so at first because `𒐩` can sometimes translate to the wrong output

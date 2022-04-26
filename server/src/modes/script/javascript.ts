@@ -199,15 +199,22 @@ export async function getJavascriptMode(
       const coffee_offset = coffee_doc.offsetAt(coffee_position)
       const coffee_next_char = coffee_text[coffee_offset]
       const coffee_last_char = coffee_text[coffee_offset - 1]
+      const coffee_second_last_char = coffee_text[coffee_offset - 2]
       const { word: coffee_word } = get_word_around_position(coffee_text, coffee_offset)
       const coffee_line = get_line_at_line_no(coffee_doc, coffee_position.line)
       let position: Position
       if(transpilation.source_map) {
         // For position reverse mapping, remove . char, and add again to result afterwards.
         // Otherwise, the source map does not know what you're talking of
+        let dot_offset_tweak = 0
+        if(coffee_last_char === '.') {
+          dot_offset_tweak = -1
+          if(coffee_second_last_char === '?')
+            dot_offset_tweak = -2
+        }
         const coffee_position_tweaked = {
           line: coffee_position.line,
-          character: coffee_position.character - (coffee_last_char==='.'? 1 : 0)
+          character: coffee_position.character + dot_offset_tweak
         }
         if(coffee_line.startsWith("import {") && [' ', '}'].includes(coffee_next_char||'')) {
           let i = coffee_offset - 1
@@ -244,7 +251,7 @@ export async function getJavascriptMode(
           return { isIncomplete: false, items: [] }
         position = {
           line: js_position.line,
-          character: js_position.character + (coffee_last_char==='.'? 1 : 0)
+          character: js_position.character - dot_offset_tweak
         }
       } else {
         // If no source map, the file is passed as coffee text which must not be mapped
