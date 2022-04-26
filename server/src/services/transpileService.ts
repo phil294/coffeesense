@@ -629,7 +629,8 @@ const transpile_service: ITranspileService = {
         return js_matches_by_char
       if(coffee_position_is_at_end_of_word) {
         const js_matches_by_start_of_word = js_matches_by_line
-          .filter(c => c?.sourceColumn === coffee_position_at_start_of_word.character)
+          .filter(c => c?.sourceColumn === coffee_position_at_start_of_word.character &&
+            get_word_around_position(result.js||'', js_doc_tmp.offsetAt({ line: c.line, character: c.column })).word === word_at_coffee_position.word)
         if(js_matches_by_start_of_word.length)
           return js_matches_by_start_of_word
       }
@@ -666,12 +667,17 @@ const transpile_service: ITranspileService = {
       }
       if(word_at_coffee_position.word) {
         const js_matches_by_word = js_matches.map(match => {
-          const match_offset = js_doc_tmp.offsetAt({ line: match.line, character: match.column })
-          const match_word_info = get_word_around_position(result.js||'', match_offset)
-          if(match_word_info.word !== word_at_coffee_position.word)
-            return null
-          const js_position_is_at_start_of_word = match_word_info.offset === match_offset
           const ret = { ...match }
+          let match_offset = js_doc_tmp.offsetAt({ line: match.line, character: match.column })
+          let match_word_info = get_word_around_position(result.js||'', match_offset)
+          if(match_word_info.word !== word_at_coffee_position.word) {
+            ret.column += 1
+            match_offset++
+            match_word_info = get_word_around_position(result.js||'', match_offset)
+            if(match_word_info.word !== word_at_coffee_position.word)
+              return null
+          }
+          const js_position_is_at_start_of_word = match_word_info.offset === match_offset
           if(coffee_position_is_at_end_of_word && js_position_is_at_start_of_word)
             ret.column += word_at_coffee_position.word.length
           return ret

@@ -15,6 +15,14 @@ describe('Should autocomplete', () => {
 		await testCompletion({ doc_uri: basic_uri, position: position(6, 25), expected_items: ['toISOString'], allow_unspecified: true, })
 	})
 
+	it('completes correctly in implicit return scenario', async () => {
+		const doc_uri = getDocUri('completion/implicit-return.coffee')
+		await testCompletion({ doc_uri, position: position(6, 41), expected_items: ['ccc1'] })
+		await testCompletion({ doc_uri, position: position(6, 40), expected_items: ['bbb1'] })
+		await testCompletion({ doc_uri, position: position(6, 37), expected_items: ['bbb1'] })
+		await testCompletion({ doc_uri, position: position(6, 36), expected_items: ['bbb1', 'bbb2'] })
+	})
+
 	const import_uri = getDocUri('completion/import.coffee')
 	it('completes import modules', async () => {
 		await testCompletion({ doc_uri: import_uri, position: position(0, 8), expected_items: ['lodash'], allow_unspecified: true, })

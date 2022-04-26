@@ -273,7 +273,7 @@ export async function getJavascriptMode(
         for(const s of special_trigger_chars) {
           // When CS cursor is e.g. at `a('|')`, completion does not work bc of bad source mapping,
           // JS cursor is falsely `a(|'')`. Circumvent this:
-          if((coffee_last_char === s || [s, '\n', undefined].includes(coffee_next_char)) && js_last_char !== s && js_next_char === s) {
+          if((coffee_last_char === s || [s, '\n', undefined].includes(coffee_next_char)) && js_last_char !== s && !js_last_char?.match(common_js_variable_name_character) && js_next_char === s) {
             char_offset = 1
             break
           // When adding closing brace using aggressive preprocessing, e.g. `("ab|`, JS is falsely
