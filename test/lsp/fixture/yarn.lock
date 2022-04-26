@@ -13,6 +13,6 @@ lodash@4.17.21:
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
 
 typescript@^4.7.0-beta:
-  version "4.7.0-dev.20220421"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.7.0-dev.20220421.tgz#34d0a3d3aab6e6394d75e5806d80ff85846110fa"
-  integrity sha512-SWMETCW3SwzpCE0eyfqqUDeiKV9hJIs/g4eT5eQU8qv32lk9QNrH7+4n68GTZNiX3bBfHfEUcuh/04afMDi3Kw==
+  version "4.7.0-dev.20220426"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.7.0-dev.20220426.tgz#7924d223a4e111e5bb30c8d99ed989c4a594ab69"
+  integrity sha512-Kp2HY+EFd3ohtistJ+C4Px4esymoC90SFH9/aNOhD7pyoan9DSRmzcqOgN6zdwbSH4T1Riju+p6Flc1VnVlhrg==
