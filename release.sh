@@ -17,11 +17,14 @@ yarn
 yarn upgrade
 cd server
 yarn upgrade
-cd ..
+cd ../test/lsp/fixture
+yarn upgrade
+cd ../../..
 pause
 
-changes=$(git log --reverse ed36f9.. --pretty=format:"%B" |grep . |sed -E 's/^(.)/- \U\1/')
-echo 'CHANGES:'
+git fetch
+changes=$(git log --reverse origin/master.. --pretty=format:"%B" |grep . |sed -E 's/^(.)/- \U\1/')
+echo 'CHANGES, generated from commits since last git push:'
 echo "$changes"
 echo "---- (put into clipboard)"
 echo "$changes" |xclip -sel c
