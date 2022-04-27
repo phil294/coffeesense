@@ -121,8 +121,8 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 #### 1.10.0
 ##### 2022-04-26
 - Add autocomplete in optional chaining, e.g. `a?.|`
-- Fix params and autocomplete after unclosed brace when indented, e.g. `### (...) ###\n\tmy_func("|\n# x`
-- Fix autocomplete after dot in implicit return, e.g. `do =>\ta b.|`
+- Fix params and autocomplete after unclosed brace when indented, e.g. `\t### (...) ###\n\tmy_func("|\n\t# x`
+- Fix autocomplete after dot in implicit return, e.g. `do =>\n\ta b.|`
 - Improve automatic type detection at variable assignment time (again), see #1, 1.2.0, 1.4.0
 - Readme: Add new known problem: trailing dot/space in JSDoc
 
