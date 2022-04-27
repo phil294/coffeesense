@@ -1,6 +1,5 @@
 import vscode from 'vscode'
 import { testDiagnostics } from '../../../diagnosticHelper'
-import { showFile } from '../../../editorHelper'
 import { sameLineRange } from '../../../util'
 import { getDocUri } from '../../path'
 
@@ -59,6 +58,18 @@ describe('Should find diagnostics', () => {
 		await testDiagnostics(docUri, [
 			{
 				range: sameLineRange(3, 0, 15),
+				severity: vscode.DiagnosticSeverity.Error,
+				message: "Type 'string' is not assignable to type 'number'."
+			}
+		])
+	})
+
+	// TODO: issue #1, need another `#` before comment blocks
+	xit('positions multiple comment blocks before each var assignment, not declaration', async () => {
+		const docUri = getDocUri('diagnostics/declaration-with-commentblock.coffee')
+		await testDiagnostics(docUri, [
+			{
+				range: sameLineRange(1, 0, 28),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Type 'string' is not assignable to type 'number'."
 			}
