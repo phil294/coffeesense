@@ -428,7 +428,7 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
   // Part 1: Determine declaration areas (`   var x, y;`)
   const js_decl_lines_info = js_line_nos
     .map(decl_line_no => {
-      const match = js_lines[decl_line_no]!.match(/^(\s*)(var )(.+);$/)
+      const match = js_lines[decl_line_no]!.match(/^(\s*)(var )([^\n=]+);$/)
       if(match) {
         const var_decl_infos = match[3]!.split(', ').map(var_name => ({
           var_name,
