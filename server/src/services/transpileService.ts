@@ -55,12 +55,12 @@ export const trailing_param_regex = /^[^#]*[^ #] $/mg
 /** The resulting coffee must still always be valid and parsable by the compiler */
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
-    // Enable autocomplete at `@|`. For that, all usages of `@` as `this` (without dot)
-    // need to be ignored: A dot needs to be inserted. To avoid syntax errors, this also
-    // adds a `valueOf()` afterwards. Cursor needs to be adjusted properly in doComplete()
-    .replaceAll(/^([^#\n]*([^a-z-A-Z_\n]|^))@(\s|$)/mg, (_, c, __, ws) => {
-      logger.logDebug(`transform @ to this.valueOf() ${coffee_doc.uri}`)
-      return `${c}this.valueOf()${ws}`
+    // Enable autocomplete at `@|`. Replace with magic snippet that allows for both @|
+    // and standalone @ sign. Cursor needs to be adjusted properly in doComplete().
+    // .____CoffeeSenseAtSign is replaced with (this.valueOf(),this) in postprocess_js.
+    .replaceAll(/^([^#\n]*([^a-z-A-Z_$\n]|^))@(\s|$)/mg, (_, c, __, ws) => {
+      logger.logDebug(`transform @ to (this.valueOf(),this) ${coffee_doc.uri}`)
+      return `${c}this.____CoffeeSenseAtSign${ws}`
     })
     // To avoid successful compilation where it should fail, e.g. `a.|\nconsole.log 1`
     // (debatable if this should actually be allowed though), and more importantly, fix `a.|\n#`
@@ -346,6 +346,8 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
     // Prefer object method shorthand
     .replaceAll(/([a-zA-Z0-9_$]+): (async )?function(\*?)\(/g, (_, func_name, asynk, asterisk) =>
       `${asynk || ''}${asterisk}${func_name}          (`)
+    // see preprocess
+    .replaceAll('this.____CoffeeSenseAtSign', '(this.valueOf(),this)     ')
 
   const js_lines = result.js.split('\n')
 

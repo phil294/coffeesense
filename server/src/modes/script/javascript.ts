@@ -294,9 +294,11 @@ export async function getJavascriptMode(
       js_offset += char_offset
 
       if(char_offset === 0) {
-        if(js_text.substr(js_offset, 14) === 'this.valueOf()') {
-          // CS cursor: `...@|`
-          js_offset += 'this.'.length
+        if(coffee_last_char === '@') {
+          if (js_text.substr(js_offset - 5, 26) === '(this.valueOf(),this)     ')
+            js_offset++
+          else if(js_text.substr(js_offset - 26, 26) === '(this.valueOf(),this)     ')
+            js_offset -= 20
         }
       }
 

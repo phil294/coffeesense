@@ -126,8 +126,17 @@ describe('Should autocomplete', () => {
 	})
 
 	// bfa0645
-	it('completes for @', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/@.coffee'), position: position(3, 9), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
+	it('completes at @| as this.|', async () => {
+		const doc_uri = getDocUri('completion/@.coffee')
+		await testCompletion({ doc_uri, position: position(3, 9), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
+		await testCompletion({ doc_uri, position: position(4, 15), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
+		await testCompletion({ doc_uri, position: position(6, 29), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
+		await testCompletion({ doc_uri, position: position(7, 10), expected_items: [{label: 'bbb', insertTextValue: 'b'}] })
+	})
+
+	// issue #13, #2
+	it('parses @ without anything after it as this', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/@.coffee'), position: position(5, 19), expected_items: ['toFixed']})
 	})
 
 	it('completes at end of fake line if it contains a @ somewhere earlier', async () => {
@@ -183,7 +192,7 @@ describe('Should autocomplete', () => {
 			doc_uri: inline_object_param_key_uri,
 			position: position(14, 28),
 			expected_items: [
-				'obj_inline_param_key_prop_1',
+				'obj_inline_param_key_prop_1', // TODO expect pos 1? as there are globals. perhaps always as part of testcompletion
 				{ label: 'obj_inline_param_key_unrelated_var', kind: CompletionItemKind.Variable }
 			],
 			allow_globals: true,
@@ -282,6 +291,7 @@ describe('Should autocomplete', () => {
 		}] })
 	})
 
+	// ref issue #1
 	it('completes a destructured variable that had a comment block attached, inside a wrapper', async () => {
 		await testCompletion({ doc_uri: getDocUri('completion/destructuring-with-comment-block.coffee'), position: position(7, 8), expected_items: ['destructuring_with_comment_block_var_1'] })
 	})
