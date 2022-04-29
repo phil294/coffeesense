@@ -118,6 +118,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.10.1
+##### 2022-04-29
+- Fix type of standalone `@` while preserving autocomplete (no extra `.valueOf()` added - thanks to @STRd6) (#13, #2)
+
 #### 1.10.0
 ##### 2022-04-26
 - Add autocomplete in optional chaining, e.g. `a?.|`
