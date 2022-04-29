@@ -128,10 +128,10 @@ describe('Should autocomplete', () => {
 	// bfa0645
 	it('completes at @| as this.|', async () => {
 		const doc_uri = getDocUri('completion/@.coffee')
-		await testCompletion({ doc_uri, position: position(3, 9), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
-		await testCompletion({ doc_uri, position: position(4, 15), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
-		await testCompletion({ doc_uri, position: position(6, 29), expected_items: [{label: 'bbb', insertTextValue: 'bbb'}, 'ccc'] })
-		await testCompletion({ doc_uri, position: position(7, 10), expected_items: [{label: 'bbb', insertTextValue: 'b'}] })
+		await testCompletion({ doc_uri, position: position(3, 9), expected_items: ['bbb', 'ccc'] })
+		await testCompletion({ doc_uri, position: position(4, 15), expected_items: ['bbb', 'ccc'] })
+		await testCompletion({ doc_uri, position: position(6, 29), expected_items: ['bbb', 'ccc'] })
+		await testCompletion({ doc_uri, position: position(7, 10), expected_items: ['bbb'] })
 	})
 
 	// issue #13, #2
