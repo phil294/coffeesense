@@ -598,7 +598,7 @@ const transpile_service: ITranspileService = {
   range_js_to_coffee(source_map, js_range) {
     const start = this.position_js_to_coffee(source_map, js_range.start)
     const end = this.position_js_to_coffee(source_map, js_range.end)
-    if(start && end)
+    if(start && end && start.line > -1 && end.line > -1)
       return Range.create(start, end)
     return undefined
   },
