@@ -118,6 +118,10 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.10.2
+##### 2022-05-03
+- Fix invalid range creation error, sometimes even resulting in the entire server to continuously crash
+
 #### 1.10.1
 ##### 2022-04-29
 - Fix type of standalone `@` while preserving autocomplete (no extra `.valueOf()` added - thanks to @STRd6) (#13, #2)
