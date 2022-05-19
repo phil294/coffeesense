@@ -1,4 +1,4 @@
-#
+
 ###* @param val {'abc' | 'def'} ###
 open_string_as_function_no_brace_param = (val) =>
 

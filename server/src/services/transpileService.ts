@@ -77,6 +77,12 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
       return match + ':' + key
     })
+    // Comment blocks ordering are often messed up without some workaround (issue #1)
+    // This also inserts `` before closing block comments but JSDoc doesn't seem to care
+    .replaceAll(/^(\s*)###($|[^#])/mg, (_, ws, c) => {
+      logger.logDebug(`transform ^### to ^\`\`### ${coffee_doc.uri}`)
+      return ws + '``###' + c
+    })
   const tmp_lines = tmp.split('\n')
   const object_tweak_coffee_lines: number[] = []
   const space_tweak_coffee_lines: { line: string, line_i: number }[] = []

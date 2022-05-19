@@ -32,10 +32,16 @@ describe('Should find diagnostics', () => {
 			},
 			// be5e704: JSDoc errors shown at the next possible source code section
 			{
-				range: sameLineRange(12, 0, 26),
+				range: sameLineRange(11, 0, 26),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Cannot find name 'ThisTypeDoesNotExist'."
-			}
+			},
+			// Issue #1: Keep multiple var/comment block combination in the right order
+			{
+				range: sameLineRange(14, 0, 16),
+				severity: vscode.DiagnosticSeverity.Error,
+				message: "Type 'string' is not assignable to type 'number'."
+			},
 		])
 	})
 
