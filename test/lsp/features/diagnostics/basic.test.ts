@@ -42,6 +42,13 @@ describe('Should find diagnostics', () => {
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Type 'string' is not assignable to type 'number'."
 			},
+			// Also dependent on the backtick `` block quote fix because the typedef
+			// is otherwise being dragged *into* the IIFE with a missing newline which messes everything up
+			{
+				range: sameLineRange(26, 8, 36),
+				severity: vscode.DiagnosticSeverity.Error,
+				message: "Type 'string' is not assignable to type 'number'."
+			},
 		])
 	})
 
