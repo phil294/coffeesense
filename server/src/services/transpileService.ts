@@ -57,9 +57,8 @@ interface ITranspileService {
 const MD5 = new jshashes.MD5()
 const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(180000)
 
-export const trailing_param_regex = /^[^#]*[^ #] $/mg
-
-/** The resulting coffee must still always be valid and parsable by the compiler */
+/** The resulting coffee must still always be valid and parsable by the compiler,
+    and should not shift characters around much (otherwise source maps would need changes too) */
 function preprocess_coffee(coffee_doc: TextDocument) {
   const tmp = coffee_doc.getText()
     // Enable autocomplete at `@|`. Replace with magic snippet that allows for both @|
@@ -90,19 +89,23 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       logger.logDebug(`transform ^### to ^\`\`### ${coffee_doc.uri}`)
       return ws + '``###' + c
     })
+    // Trailing spaces = `↯:↯`. Something to make the line not error, and object to get autocomplete with params
+    // inline object keys, both as new obj param and as new entry to an existing object param.
+    // These characters are again removed in postprocess_js and gets special handling in doComplete().
+    // Trailing open brace on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
+    .replaceAll(/^[^#\n]*[^ #\n] $/mg, (m) => {
+      logger.logDebug(`replace trailing space with ↯:↯ ${coffee_doc.uri}`)
+      return m + '↯:↯'
+    })
+    // Similar inside objects: `{ ..., }` -> add another element to it after comma.
+    // Shorthand not like above to keep line length.
+    .replaceAll(/, (\s*)\}/mg, (_, ws) => {
+      logger.logDebug(`replace trailing comma inside { } with ↯ ${coffee_doc.uri}`)
+      return `,↯${ws}}`
+    })
   const tmp_lines = tmp.split('\n')
   const object_tweak_coffee_lines: number[] = []
-  const space_tweak_coffee_lines: { line: string, line_i: number }[] = []
   tmp_lines.forEach((line, line_i) => {
-    if(line.match(trailing_param_regex)) {
-      // Trailing spaces = `{𝆮}`. Something to make the line not error, and `{}` to get autocomplete with params inline object keys.
-      // Handled in in postprocess_js and gets special handling in doComplete().
-      // Trailing open brace on the other hand cannot be replaced because it is valid CS (s.a. signature hint tests).
-      logger.logDebug(`replace trailing space with {𝆮} ${coffee_doc.uri}`)
-      space_tweak_coffee_lines.push({ line_i, line })
-      tmp_lines[line_i] = `${line}{𝆮}`
-      return
-    }
     // Enable autocomplete on empty lines inside object properties.
     // Normally, empty lines get deleted by the cs compiler and cannot be mapped back. Insert some
     // random unicode snippet to keep the lines, and remove these snippets right after compilation below,
@@ -127,7 +130,7 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     }
   })
   const coffee = tmp_lines.join('\n')
-  return { coffee, object_tweak_coffee_lines, space_tweak_coffee_lines }
+  return { coffee, object_tweak_coffee_lines }
 }
 
 /** further transforms that *can break* cs compilation, to be used if compilation could not succeed without it anyway */
@@ -379,7 +382,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
  * Applies some transformations to the JS in result and updates source_map accordingly.
  * These transforms do not depend on any previous information.
  */
-function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[], space_tweak_coffee_lines: { line: string, line_i: number }[]) {
+function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[]) {
   if(!result.js || !result.source_map)
     return
 
@@ -389,34 +392,14 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
       `${asynk || ''}${asterisk}${func_name}          (`)
     // see preprocess
     .replaceAll('this.____CoffeeSenseAtSign', '(this.valueOf(),this)     ')
+    // coffee `↯:↯` *always* results in a separate line in js so no source mapping is required, just rm them
+    .replaceAll(/↯(: )?/g, (m) =>
+      ' '.repeat(m.length))
 
   const js_lines = result.js.split('\n')
 
   result.source_map.forEach(source_map_line => {
     source_map_line.columns.forEach(source_map_entry => {
-      // See usage of 𝆮 above
-      for(const space_tweak_coffee_line of space_tweak_coffee_lines) {
-        if(source_map_entry.sourceLine === space_tweak_coffee_line.line_i) {
-          const js_line = js_lines[source_map_entry.line]!
-          const invocation_match = js_line.match(/\(\{𝆮\}\);$/)
-          if(invocation_match) {
-            js_lines[source_map_entry.line] = js_line.slice(0, invocation_match.index) + '({}   '
-            source_map_entry.sourceColumn = space_tweak_coffee_line.line.length
-            source_map_entry.column = invocation_match.index! + 2
-          } else {
-            const comma_param_match = js_line.match(/, \{𝆮\}\);$/)
-            if(comma_param_match) {
-              js_lines[source_map_entry.line] = js_line.slice(0, comma_param_match.index) + ', {})  '
-              source_map_entry.sourceColumn = space_tweak_coffee_line.line.length
-              source_map_entry.column = comma_param_match.index! + 3
-            } else {
-              // Don't completely remove other mappings for this line so maybe go-tos might still work,
-              // but they can't take precedence over the match at the end of the line due to no word match
-              source_map_entry.sourceColumn = 0
-            }
-          }
-        }
-      }
       // See usage of 𒐛 above
       for(const obj_tweak_coffee_line of object_tweak_coffee_lines) {
         // This logic is equivalent to fake line source map fixing, explained there
@@ -577,7 +560,7 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const { coffee: preprocessed_coffee, object_tweak_coffee_lines, space_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
+    const { coffee: preprocessed_coffee, object_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     let mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, preprocessed_coffee)
@@ -590,7 +573,7 @@ const transpile_service: ITranspileService = {
     }
 
     if(result.js && result.source_map) {
-      postprocess_js(result, object_tweak_coffee_lines, space_tweak_coffee_lines)
+      postprocess_js(result, object_tweak_coffee_lines)
     } else {
       // Nothing worked at all. As a last resort, just pass the coffee to tsserver,
       // with minimal transforms:
@@ -700,6 +683,16 @@ const transpile_service: ITranspileService = {
         if(js_matches_by_cut_off_chars.length)
           return js_matches_by_cut_off_chars
       }
+      let prev = '', i = coffee_position_offset - 1
+      while((prev = coffee_doc.getText()[i]||' ') === ' ')
+        i--
+      if(prev === '{') {
+        // e.g. wrong source map cs `|{}` to js `{|}`
+        const js_matches_by_previous_brace = js_matches_by_line
+            .filter(c => c?.sourceColumn === coffee_position.character - coffee_position_offset + i)
+          if(js_matches_by_previous_brace.length)
+            return js_matches_by_previous_brace
+      }
       return js_matches_by_line
     }
     const js_matches = get_fitting_js_matches()
@@ -740,10 +733,11 @@ const transpile_service: ITranspileService = {
         if(js_matches_by_line_contains_word.length)
           return abcdefg(js_matches_by_line_contains_word)
       }
-      const js_matches_by_line_contains_any_common_char = js_matches.filter(match =>
-        get_line_at_line_no(js_doc_tmp, match.line).match(common_js_variable_name_character))
-      if(js_matches_by_line_contains_any_common_char.length)
-        return abcdefg(js_matches_by_line_contains_any_common_char)
+      // Doesn't make much sense here as match_by_char in abcdefg comes after...
+      // const js_matches_by_line_contains_any_common_char = js_matches.filter(match =>
+      //   get_line_at_line_no(js_doc_tmp, match.line).match(common_js_variable_name_character))
+      // if(js_matches_by_line_contains_any_common_char.length)
+      //   return abcdefg(js_matches_by_line_contains_any_common_char)
       return abcdefg(js_matches)
     }
     const js_match = choose_js_match()
@@ -770,7 +764,7 @@ const transpile_service: ITranspileService = {
       column += (coffee_line_until_cursor.split('@').length - 1) * ('this.'.length - '@'.length)
     }
 
-    // logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${match?.line}:${match?.column}`)
+    logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${line}:${column}`)
     if(line == null || column == null)
       return undefined
     return Position.create(line, column)

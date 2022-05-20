@@ -13,7 +13,7 @@ import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import transpile_service, { common_js_variable_name_character, trailing_param_regex, get_line_at_line_no, get_word_around_position, pseudo_compile_coffee } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, get_line_at_line_no, get_word_around_position, pseudo_compile_coffee } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
@@ -226,6 +226,8 @@ export async function getJavascriptMode(
             // source maps in between import modules names, so when adding a new module, move cursor
             // to start of first existing import which gives correct results:
             coffee_position_tweaked.character = 9
+        } else if(coffee_next_char === '}' && coffee_last_char === ' ' && coffee_second_last_char === ',') {
+          coffee_position_tweaked.character--
         }
         let js_position = transpile_service.position_coffee_to_js(transpilation, coffee_position_tweaked, coffee_doc)
         if(!js_position) {
@@ -275,6 +277,9 @@ export async function getJavascriptMode(
       if(js_second_last_char === ':' && js_last_char === ' ' && js_next_char?.match(common_js_variable_name_character)) {
         // source maps are wrong, cursor is in CS before : but in JS after :, fix this:
         char_offset = -2
+      } else if(js_next_char === '{') {
+        // pretty much always want to know what's *inside* the object, when sourcemap points directly before
+        char_offset++
       } else {
         const special_trigger_chars = ['"', "'"]
         for(const s of special_trigger_chars) {
@@ -310,13 +315,18 @@ export async function getJavascriptMode(
       }
       let completions = service.getCompletionsAtPosition(fileFsPath, js_offset, completion_options);
       
-      if(coffee_line.match(trailing_param_regex)) {
-        if(js_next_char === '}' && js_last_char === '{') {
-          // Special case: `{}` was inserted by transpileService to get items for *possible* object param keys.
-          // However, it must also be possible to insert normal variable references here - at this point, it is
+      if(! js_line.startsWith('import') && ! js_line.includes('require(') && coffee_last_char !== '{' && coffee_second_last_char !== '{') {
+        let outside_brace_check_offset = 0
+        if(js_next_char === '{')
+          // offset is ++, so we're actually *after* the { now
+          outside_brace_check_offset = -1
+        else if(js_next_char === '}')
+          outside_brace_check_offset = 1
+        if(outside_brace_check_offset) {
+          // It must also be possible to insert normal variable references here - at this point, it is
           // impossible to predict whether the user wants to define a new object here or insert a var.
-          // Get suggestions for both:
-          const completions_outside_object = service.getCompletionsAtPosition(fileFsPath, js_offset - 1, completion_options);
+          // Get suggestions for both by moving the cursor outside the object:
+          const completions_outside_object = service.getCompletionsAtPosition(fileFsPath, js_offset + outside_brace_check_offset, completion_options);
           if(completions_outside_object) {
             if(completions) {
               completions.entries.forEach(e => e.sortText = '0') // prefer inside to outside

@@ -35,6 +35,7 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
     position
   )) as vscode.CompletionList;
 
+  // todo allow_unspecified is not in use??
   if(!allow_unspecified && !allow_globals)
     //@ts-ignore
     assert.equal(expectedItems.length, result.items.filter(i => i.label.label !== '#region' && i.label.label !== '#endregion' && i.label !== '#region' && i.label !== '#endregion').length)
@@ -54,14 +55,15 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
     assert.ok(! result.items.some(i => unexpected_items.includes(i.label.label? i.label.label : i.label)))
 
   expectedItems.forEach(ei => {
+    let match_index = -1
     if (typeof ei === 'string') {
-      assert.ok(
-        result.items.some(i => {
+      match_index = result.items.findIndex(i => {
           return i.label === ei &&
             // Omit standard matches like variable as these primarily yield false positives.
             // If these are really required, they can be passed separately.
             [CompletionItemKind.Function, CompletionItemKind.Property, CompletionItemKind.Field].includes(i.kind || -1)
-        }),
+        })
+      assert.ok(match_index > -1,
         `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(
           result.items,
           null,
@@ -69,7 +71,8 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
         )}`
       );
     } else {
-      const match = matchFn ? result.items.find(matchFn(ei)) : result.items.find(i => i.label === ei.label);
+      const match_index = matchFn ? result.items.findIndex(matchFn(ei)) : result.items.findIndex(i => i.label === ei.label);
+      const match = result.items[match_index]
       if (!match) {
         assert.fail(
           `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(

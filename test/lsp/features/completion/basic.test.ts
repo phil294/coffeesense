@@ -190,7 +190,7 @@ describe('Should autocomplete', () => {
 		const inline_object_param_key_uri = getDocUri('completion/inline-object-param-key.coffee')
 		await testCompletion({
 			doc_uri: inline_object_param_key_uri,
-			position: position(14, 28),
+			position: position(13, 28),
 			expected_items: [
 				'obj_inline_param_key_prop_1', // TODO expect pos 1? as there are globals. perhaps always as part of testcompletion
 				{ label: 'obj_inline_param_key_unrelated_var', kind: CompletionItemKind.Variable }
@@ -200,7 +200,7 @@ describe('Should autocomplete', () => {
 		})
 		await testCompletion({
 			doc_uri: inline_object_param_key_uri,
-			position: position(16, 32),
+			position: position(15, 32),
 			expected_items: [
 				'obj_inline_param_key_prop_2',
 				{ label: 'obj_inline_param_key_unrelated_var', kind: CompletionItemKind.Variable }
@@ -210,6 +210,34 @@ describe('Should autocomplete', () => {
 				'obj_inline_param_key_prop_1',
 			]
 		})
+	})
+	it('completes inline object (implicit) property keys in various scenarios', async () => {
+		const inline_object_param_key_uri = getDocUri('completion/inline-object-param-key.coffee')
+		const checks = [
+			[30, 5, 'oi2'], [30, 17, 'oi2'], [30, 18, 'oi2'], [30, 21, ['oi3', 'oi4'], true], [30, 22, ['oi3', 'oi4']],
+			[31, 22, ['oi3', 'oi4']], [31, 23, ['oi3', 'oi4']], [31, 24, ['oi3', 'oi4'], true], [31, 25, ['oi3', 'oi4'], true], [31, 26, ['oi3', 'oi4'], true], 
+			[32, 22, 'oi4'], [32, 23, ['oi3', 'oi4']], [32, 34, 'oi4'], [32, 35, 'oi4'], 
+			[33, 21, ['oi3', 'oi4'], true], 
+			[34, 5, 'oi2'], [34, 18, 'oi2'], 
+			[35, 20, ['oi3', 'oi4'], true], 
+			[36, 16, 'oi2'], 
+			[37, 18, ['oi3', 'oi4'], true], 
+			[39, 4, ['oi3', 'oi4']], 
+			[40, 11, ['oi7', 'oi8'], true], 
+			[42, 21, 'oi2'], 
+			[43, 8, ['oi1', 'oi2'], true], 
+			[45, 7, ['oi11', 'oi12'], true], 
+			[47, 19, 'oi15'], 
+		] as const
+		for(const check of checks) {
+			await testCompletion({
+				doc_uri: inline_object_param_key_uri,
+				position: position(check[0], check[1]),
+				//@ts-ignore
+				expected_items: Array.isArray(check[2]) ? check[2] : [ check[2] ],
+				allow_globals: check[3] || false
+			})
+		}
 	})
 
 	it('completes inline object property keys as function params even without a colon, after opened but not yet closed brace', async () => {
