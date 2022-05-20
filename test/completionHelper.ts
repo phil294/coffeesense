@@ -35,7 +35,6 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
     position
   )) as vscode.CompletionList;
 
-  // todo allow_unspecified is not in use??
   if(!allow_unspecified && !allow_globals)
     //@ts-ignore
     assert.equal(expectedItems.length, result.items.filter(i => i.label.label !== '#region' && i.label.label !== '#endregion' && i.label !== '#region' && i.label !== '#endregion').length)
@@ -148,6 +147,9 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
         assert.strictEqual(match.textEdit?.range.end.character, ei.textEdit.range.end.character)
       }
     }
+
+    if(!allow_unspecified)
+      assert.ok(match_index < expectedItems.length, `Expected item found but after unspecified items! match_index ${match_index} >= expectedItems.length ${expectedItems.length}`)
   });
 }
 
