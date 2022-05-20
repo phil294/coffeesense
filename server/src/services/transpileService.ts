@@ -83,12 +83,6 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       logger.logDebug(`transform a:b\nc\n to a:b\nc:c\n ${coffee_doc.uri}`)
       return match + ':' + key
     })
-    // Comment blocks ordering are often messed up without some workaround (issue #1)
-    // This also inserts `` before closing block comments but JSDoc doesn't seem to care
-    .replaceAll(/^(\s*)###($|[^#])/mg, (_, ws, c) => {
-      logger.logDebug(`transform ^### to ^\`\`### ${coffee_doc.uri}`)
-      return ws + '``###' + c
-    })
     // Trailing spaces = `↯:↯`. Something to make the line not error, and object to get autocomplete with params
     // inline object keys, both as new obj param and as new entry to an existing object param.
     // These characters are again removed in postprocess_js and gets special handling in doComplete().

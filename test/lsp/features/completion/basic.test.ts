@@ -226,8 +226,8 @@ describe('Should autocomplete', () => {
 			[40, 11, ['oi7', 'oi8'], true], 
 			[42, 21, 'oi2'], 
 			[43, 8, ['oi1', 'oi2'], true], 
-			[45, 7, ['oi11', 'oi12'], true], 
-			[47, 19, 'oi15'], 
+			[46, 7, ['oi11', 'oi12'], true], 
+			[49, 19, 'oi15'], 
 		] as const
 		for(const check of checks) {
 			await testCompletion({
