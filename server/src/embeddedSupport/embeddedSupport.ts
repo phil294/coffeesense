@@ -109,7 +109,7 @@ export function getSingleTypeDocument(
   // newContent is coffee
 
   try {
-    newContent = transpile_service.transpile(document).js || document.getText()
+    newContent = transpile_service.transpile(document).js || (()=>{throw new Error(`no js set for ${document.uri}`)})()
   } catch(e: any) {
     logger.logInfo('TRANSPILATION FAILED ' + document.uri + ' ' + JSON.stringify(e) + e.stack)
   }

@@ -13,7 +13,7 @@ import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
 import { EnvironmentService } from '../../services/EnvironmentService';
-import transpile_service, { common_js_variable_name_character, trailing_param_regex, get_line_at_line_no, get_word_around_position } from '../../services/transpileService';
+import transpile_service, { common_js_variable_name_character, trailing_param_regex, get_line_at_line_no, get_word_around_position, pseudo_compile_coffee } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
 import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
@@ -529,7 +529,7 @@ export async function getJavascriptMode(
                     range = Range.create(0, 0, 0, 0)
                   } else {
                     const js_line = get_line_at_line_no(js_doc, js_range.start.line).trim()
-                    const equiv_coffee_line_no = coffee_lines.findIndex(l => l === js_line)
+                    const equiv_coffee_line_no = coffee_lines.findIndex(coffee_line => pseudo_compile_coffee(coffee_line) === js_line)
                     if(js_line.startsWith('import ') && equiv_coffee_line_no > -1)
                       // Fallback import matching, mostly when cs compilation failed and the import comes from ts by parsing cs directly with no source maps available
                       range = Range.create(equiv_coffee_line_no, js_range.start.character, equiv_coffee_line_no, js_range.end.character)

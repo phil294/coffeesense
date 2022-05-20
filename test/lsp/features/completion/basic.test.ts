@@ -237,6 +237,8 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes partial object key when object closing brace is missing', async () => {
+		// This works because it's replaced with `if ... { ...` and then again with the coffee line,
+		// and the } from the if-statement closes the coffee line again
 		await testCompletion({ doc_uri: getDocUri('completion/object-half-line-with-open-brace.coffee'), position: position(11, 49), expected_items: ['obj_half_line_with_open_brace_completion_prop_1', 'obj_half_line_with_open_brace_completion_prop_2'] })
 	})
 
@@ -296,4 +298,9 @@ describe('Should autocomplete', () => {
 		await testCompletion({ doc_uri: getDocUri('completion/destructuring-with-comment-block.coffee'), position: position(7, 8), expected_items: ['destructuring_with_comment_block_var_1'] })
 	})
 
+	it('completes when there are multiple unclosed curly braces', async () => {
+		// this is a pretty random complicated scenario that works by removing all {} and consequently also all ...spread operators
+		// (aggressive preprocess)
+		await testCompletion({ doc_uri: getDocUri('completion/multiple-open-braces.coffee'), position: position(22, 17), expected_items: ['multiple_open_braces_prop_1', 'multiple_open_braces_prop_1'] })
+	})
 })

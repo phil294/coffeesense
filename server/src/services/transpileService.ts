@@ -31,7 +31,14 @@ interface ITranspilationResult {
   diagnostics?: Diagnostic[]
   /** set to number of coffeescript altered line if it was necessary for compilation to succeed */
   fake_line?: number
-  fake_line_mechanism?: 'coffee_in_js' | 'modified_js'
+  /**
+   * `'modified_js'`: Failing coffee line was brought to coffee compilation success by
+   *      slightly adjusting it (removing trailing dot, mostly)
+   * `'coffee_in_js'`: ...by *replacing* it with some kind of minimal placeholder
+   *      and injecting the coffee line back into js as is (or with minimal changes)
+   * For more details, see `try_translate_coffee`.
+   */
+  fake_line_mechanism?: 'modified_js' | 'coffee_in_js'
   /** compilation result. if `fake_line` is set, this result was made possible by it. */
   js?: string
   /** accompanying its respective `js` counterpart, also possibly depending on `fake_line` if set */
@@ -64,7 +71,7 @@ function preprocess_coffee(coffee_doc: TextDocument) {
     })
     // To avoid successful compilation where it should fail, e.g. `a.|\nconsole.log 1`
     // (debatable if this should actually be allowed though), and more importantly, fix `a.|\n#`
-    .replaceAll(/^[^#\n]*\.$/mg, (c) => {
+    .replaceAll(/^[^#\n]*(^|[^.])\.$/mg, (c) => {
       logger.logDebug(`transform .\n to .;\n ${coffee_doc.uri}`)
       return `${c};`
     })
@@ -131,15 +138,29 @@ function preprocess_coffee_aggressive(coffee_doc: TextDocument) {
         logger.logDebug(`aggressively transform open string to closed one ${coffee_doc.uri}`)
         return c + quote
       })
-    // `abc(|\n` -> add ). This can break things because open braces are actually allowed
-    // and used in normal CoffeeScript (issue #8)
+    // `abc(|\n` -> add `)`. Open braces are actually allowed and used in normal CoffeeScript (issue #8)
     .replaceAll(/([a-zA-Z_$0-9])\(([^)\n]*)$/mg, (_,c, p) => {
-      logger.logDebug(`aggressively replace dangling space or opening brace with braces ${coffee_doc.uri}`)
-      return `${c}(${p})\n`
+      logger.logDebug(`aggressively replace open ( with () ${coffee_doc.uri}`)
+      return `${c}(${p})`
+    })
+    // In case there are unclosed braces { around: {} have little value in cs
+    // Remove them and any spread operators that would then result in more syntax errors
+    .replaceAll(/[\t ]*[{}]$/mg, () => {
+      logger.logDebug(`aggressively remove {} ${coffee_doc.uri}`)
+      return ''
+    })
+    .replaceAll(/\.\.\.([a-zA-Z_$])/g, (_, c) => {
+      logger.logDebug(`aggressively remove ...X ${coffee_doc.uri}`)
+      return `_: ${c}`
+    })
+    .replaceAll(/([a-zA-Z_$])\.\.\./g, (_, c) => {
+      logger.logDebug(`aggressively remove X... ${coffee_doc.uri}`)
+      return `${c}: _`
     })
 }
 
-function try_compile(coffee: string): ITranspilationResult {
+/** using official coffeescript compiler */
+function try_compile_coffee(coffee: string): ITranspilationResult {
   try {
     // takes about 1-4 ms
     const response = compile(coffee, { sourceMap: true, bare: true })
@@ -165,6 +186,37 @@ function try_compile(coffee: string): ITranspilationResult {
   }
 }
 
+/** This is an alternative to `try_compile_coffee` - here, coffeescript code is transformed
+ * so that tsserver can provide some intellisense for it. This is very limited and
+ * should be avoided if possible. */
+export function pseudo_compile_coffee(coffee: string) {
+  return coffee
+      .replaceAll('@', 'this.')
+      // Callback parens insertion: In callbacks, the variable type can not be inferred:
+      // JS does not understand that this is a function (because of the missing parens).
+      // E.g. `x (a) => a.` becomes `x((a) => a.`
+      .replaceAll(/ (\(.+)$/mg, '($1   )') // the "   " is to avoid wrong mappings
+      // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
+      .replaceAll(/^(.*)([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'].*$)/mg, (match, a, b, c) => {
+        if(match.startsWith('import ') || match.includes('require('))
+          return match
+        return `${a}${b}(${c}   )`
+      })
+      // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`.
+      // General object braces insertion requires iterating all lines
+      // based on indentation etc so I skipped that
+      .replaceAll(/([^\s{][ (])([a-zA-Z_$][a-zA-Z0-9_$]* ?:) /mg, '$1{$2')
+      // More special words that JS does not understand *so bad*, it cannot give suggestions
+      // anymore. && Seems to work in all cases, same as if, ! does not.
+      .replaceAll(/\b(unless|not|and|is|isnt|then)\b/mg, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
+      // Every assignment needs a var/const/let or a (nonexisting) prefix object.
+      // This transform is rare for fake line coffee_in_js (object half line with
+      // open brace, or open string), but highly frequent in normal cs->js
+      .replaceAll(/^[\t ]*[a-zA-Z0-9_$]+[\t ]*=([^=]|$)/mg, (line) => `let ${line}`)
+      // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
+      .replaceAll(' #', '//')
+}
+
 const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult => {
   let result: ITranspilationResult = {}
   let fake_line_mechanism: ITranspilationResult["fake_line_mechanism"]
@@ -175,7 +227,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
   const coffee = coffee_doc.getText()
 
   // Try normal compilation
-  result = try_compile(coffee)
+  result = try_compile_coffee(coffee)
 
   if(result.js) {
     logger.logDebug(`successful simple compilation ${coffee_doc.uri}`)
@@ -213,7 +265,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
       ' '.repeat(Math.max(0,coffee_error_line.length - coffee_error_line_indentation.length - fake_line_content.length)),
       coffee_error_end > -1 ? coffee.slice(coffee_error_end) : ''
     ].join('')
-    result = try_compile(coffee_fake)
+    result = try_compile_coffee(coffee_fake)
     if(result.js) {
       logger.logDebug(`successful compilation with fake content '${fake_line_content}' ${coffee_doc.uri}`)
       successful_coffee_fake = coffee_fake
@@ -266,25 +318,8 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
 
     if(fake_line_mechanism === 'coffee_in_js') {
       // Below modifications that change the line length are handled in position_coffee_to_js.
-      const coffee_error_line_modified = coffee_error_line
-        .replaceAll('@', 'this.')
-        // Callback parens insertion: In callbacks, the variable type can not be inferred:
-        // JS does not understand that this is a function (because of the missing parens).
-        // E.g. `x (a) => a.` becomes `x((a) => a.`
-        .replaceAll(/ \(/g, '((')
-        // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
-        .replaceAll(/([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'])/g, '$1($2')
-        // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`
-        .replaceAll(/([^\s{][ (])([a-zA-Z_][a-zA-Z0-9_$]* ?:) /g, '$1{$2')
-        // More special words that JS does not understand *so bad*, it cannot give suggestions
-        // anymore. && Seems to work in all cases, same as if, ! does not.
-        .replaceAll(/\b(unless|not|and|is|isnt|then)\b/g, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
-        // Rare case of error in assignment: object half line with open brace, or open string
-        // To make JS work, the variable needs var/const/let or a (nonexisting) prefix object.
-        .replace(/^\s*[a-zA-Z0-9_-]+\s*=([^=]|$)/g, (line) => `let ${line}`)
-        // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
-        .replaceAll(' #', '//')
-      
+      const coffee_error_line_modified = pseudo_compile_coffee(coffee_error_line)
+
       js_fake_arr[js_fake_𒐩_line_no] = coffee_error_line_modified
 
       // Source map contains lines that refer to the now again removed `𒐩`s.
@@ -556,6 +591,10 @@ const transpile_service: ITranspileService = {
 
     if(result.js && result.source_map) {
       postprocess_js(result, object_tweak_coffee_lines, space_tweak_coffee_lines)
+    } else {
+      // Nothing worked at all. As a last resort, just pass the coffee to tsserver,
+      // with minimal transforms:
+      result.js = pseudo_compile_coffee(orig_coffee_doc.getText())
     }
 
     transpilation_cache.set(hash, result)
