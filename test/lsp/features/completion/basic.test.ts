@@ -331,4 +331,8 @@ describe('Should autocomplete', () => {
 		// (aggressive preprocess)
 		await testCompletion({ doc_uri: getDocUri('completion/multiple-open-braces.coffee'), position: position(22, 17), expected_items: ['multiple_open_braces_prop_1', 'multiple_open_braces_prop_1'] })
 	})
+
+	it('does not mess up indent in modified-js', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/modified-js-indent.coffee'), position: position(2, 35), expected_items: ['modified_js_indent_prop'] })
+	})
 })
