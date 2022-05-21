@@ -281,7 +281,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
         // Still need the `𒐩` to detect the fake js line further below
         if(try_fake_line_compilation(
             (coffee_error_line
-              .substring(0, coffee_error_line.length - end.length) + '𒐩'
+              .substring(0, coffee_error_line.length - end.length) + '.𒐩'
               ).trim())) {
           fake_line_mechanism = 'modified_js'
           fake_line_modified_js_end_removed = end
@@ -339,9 +339,9 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
 
     } else {
       const fake_js_line = js_fake_arr[js_fake_𒐩_line_no]!
-      const 𒐩_index = fake_js_line.indexOf('𒐩')
+      const 𒐩_index = fake_js_line.indexOf('.𒐩')
       const before_𒐩 = fake_js_line.slice(0, 𒐩_index)
-      const after_𒐩 = fake_js_line.slice(𒐩_index + 2) // 2 because 𒐩 is 2 chars in size?? Hopefully this is stable
+      const after_𒐩 = fake_js_line.slice(𒐩_index + 3) // 𒐩 is length 2
       let tail = ''
         if(after_𒐩 !== ';') {
         // This is not really expected but can sometimes happen when fake line is being

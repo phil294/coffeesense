@@ -335,4 +335,8 @@ describe('Should autocomplete', () => {
 	it('does not mess up indent in modified-js', async () => {
 		await testCompletion({ doc_uri: getDocUri('completion/modified-js-indent.coffee'), position: position(2, 35), expected_items: ['modified_js_indent_prop'] })
 	})
+
+	it('completes after dot after closing brace', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/dot-after-closing-brace.coffee'), position: position(1, 14), expected_items: ['splice'], allow_unspecified: true })
+	})
 })
