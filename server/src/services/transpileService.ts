@@ -681,7 +681,7 @@ const transpile_service: ITranspileService = {
           return js_matches_by_cut_off_chars
       }
       let prev = '', i = coffee_position_offset - 1
-      while((prev = coffee_doc.getText()[i]||' ') === ' ')
+      while((prev = coffee_doc.getText()[i]||'') === ' ')
         i--
       if(prev === '{') {
         // e.g. wrong source map cs `|{}` to js `{|}`
