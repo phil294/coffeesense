@@ -25,3 +25,5 @@ coverage.lcov
 **/*.tsbuildinfo
 
 .history
+
+todo*
