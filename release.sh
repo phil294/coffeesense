@@ -23,7 +23,7 @@ cd ../../..
 pause
 
 git fetch
-changes=$(git log --reverse origin/master.. --pretty=format:"%B" |grep . |sed -E 's/^(.)/- \U\1/')
+changes=$(git log --reverse origin/master.. --pretty=format:"%h___%B" |grep . |sed -E 's/^([0-9a-f]{8})___(.)/- \1 \U\2/')
 echo 'CHANGES, generated from commits since last git push:'
 echo "$changes"
 echo "---- (put into clipboard)"
