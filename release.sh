@@ -45,9 +45,13 @@ yarn compile
 yarn prepare-publish
 rm -rf server/node_modules/coffeescript/{docs,documentation,.github,test,src}
 rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
-vsce package
-echo TODO: vsce publish
-# vsce publish
+
+npx vsce package
+
+npx vsce publish
+pause
+
+npx ovsx publish "$(ls -tr coffeesense-*.vsix* |tail -1)" -p "$(cat ~/.open-vsx-access-token)"
 pause
 
 git push origin master
