@@ -121,13 +121,13 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 
 #### 1.11.0
 ##### 2022-05-22
-- 56b7982a Fix autocomplete for inline object keys in more specialized conditions such as inline after other key-values
-- 56b7982a Internal trailing space transforms revise: Trailing spaces are now *possible* but mostly yield type errors, so it's best to keep avoiding them.
-- 8676ec03 Add improved autocomplete when the document contains multiple unclosed braces `{`
-- 8676ec03 Add internal pseudo-compilation step which potentially improves autocomplete in many cases where there are multiple failing points in the source code
-- 07662ebb Fix sometimes wrong autocomplete after trailing dot in indented scenarios
-- d02fddf6 Fix completion after dot after closing brace )
-- f870c2ca Upgrade TS 4.7 from beta to RC
+- [`6cc76e45`](https://github.com/phil294/coffeesense/commit/6cc76e45) Fix autocomplete for inline object keys in more specialized conditions such as inline after other key-values
+- [`6cc76e45`](https://github.com/phil294/coffeesense/commit/6cc76e45) Internal trailing space transforms revise: Trailing spaces are now *possible* but mostly yield type errors, so it's best to keep avoiding them.
+- [`8676ec03`](https://github.com/phil294/coffeesense/commit/8676ec03) Add improved autocomplete when the document contains multiple unclosed braces `{`
+- [`8676ec03`](https://github.com/phil294/coffeesense/commit/8676ec03) Add internal pseudo-compilation step which potentially improves autocomplete in many cases where there are multiple failing points in the source code
+- [`07662ebb`](https://github.com/phil294/coffeesense/commit/07662ebb) Fix sometimes wrong autocomplete after trailing dot in indented scenarios
+- [`d02fddf6`](https://github.com/phil294/coffeesense/commit/d02fddf6) Fix completion after dot after closing brace )
+- [`f870c2ca`](https://github.com/phil294/coffeesense/commit/f870c2ca) Upgrade TS 4.7 from beta to RC
 
 #### 1.10.2
 ##### 2022-05-03
