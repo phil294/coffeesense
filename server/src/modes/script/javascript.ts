@@ -1008,8 +1008,8 @@ export function languageServiceIncludesFile(ls: ts.LanguageService, documentUri:
 }
 
 function convertRange(document: TextDocument, span: ts.TextSpan): Range {
-  const startPosition = document.positionAt(span.start);
-  const endPosition = document.positionAt(span.start + span.length);
+  const startPosition = document.positionAt(span.start || 0);
+  const endPosition = document.positionAt((span.start + span.length) || 0);
   return Range.create(startPosition, endPosition);
 }
 
