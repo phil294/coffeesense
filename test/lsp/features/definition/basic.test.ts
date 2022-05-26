@@ -1,5 +1,6 @@
 import assert from 'assert'
 import { testDefinition } from '../../../definitionHelper'
+import { showFile } from '../../../editorHelper'
 import { location, position, sameLineLocation } from '../../../util'
 import { getDocUri } from '../../path'
 
@@ -50,5 +51,10 @@ describe('Should find definition', () => {
 		await testDefinition(basic_uri, position(28, 13), sameLineLocation(basic_uri, 22, 17, 26))
 		await testDefinition(basic_uri, position(31, 25), sameLineLocation(basic_uri, 24, 20, 29))
 		await testDefinition(basic_uri, position(35, 13), sameLineLocation(basic_uri, 25, 20, 29))
+	})
+	it('finds definition in jsdoc from other file', async () => {
+		const definition_uri = getDocUri('definition/item-def-3.coffee')
+		await showFile(definition_uri) // Bug workaround see definitionTargetDoc_coffee in javascript.ts
+		await testDefinition(basic_uri, position(39, 45), sameLineLocation(definition_uri, 3, 20, 29))
 	})
 })

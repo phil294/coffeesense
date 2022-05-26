@@ -36,3 +36,6 @@ do =>
     * @type {DefJSDoc3}
     ###
     a3 = []
+
+``###* @type {import('./item-def-3').DefJSDoc4} ###
+a4 = []

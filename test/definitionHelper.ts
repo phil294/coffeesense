@@ -11,6 +11,7 @@ export async function testDefinition(docUri: vscode.Uri, position: vscode.Positi
     position
   )) as vscode.Location[];
 
-  assert.ok(result[0]?.range.isEqual(expectedLocation.range));
+  const r = result[0]?.range
+  assert.ok(r.isEqual(expectedLocation.range), 'range wrong: '+ [r?.start.line, r?.start.character, r?.end.line, r?.end.character].join(', '));
   assert.equal(result[0].uri.fsPath, expectedLocation.uri.fsPath);
 }

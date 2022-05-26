@@ -51,7 +51,8 @@ export async function createProjectService(
   const languageModes = new LanguageModes();
 
   await languageModes.init(env, {
-    dependencyService
+    dependencyService,
+    documentService,
   });
 
   return {

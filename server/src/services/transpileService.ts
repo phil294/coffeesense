@@ -611,6 +611,7 @@ const transpile_service: ITranspileService = {
     if(!result.source_map)
       throw 'cannot map position without source map'
     let coffee_pos
+    const js_line = result.js!.split('\n')[js_position.line]!
     const columns = result.source_map[js_position.line]?.columns
     let mapped = columns?.[js_position.character]
     if(!mapped)
@@ -621,10 +622,12 @@ const transpile_service: ITranspileService = {
         [0]
     if(!mapped)
       mapped = columns?.find(Boolean)
+    if(js_line.trim().startsWith('/*'))
+        mapped = undefined
     if(!mapped) {
       // in case it is a single isolated line part of a block comment jsdoc
       const line_pos = source_map_position_by_line_content_equivalence(
-        js_position, result.js!.split('\n')[js_position.line]!, coffee_doc.getText())
+        js_position, js_line, coffee_doc.getText())
       if(line_pos)
         mapped = { sourceLine: line_pos.line, sourceColumn: line_pos.character, line: -1, column: -1 }
     }

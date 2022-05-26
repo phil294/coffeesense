@@ -12,6 +12,7 @@ import { getLanguageModelCache, LanguageModelCache } from '../../embeddedSupport
 import { LanguageMode } from '../../embeddedSupport/languageModes';
 import { LANGUAGE_ID } from '../../language';
 import { DependencyService, RuntimeLibrary } from '../../services/dependencyService';
+import { DocumentService } from '../../services/documentService';
 import { EnvironmentService } from '../../services/EnvironmentService';
 import transpile_service, { common_js_variable_name_character, get_line_at_line_no, get_word_around_position, pseudo_compile_coffee } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
@@ -29,7 +30,8 @@ export async function getJavascriptMode(
   serviceHost: IServiceHost,
   env: EnvironmentService,
   documentRegions: LanguageModelCache<CoffeescriptDocumentRegions>,
-  dependencyService: DependencyService
+  dependencyService: DependencyService,
+  documentService: DocumentService
 ): Promise<LanguageMode> {
   const jsDocuments = getLanguageModelCache(10, 60, document => {
     const coffeescriptDocument = documentRegions.refreshAndGet(document);
@@ -814,12 +816,15 @@ export async function getJavascriptMode(
         return [];
       }
       definitions.forEach(d => {
-        const definitionTargetDoc = getSourceDoc(d.fileName, program);
-        let range = convertRange(definitionTargetDoc, d.textSpan)
+        const definitionTargetDoc_js = getSourceDoc(d.fileName, program);
+        let range = convertRange(definitionTargetDoc_js, d.textSpan)
         const uri = URI.file(d.fileName).toString()
+        // TODO: Can be empty if file has not been opened yet. This breaks the definition positioning :(
+        // It would be necessary to somehow load that file now (if undefined *and* if coffee file)
+        const definitionTargetDoc_coffee = documentService.getDocument(uri)
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation, range, coffee_doc) || range
+          range = transpile_service.range_js_to_coffee(uri_transpilation, range, definitionTargetDoc_coffee || coffee_doc) || range
         definitionResults.push({
           uri,
           range
@@ -856,9 +861,10 @@ export async function getJavascriptMode(
 
         let range = convertRange(referenceTargetDoc, r.textSpan)
         const uri = URI.file(r.fileName).toString()
+        const referenceTargetDoc_coffee = documentService.getDocument(uri)
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation, range, coffee_doc) || range
+          range = transpile_service.range_js_to_coffee(uri_transpilation, range, referenceTargetDoc_coffee || coffee_doc) || range
         if (referenceTargetDoc) {
           referenceResults.push({
             uri,

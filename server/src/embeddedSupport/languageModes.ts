@@ -30,9 +30,11 @@ import { getServiceHost, IServiceHost } from '../services/typescriptService/serv
 import { VCancellationToken } from '../utils/cancellationToken';
 import { EnvironmentService } from '../services/EnvironmentService';
 import { LANGUAGE_ID } from '../language';
+import { DocumentService } from '../services/documentService';
 
 export interface LSPServices {
   dependencyService: DependencyService;
+  documentService: DocumentService;
 }
 
 export interface LanguageMode {
@@ -93,7 +95,7 @@ export class LanguageModes {
     });
     this.serviceHost = getServiceHost(tsModule, env, scriptRegionDocuments);
 
-    const jsMode = await getJavascriptMode(tsModule, this.serviceHost, env, this.documentRegions, services.dependencyService);
+    const jsMode = await getJavascriptMode(tsModule, this.serviceHost, env, this.documentRegions, services.dependencyService, services.documentService);
 
     this.modes['javascript'] = jsMode;
     this.modes['typescript'] = jsMode;
