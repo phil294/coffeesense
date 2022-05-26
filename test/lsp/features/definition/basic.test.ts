@@ -45,4 +45,10 @@ describe('Should find definition', () => {
 	it('finds definition from js file without file extension', async () => {
 		await testDefinition(basic_uri, position(19, 0), sameLineLocation(getDocUri('definition/item-def-2.js'), 0, 0, 18))
 	})
+
+	it('finds definition in and from jsdoc, both inline and block, # and *', async () => {
+		await testDefinition(basic_uri, position(28, 13), sameLineLocation(basic_uri, 22, 17, 26))
+		await testDefinition(basic_uri, position(31, 25), sameLineLocation(basic_uri, 24, 20, 29))
+		await testDefinition(basic_uri, position(35, 13), sameLineLocation(basic_uri, 25, 20, 29))
+	})
 })

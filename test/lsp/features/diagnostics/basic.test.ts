@@ -32,7 +32,7 @@ describe('Should find diagnostics', () => {
 			},
 			// be5e704: JSDoc errors shown at the next possible source code section
 			{
-				range: sameLineRange(12, 0, 26),
+				range: sameLineRange(10, 9, 29),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Cannot find name 'ThisTypeDoesNotExist'."
 			}

@@ -22,6 +22,24 @@ export function get_word_around_position(text: string, offset: number) {
   return { word: match_word, offset: start_offset }
 }
 
+/** This should be avoided to occur - this can be guesswork at best.
+  * One (the only) known valid use case here is JSDoc where there are no source maps
+  * but autocomplete in JS. */
+function source_map_position_by_line_content_equivalence(position: Position, line: string, in_text: string): Position | undefined {
+  // leading # gets // but can also stay # or become leading * inside comment blocks
+  const strip = (line: string) => line.replace(/^\s*((\/\/)|#*|\*|\/\*)?/, '').trim().replace(/(###|\*\/)$/, '')
+  const stripped = strip(line)
+  const in_lines = in_text.split('\n')
+  const match_i = in_lines.findIndex(in_line => strip(in_line) === stripped)
+  if(match_i > -1) {
+    return Position.create(
+      match_i,
+      position.character - line.indexOf(stripped) + in_lines[match_i]!.indexOf(stripped))
+  }
+  return undefined
+}
+
+
 export function get_line_at_line_no(doc: TextDocument, line_no: number) {
   return doc.getText().slice(doc.offsetAt({ line: line_no, character: 0 }), doc.offsetAt({ line: line_no, character: Number.MAX_VALUE }))
 }
@@ -48,8 +66,8 @@ interface ITranspilationResult {
 interface ITranspileService {
   result_by_uri: Map<string, ITranspilationResult>,
   transpile(coffee_doc: TextDocument): ITranspilationResult,
-  position_js_to_coffee(source_map: LineMap[], js_position: Position): Position | undefined,
-  range_js_to_coffee(source_map: LineMap[], js_range: Range): Range | undefined,
+  position_js_to_coffee(result: ITranspilationResult, js_position: Position, coffee_doc: TextDocument): Position | undefined,
+  range_js_to_coffee(result: ITranspilationResult, js_range: Range, coffee_doc: TextDocument): Range | undefined,
   position_coffee_to_js(result: ITranspilationResult, coffee_position: Position, coffee_doc: TextDocument): Position | undefined,
   range_coffee_to_js(result: ITranspilationResult, coffee_range: Range, coffee_doc: TextDocument): Range | undefined,
 }
@@ -210,6 +228,8 @@ export function pseudo_compile_coffee(coffee: string) {
       // This transform is rare for fake line coffee_in_js (object half line with
       // open brace, or open string), but highly frequent in normal cs->js
       .replaceAll(/^[\t ]*[a-zA-Z0-9_$]+[\t ]*=([^=]|$)/mg, (line) => `let ${line}`)
+      // no use case but seems sane
+      .replace(/(^|[^\n#])###($|[^\n#])/mg, (_, a, b) => `${a}/*${b}`)
       // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
       .replaceAll(' #', '//')
 }
@@ -587,9 +607,11 @@ const transpile_service: ITranspileService = {
    * Convert position in transpiled JS text back to where it was in the original CS text.
    * Tries to find by line and column, or if not found, the first match by line only.
    */
-  position_js_to_coffee(source_map, js_position) {
-    let result
-    const columns = source_map[js_position.line]?.columns
+  position_js_to_coffee(result, js_position, coffee_doc) {
+    if(!result.source_map)
+      throw 'cannot map position without source map'
+    let coffee_pos
+    const columns = result.source_map[js_position.line]?.columns
     let mapped = columns?.[js_position.character]
     if(!mapped)
       mapped = columns
@@ -600,9 +622,16 @@ const transpile_service: ITranspileService = {
     if(!mapped)
       mapped = columns?.find(Boolean)
     if(!mapped) {
+      // in case it is a single isolated line part of a block comment jsdoc
+      const line_pos = source_map_position_by_line_content_equivalence(
+        js_position, result.js!.split('\n')[js_position.line]!, coffee_doc.getText())
+      if(line_pos)
+        mapped = { sourceLine: line_pos.line, sourceColumn: line_pos.character, line: -1, column: -1 }
+    }
+    if(!mapped) {
       let line_i = js_position.line + 1
-      while(line_i < source_map.length) {
-        const any_next_column = source_map[line_i]?.columns?.find(Boolean)
+      while(line_i < result.source_map.length) {
+        const any_next_column = result.source_map[line_i]?.columns?.find(Boolean)
         if(any_next_column) {
           mapped = any_next_column
           break
@@ -612,17 +641,17 @@ const transpile_service: ITranspileService = {
     }
     
     if(mapped)
-      result = Position.create(mapped.sourceLine, mapped.sourceColumn)
+      coffee_pos = Position.create(mapped.sourceLine, mapped.sourceColumn)
     else
-      result = undefined
+      coffee_pos = undefined
     // logger.logDebug(`mapped JS => CS: ${js_position.line}:${js_position.character} => ${result?.line}:${result?.character}`)
-    return result
+    return coffee_pos
   },
 
   /** Convert range in transpiled JS back to where it was in the original CS */
-  range_js_to_coffee(source_map, js_range) {
-    const start = this.position_js_to_coffee(source_map, js_range.start)
-    const end = this.position_js_to_coffee(source_map, js_range.end)
+  range_js_to_coffee(result, js_range, coffee_doc) {
+    const start = this.position_js_to_coffee(result, js_range.start, coffee_doc)
+    const end = this.position_js_to_coffee(result, js_range.end, coffee_doc)
     if(start && end && start.line > -1 && end.line > -1)
       return Range.create(start, end)
     return undefined
@@ -636,6 +665,7 @@ const transpile_service: ITranspileService = {
    * If multiple JS finds for a coffee line/col combination, try to find where JS match equals
    * the word at `coffee_position`, else where JS is any word at all, else furthest down/right
    * in JS as possible.
+   * If no match, look for identical line content in JS.
    */
   position_coffee_to_js(result, coffee_position, coffee_doc) {
     if(!result.source_map)
@@ -644,9 +674,28 @@ const transpile_service: ITranspileService = {
     const coffee_position_offset = coffee_doc.offsetAt(coffee_position)
     const char_at_coffee_position = coffee_doc.getText()[coffee_position_offset]
     const word_at_coffee_position = get_word_around_position(coffee_doc.getText(), coffee_position_offset)
+    const coffee_line = get_line_at_line_no(coffee_doc, coffee_position.line)
     const coffee_position_is_at_end_of_word = word_at_coffee_position.word.length && word_at_coffee_position.offset === coffee_position_offset - word_at_coffee_position.word.length
     const coffee_position_at_start_of_word = coffee_doc.positionAt(word_at_coffee_position.offset)
     const js_doc_tmp = TextDocument.create('file://tmp.js', 'js', 1, result.js||'')
+
+    const inline_jsdoc_match = [...coffee_line.matchAll(/^(.*)(^|[^\n#])###*(.+)([^\n#])###(.*)/g)][0]
+    if(inline_jsdoc_match) {
+      const inline_jsdoc_content = inline_jsdoc_match[3]! + inline_jsdoc_match[4]!
+      const inline_jsdoc_content_starts_at = inline_jsdoc_match[1]!.length + inline_jsdoc_match[2]!.length + 4
+      const inline_jsdoc_content_ends_at = inline_jsdoc_content_starts_at + inline_jsdoc_content.length
+      if(coffee_position.character >= inline_jsdoc_content_starts_at && coffee_position.character <= inline_jsdoc_content_ends_at) {
+        // Inside comments, there can never be source maps, so our best bet is simple matching
+        // in any case. Similar to source_map_position_by_line_content_equivalence:
+        const js_lines = js_doc_tmp.getText().split('\n')
+        const match_i = js_lines.findIndex(js_line => js_line.includes(inline_jsdoc_content))
+        if(match_i > -1) {
+          const column = coffee_position.character - coffee_line.indexOf(inline_jsdoc_content) + js_lines[match_i]!.indexOf(inline_jsdoc_content)
+          logger.logDebug(`mapped CS => JS as inline JSDoc: ${coffee_position.line}:${coffee_position.character} => ${match_i}:${column}`)
+          return Position.create(match_i, column)
+        }
+      }
+    }
     
     // TODO: revise this function, maybe this should be always all line matches by default instead
     const get_fitting_js_matches = () => {
@@ -722,7 +771,7 @@ const transpile_service: ITranspileService = {
           if(coffee_position_is_at_end_of_word && js_position_is_at_start_of_word)
             ret.column += word_at_coffee_position.word.length
           return ret
-        }).filter((match): match is LineMap["columns"][0] => !!match)
+        }).filter((match): match is LineMap["columns"][number] => !!match)
         if(js_matches_by_word.length)
           return abcdefg(js_matches_by_word)
         const js_matches_by_line_contains_word = js_matches.filter(match =>
@@ -739,7 +788,7 @@ const transpile_service: ITranspileService = {
     }
     const js_match = choose_js_match()
     
-    const line = js_match?.line
+    let line = js_match?.line
     let column = js_match?.column
     if(js_match && line != null && result.fake_line == coffee_position.line && result.fake_line_mechanism === 'coffee_in_js') {
       // The coffee line is also a (the) altered one (fake line). In this case, `column.line` is
@@ -752,13 +801,20 @@ const transpile_service: ITranspileService = {
       const js_line = get_line_at_line_no(js_doc_tmp, line)
       if(js_line.startsWith('let '))
         column += 'let '.length
-      const coffee_line_until_cursor = get_line_at_line_no(coffee_doc, coffee_position.line).slice(0, coffee_position.character)
+      const coffee_line_until_cursor = coffee_line.slice(0, coffee_position.character)
       // CS cursor can be everything, but in case it is at `...@a.|` or `...@a b|`,
       // the `@`s to `this` conversions need to be considered because fake lines are
       // CS only.
       // Possible error: current_line != fake_line (so current_line is JS) and
       // current_line.includes('@'), but let's ignore that
       column += (coffee_line_until_cursor.split('@').length - 1) * ('this.'.length - '@'.length)
+    }
+
+    if(!js_match) {
+      const line_pos = source_map_position_by_line_content_equivalence(
+          coffee_position, coffee_line, js_doc_tmp.getText())
+      line = line_pos?.line
+      column = line_pos?.character
     }
 
     logger.logDebug(`mapped CS => JS: ${coffee_position.line}:${coffee_position.character} => ${line}:${column}`)

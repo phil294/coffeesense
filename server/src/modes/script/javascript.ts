@@ -152,7 +152,7 @@ export async function getJavascriptMode(
         }
 
         if(transpilation.source_map) {
-          const coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, range)
+          const coffee_range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc)
           if(coffee_range) {
             range = coffee_range
           } else {
@@ -354,7 +354,7 @@ export async function getJavascriptMode(
             // With replacementSpan, more complicated insertions are bound to happen: Insertions outside of
             // cursor position (e.g. `].|` becoming `]?.completionText`.
             if(transpilation.source_map)
-              range = transpile_service.range_js_to_coffee(transpilation.source_map, range)  || range
+              range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc)  || range
             range.start.character += char_offset
             range.end.character += char_offset
             // VSCode fails to show this completion item when the cursor is not inside that very range and is arguably
@@ -488,7 +488,7 @@ export async function getJavascriptMode(
                 let range: Range | undefined
                 if(transpilation.source_map) {
                   range = js_range
-                  let coffee_range = transpile_service.range_js_to_coffee(transpilation.source_map, js_range)
+                  let coffee_range = transpile_service.range_js_to_coffee(transpilation, js_range, coffee_doc)
                   if(coffee_range) {
                     const coffee_line = coffee_lines[coffee_range.start.line]!
                     let coffee_range_end_of_named_group
@@ -568,21 +568,21 @@ export async function getJavascriptMode(
       }
       return item;
     },
-    doHover(doc: TextDocument, position: Position): Hover {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doHover(coffee_doc: TextDocument, position: Position): Hover {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return { contents: [] };
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return { contents: [] }
 
       if(transpilation.source_map)
-        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
-      const info = service.getQuickInfoAtPosition(fileFsPath, scriptDoc.offsetAt(position));
+      const info = service.getQuickInfoAtPosition(fileFsPath, js_doc.offsetAt(position));
 
       if (info) {
         const display = tsModule.displayPartsToString(info.displayParts);
@@ -607,9 +607,9 @@ export async function getJavascriptMode(
           markedContents.push(hoverMdDoc);
         }
 
-        let range = convertRange(scriptDoc, info.textSpan)
+        let range = convertRange(js_doc, info.textSpan)
         if(transpilation.source_map)
-          range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+          range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc) || range
 
         return {
           range,
@@ -618,21 +618,21 @@ export async function getJavascriptMode(
       }
       return { contents: [] };
     },
-    doSignatureHelp(doc: TextDocument, position: Position): SignatureHelp | null {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doSignatureHelp(coffee_doc: TextDocument, position: Position): SignatureHelp | null {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return NULL_SIGNATURE;
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return NULL_SIGNATURE
 
       if(transpilation.source_map)
-        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
-      const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, scriptDoc.offsetAt(position), undefined);
+      const signatureHelpItems = service.getSignatureHelpItems(fileFsPath, js_doc.offsetAt(position), undefined);
       if (!signatureHelpItems) {
         return NULL_SIGNATURE;
       }
@@ -683,20 +683,18 @@ export async function getJavascriptMode(
         signatures
       };
     },
-    findDocumentHighlight(doc: TextDocument, position: Position): DocumentHighlight[] {
-      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    findDocumentHighlight(coffee_doc: TextDocument, position: Position): DocumentHighlight[] {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation?.source_map)
         return []
 
-      position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
-
-      const js_text = js_doc.getText()
+      position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
       const occurrences = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (occurrences) {
@@ -708,7 +706,7 @@ export async function getJavascriptMode(
             ! get_line_at_line_no(js_doc, range.start.line).match(/^\s*var /)
           ).map(({ entry, range }) => {
             if(transpilation.source_map) {
-              range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+              range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc) || range
               if(range.end.line < range.start.line)
                 range.end.line = range.start.line
               range.end.character = range.start.character + entry.textSpan.length
@@ -721,14 +719,14 @@ export async function getJavascriptMode(
       }
       return [];
     },
-    findDocumentSymbols(doc: TextDocument): SymbolInformation[] {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    findDocumentSymbols(coffee_doc: TextDocument): SymbolInformation[] {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation?.source_map)
         return []
 
@@ -741,14 +739,14 @@ export async function getJavascriptMode(
       const collectSymbols = (item: ts.NavigationBarItem, containerLabel?: string) => {
         const sig = item.text + item.kind + item.spans[0]!.start;
         if (item.kind !== 'script' && !existing[sig]) {
-          let range = convertRange(scriptDoc, item.spans[0]!)
+          let range = convertRange(js_doc, item.spans[0]!)
           if(transpilation?.source_map)
-            range = transpile_service.range_js_to_coffee(transpilation.source_map, range) || range
+            range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc) || range
           const symbol: SymbolInformation = {
             name: item.text,
             kind: toSymbolKind(item.kind),
             location: {
-              uri: doc.uri,
+              uri: coffee_doc.uri,
               range
             },
             containerName: containerLabel
@@ -821,7 +819,7 @@ export async function getJavascriptMode(
         const uri = URI.file(d.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range) || range
+          range = transpile_service.range_js_to_coffee(uri_transpilation, range, coffee_doc) || range
         definitionResults.push({
           uri,
           range
@@ -829,21 +827,21 @@ export async function getJavascriptMode(
       });
       return definitionResults;
     },
-    findReferences(doc: TextDocument, position: Position): Location[] {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    findReferences(coffee_doc: TextDocument, position: Position): Location[] {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return [];
       }
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
 
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation)
         return []
 
       if(transpilation.source_map)
-        position = transpile_service.position_coffee_to_js(transpilation, position, doc) || position
+        position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
-      const references = service.getReferencesAtPosition(fileFsPath, scriptDoc.offsetAt(position));
+      const references = service.getReferencesAtPosition(fileFsPath, js_doc.offsetAt(position));
       if (!references) {
         return [];
       }
@@ -860,7 +858,7 @@ export async function getJavascriptMode(
         const uri = URI.file(r.fileName).toString()
         const uri_transpilation = transpile_service.result_by_uri.get(uri)
         if(uri_transpilation?.source_map)
-          range = transpile_service.range_js_to_coffee(uri_transpilation.source_map, range) || range
+          range = transpile_service.range_js_to_coffee(uri_transpilation, range, coffee_doc) || range
         if (referenceTargetDoc) {
           referenceResults.push({
             uri,
@@ -870,20 +868,20 @@ export async function getJavascriptMode(
       });
       return referenceResults;
     },
-    getCodeActions(doc: TextDocument, coffee_range: Range, context: CodeActionContext) {
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+    getCodeActions(coffee_doc: TextDocument, coffee_range: Range, context: CodeActionContext) {
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation?.source_map)
         return []
-      const js_range = transpile_service.range_coffee_to_js(transpilation, coffee_range, doc)
+      const js_range = transpile_service.range_coffee_to_js(transpilation, coffee_range, coffee_doc)
       if(!js_range)
         return []
 
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      const fileName = getFileFsPath(scriptDoc.uri);
-      const start = scriptDoc.offsetAt(js_range.start);
-      const end = scriptDoc.offsetAt(js_range.end);
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      const fileName = getFileFsPath(js_doc.uri);
+      const start = js_doc.offsetAt(js_range.start);
+      const end = js_doc.offsetAt(js_range.end);
       const textRange = { pos: start, end };
-      const preferences = getUserPreferences(scriptDoc);
+      const preferences = getUserPreferences(js_doc);
       if (!supportedCodeFixCodes) {
         supportedCodeFixCodes = new Set(
           tsModule
@@ -894,38 +892,38 @@ export async function getJavascriptMode(
       }
 
       const result: CodeAction[] = [];
-      provideOrganizeImports(doc.uri, scriptDoc.languageId as LanguageId, textRange, context, result);
+      provideOrganizeImports(coffee_doc.uri, js_doc.languageId as LanguageId, textRange, context, result);
 
       return result;
     },
-    doCodeActionResolve(doc, action) {
-      const { scriptDoc, service } = updateCurrentCoffeescriptTextDocument(doc);
-      if (!languageServiceIncludesFile(service, doc.uri)) {
+    doCodeActionResolve(coffee_doc, action) {
+      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
+      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
         return action;
       }
-      const transpilation = transpile_service.result_by_uri.get(doc.uri)
+      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
       if(!transpilation?.source_map)
         return action;
 
-      const preferences = getUserPreferences(scriptDoc);
+      const preferences = getUserPreferences(js_doc);
 
-      const fileFsPath = getFileFsPath(doc.uri);
+      const fileFsPath = getFileFsPath(coffee_doc.uri);
       const data = action.data as CodeActionData;
 
       if (data.kind === CodeActionDataKind.OrganizeImports) {
         const text_range_length = data.textRange.end - data.textRange.pos
-        const mapped_pos_start = transpile_service.position_coffee_to_js(transpilation, doc.positionAt(data.textRange.pos), doc)
+        const mapped_pos_start = transpile_service.position_coffee_to_js(transpilation, coffee_doc.positionAt(data.textRange.pos), coffee_doc)
         if(!mapped_pos_start)
           return action
-        data.textRange.pos = doc.offsetAt(mapped_pos_start)
+        data.textRange.pos = coffee_doc.offsetAt(mapped_pos_start)
         data.textRange.end = data.textRange.pos + text_range_length
         
         const response = service.organizeImports({ type: 'file', fileName: fileFsPath }, {}, preferences);
         const edit = { changes: createUriMappingForEdits(response.slice(), service) };
         
-        const doc_changes = edit.changes?.[doc.uri] || []
+        const doc_changes = edit.changes?.[coffee_doc.uri] || []
         for(const change of doc_changes) {
-          const range = transpile_service.range_js_to_coffee(transpilation.source_map, change.range)
+          const range = transpile_service.range_js_to_coffee(transpilation, change.range, coffee_doc)
           if(!range)
             return action
           if(change.range.start.line === change.range.end.line && change.range.start.character === 0 && change.range.end.character === 0)

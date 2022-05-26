@@ -18,3 +18,21 @@ comprehension_6 = v * 2 for v in comprehension_5
 
 item_1
 item_2
+
+``###*
+# @typedef {any} DefJSDoc1
+###
+###* @typedef {any} DefJSDoc2 ###
+###* @typedef {any} DefJSDoc3 ###
+
+``###*
+# @type {DefJSDoc1}
+###
+a1 = []
+do (###* @type {DefJSDoc2} ### a1) =>
+
+do =>
+    ``###*
+    * @type {DefJSDoc3}
+    ###
+    a3 = []
