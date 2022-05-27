@@ -119,6 +119,11 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.12.0
+##### 2022-05-27
+- [`d2ee9b05`](https://github.com/phil294/coffeesense/commit/d2ee9b05) Fix server crash in case of jsdoc-only/-intern errors
+- [`2b3b9aa4`](https://github.com/phil294/coffeesense/commit/2b3b9aa4) Add support for IntelliSense JSDoc comment blocks such as type go tos. Both multiline block and inline parameter types should work fine. As the CoffeeScript compiler (understandably) does not emit source maps for comments, these mappings are now done by CS/JS line content (near) equivalence matching. This works fine in most cases, but can obviously go wrong in a multitude of ways, for example if a line is not unique across the document. Another caveat for go tos from from other files: Opening of the respective target file should always work, but exact position only works when it was open/loaded beforehand (should be fixable some day)
+
 #### 1.11.0
 ##### 2022-05-22
 - 56b7982a Fix autocomplete for inline object keys in more specialized conditions such as inline after other key-values
