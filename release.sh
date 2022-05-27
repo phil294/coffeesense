@@ -39,6 +39,7 @@ pause
 
 cd server
 yarn preversion
+
 npm publish
 
 cd ..
@@ -50,10 +51,8 @@ rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-c
 npx vsce package
 
 npx vsce publish
-pause
 
 npx ovsx publish "$(ls -tr coffeesense-*.vsix* |tail -1)" -p "$(cat ~/.open-vsx-access-token)"
-pause
 
 git push origin master
 
