@@ -27,3 +27,5 @@ coverage.lcov
 .history
 
 todo*
+
+# Also check .vscodeignore

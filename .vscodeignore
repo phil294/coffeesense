@@ -30,3 +30,8 @@ scripts
 node_modules/.cache/
 
 images
+
+.history
+todo*
+*.log
+*.sh
