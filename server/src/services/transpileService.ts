@@ -412,6 +412,10 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
     // coffee `↯:↯` *always* results in a separate line in js so no source mapping is required, just rm them
     .replaceAll(/↯(: )?/g, (m) =>
       ' '.repeat(m.length))
+    // coffee `for x in y` becomes a for-loop, and `x` is in the next line defined as
+    // `y[i]`. This gives errors with strict null checks, so add a type guard:
+    .replaceAll(/^(\s*)for \(.+\) \{\n\1  var ([^ ]+) = \S+\];/mg, (all, indent, varname) =>
+      `${all} if (${varname} === undefined) throw 'CoffeeSense strict null check';`)
 
   const js_lines = result.js.split('\n')
 

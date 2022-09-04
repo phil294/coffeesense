@@ -35,7 +35,14 @@ describe('Should find diagnostics', () => {
 				range: sameLineRange(10, 9, 29),
 				severity: vscode.DiagnosticSeverity.Error,
 				message: "Cannot find name 'ThisTypeDoesNotExist'."
-			}
+			},
+			// Normal strictNullChecks access: Should fail
+			{
+				range: sameLineRange(15, 0, 22),
+				severity: vscode.DiagnosticSeverity.Error,
+				message: "Object is possibly 'undefined'"
+				// But no error on line 0+17: works around it in comprehensions
+			},
 		])
 	})
 
