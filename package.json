@@ -154,6 +154,7 @@
     "shelljs": "^0.8.5",
     "ts-node": "^10.6.0",
     "typescript": "^4.7.1-rc",
+    "vsce": "^2.11.0",
     "vscode-languageserver-types": "^3.16.0"
   },
   "dependencies": {

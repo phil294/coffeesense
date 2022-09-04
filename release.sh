@@ -20,6 +20,9 @@ yarn upgrade
 cd ../test/lsp/fixture
 yarn upgrade
 cd ../../..
+rm -rf server/node_modules/.cache
+rm -rf server/node_modules/coffeescript/{docs,documentation,.github,test,src}
+rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
 pause
 
 git fetch
@@ -32,6 +35,8 @@ echo "$changes" |xclip -sel c
 echo 'update changelog'
 pause
 
+yarn compile
+
 yarn test
 
 echo 'update package.json version in both . and ./server'
@@ -43,17 +48,17 @@ yarn preversion
 npm publish
 
 cd ..
-yarn compile
 yarn prepare-publish
-rm -rf server/node_modules/coffeescript/{docs,documentation,.github,test,src}
-rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
 
-npx vsce package
+yarn vsce package
 
-npx vsce publish
+echo 'Check VSIX'
+pause
+
+yarn
+
+yarn vsce publish
 
 npx ovsx publish "$(ls -tr coffeesense-*.vsix* |tail -1)" -p "$(cat ~/.open-vsx-access-token)"
 
 git push origin master
-
-yarn
