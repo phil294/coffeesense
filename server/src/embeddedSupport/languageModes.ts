@@ -9,7 +9,6 @@ import {
   DocumentHighlight,
   CompletionList,
   Position,
-  SymbolInformation,
   CodeActionContext,
   CodeAction,
   TextDocumentEdit
@@ -49,7 +48,6 @@ export interface LanguageMode {
   doHover?(document: TextDocument, position: Position): Hover;
   doSignatureHelp?(document: TextDocument, position: Position): SignatureHelp | null;
   findDocumentHighlight?(document: TextDocument, position: Position): DocumentHighlight[];
-  findDocumentSymbols?(document: TextDocument): SymbolInformation[];
   findDefinition?(document: TextDocument, position: Position): Definition;
   findReferences?(document: TextDocument, position: Position): Location[];
 

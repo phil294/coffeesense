@@ -1,5 +1,5 @@
 import type ts from 'typescript';
-import { CompletionItemKind, SymbolKind } from 'vscode-languageserver';
+import { CompletionItemKind } from 'vscode-languageserver';
 import { EnvironmentService } from '../EnvironmentService';
 
 export function isCoffeescriptFile(path: string, env: EnvironmentService) {
@@ -69,31 +69,4 @@ export function toCompletionItemKind(kind: ts.ScriptElementKind): CompletionItem
   }
 
   return CompletionItemKind.Property;
-}
-
-export function toSymbolKind(kind: ts.ScriptElementKind): SymbolKind {
-  switch (kind) {
-    case 'var':
-    case 'local var':
-    case 'const':
-      return SymbolKind.Variable;
-    case 'function':
-    case 'local function':
-      return SymbolKind.Function;
-    case 'enum':
-      return SymbolKind.Enum;
-    case 'module':
-      return SymbolKind.Module;
-    case 'class':
-      return SymbolKind.Class;
-    case 'interface':
-      return SymbolKind.Interface;
-    case 'method':
-      return SymbolKind.Method;
-    case 'property':
-    case 'getter':
-    case 'setter':
-      return SymbolKind.Property;
-  }
-  return SymbolKind.Variable;
 }

@@ -16,7 +16,6 @@ import {
   ServerCapabilities,
   TextDocumentSyncKind,
   Disposable,
-  DocumentSymbolParams,
   CodeActionParams,
   CompletionParams,
   ExecuteCommandParams,
@@ -29,7 +28,6 @@ import {
   Hover,
   Location,
   SignatureHelp,
-  SymbolInformation,
   DocumentUri,
   CodeAction,
   CodeActionKind
@@ -358,7 +356,6 @@ export class LSP {
 
     this.lspConnection.onDefinition(this.onDefinition.bind(this));
     this.lspConnection.onDocumentHighlight(this.onDocumentHighlight.bind(this));
-    this.lspConnection.onDocumentSymbol(this.onDocumentSymbol.bind(this));
     this.lspConnection.onHover(this.onHover.bind(this));
     this.lspConnection.onReferences(this.onReferences.bind(this));
     this.lspConnection.onSignatureHelp(this.onSignatureHelp.bind(this));
@@ -487,12 +484,6 @@ export class LSP {
     return project?.onReferences(params) ?? [];
   }
 
-  async onDocumentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]> {
-    const project = await this.getProjectService(params.textDocument.uri);
-
-    return project?.onDocumentSymbol(params) ?? [];
-  }
-
   async onSignatureHelp(params: TextDocumentPositionParams): Promise<SignatureHelp | null> {
     const project = await this.getProjectService(params.textDocument.uri);
 
@@ -584,7 +575,6 @@ export class LSP {
       documentFormattingProvider: false,
       hoverProvider: true,
       documentHighlightProvider: true,
-      documentSymbolProvider: true,
       definitionProvider: true,
       referencesProvider: true,
       codeActionProvider: {

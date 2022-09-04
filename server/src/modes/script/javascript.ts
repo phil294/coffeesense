@@ -4,7 +4,7 @@ import {
   CodeAction, CodeActionContext, CodeActionKind, CompletionItem, CompletionItemKind, CompletionItemTag, CompletionList, Definition, Diagnostic,
   DiagnosticSeverity, DiagnosticTag, DocumentHighlight,
   DocumentHighlightKind, Hover, Location, MarkedString, MarkupContent, ParameterInformation, Position, Range, SignatureHelp,
-  SignatureInformation, SymbolInformation, TextEdit
+  SignatureInformation, TextEdit
 } from 'vscode-languageserver-types';
 import { URI } from 'vscode-uri';
 import { CoffeescriptDocumentRegions, LanguageId } from '../../embeddedSupport/embeddedSupport';
@@ -16,7 +16,7 @@ import { DocumentService } from '../../services/documentService';
 import { EnvironmentService } from '../../services/EnvironmentService';
 import transpile_service, { common_js_variable_name_character, get_line_at_line_no, get_word_around_position, pseudo_compile_coffee } from '../../services/transpileService';
 import { IServiceHost } from '../../services/typescriptService/serviceHost';
-import { toCompletionItemKind, toSymbolKind } from '../../services/typescriptService/util';
+import { toCompletionItemKind } from '../../services/typescriptService/util';
 import { CodeActionData, CodeActionDataKind, OrganizeImportsActionData } from '../../types';
 import { isVCancellationRequested, VCancellationToken } from '../../utils/cancellationToken';
 import { getFileFsPath, getFilePath } from '../../utils/paths';
@@ -720,53 +720,6 @@ export async function getJavascriptMode(
           });
       }
       return [];
-    },
-    findDocumentSymbols(coffee_doc: TextDocument): SymbolInformation[] {
-      const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);
-      if (!languageServiceIncludesFile(service, coffee_doc.uri)) {
-        return [];
-      }
-      const fileFsPath = getFileFsPath(coffee_doc.uri);
-
-      const transpilation = transpile_service.result_by_uri.get(coffee_doc.uri)
-      if(!transpilation?.source_map)
-        return []
-
-      const items = service.getNavigationBarItems(fileFsPath);
-      if (!items) {
-        return [];
-      }
-      const result: SymbolInformation[] = [];
-      const existing: { [k: string]: boolean } = {};
-      const collectSymbols = (item: ts.NavigationBarItem, containerLabel?: string) => {
-        const sig = item.text + item.kind + item.spans[0]!.start;
-        if (item.kind !== 'script' && !existing[sig]) {
-          let range = convertRange(js_doc, item.spans[0]!)
-          if(transpilation?.source_map)
-            range = transpile_service.range_js_to_coffee(transpilation, range, coffee_doc) || range
-          const symbol: SymbolInformation = {
-            name: item.text,
-            kind: toSymbolKind(item.kind),
-            location: {
-              uri: coffee_doc.uri,
-              range
-            },
-            containerName: containerLabel
-          };
-          existing[sig] = true;
-          result.push(symbol);
-          containerLabel = item.text;
-        }
-
-        if (item.childItems && item.childItems.length > 0) {
-          for (const child of item.childItems) {
-            collectSymbols(child, containerLabel);
-          }
-        }
-      };
-
-      items.forEach(item => collectSymbols(item));
-      return result;
     },
     findDefinition(coffee_doc: TextDocument, coffee_position: Position): Definition {
       const { scriptDoc: js_doc, service } = updateCurrentCoffeescriptTextDocument(coffee_doc);

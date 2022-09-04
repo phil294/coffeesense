@@ -7,11 +7,9 @@ import {
   Definition,
   Diagnostic,
   DocumentHighlight,
-  DocumentSymbolParams,
   Hover,
   Location,
   SignatureHelp,
-  SymbolInformation,
   TextDocumentEdit,
   TextDocumentPositionParams
 } from 'vscode-languageserver';
@@ -35,7 +33,6 @@ export interface ProjectService {
   onDocumentHighlight(params: TextDocumentPositionParams): Promise<DocumentHighlight[]>;
   onDefinition(params: TextDocumentPositionParams): Promise<Definition>;
   onReferences(params: TextDocumentPositionParams): Promise<Location[]>;
-  onDocumentSymbol(params: DocumentSymbolParams): Promise<SymbolInformation[]>;
   onSignatureHelp(params: TextDocumentPositionParams): Promise<SignatureHelp | null>;
   onCodeAction(params: CodeActionParams): Promise<CodeAction[]>;
   onCodeActionResolve(action: CodeAction): Promise<CodeAction>;
@@ -114,17 +111,6 @@ export async function createProjectService(
         return mode.findReferences(doc, position);
       }
       return [];
-    },
-    async onDocumentSymbol({ textDocument }) {
-      const doc = documentService.getDocument(textDocument.uri)!;
-      const symbols: SymbolInformation[] = [];
-
-      languageModes.getAllLanguageModeRangesInDocument(doc).forEach(m => {
-        if (m.mode.findDocumentSymbols) {
-          symbols.push.apply(symbols, m.mode.findDocumentSymbols(doc));
-        }
-      });
-      return symbols;
     },
     async onSignatureHelp({ textDocument, position }) {
       const doc = documentService.getDocument(textDocument.uri)!;
