@@ -206,32 +206,43 @@ function try_compile_coffee(coffee: string): ITranspilationResult {
  * should be avoided if possible. */
 export function pseudo_compile_coffee(coffee: string) {
   return coffee
-      .replaceAll('@', 'this.')
-      // Callback parens insertion: In callbacks, the variable type can not be inferred:
-      // JS does not understand that this is a function (because of the missing parens).
-      // E.g. `x (a) => a.` becomes `x((a) => a.`
-      .replaceAll(/ (\(.+)$/mg, '($1   )') // the "   " is to avoid wrong mappings
-      // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
-      .replaceAll(/^(.*)([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'].*$)/mg, (match, a, b, c) => {
-        if(match.startsWith('import ') || match.includes('require('))
-          return match
-        return `${a}${b}(${c}   )`
-      })
-      // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`.
-      // General object braces insertion requires iterating all lines
-      // based on indentation etc so I skipped that
-      .replaceAll(/([^\s{][ (])([a-zA-Z_$][a-zA-Z0-9_$]* ?:) /mg, '$1{$2')
-      // More special words that JS does not understand *so bad*, it cannot give suggestions
-      // anymore. && Seems to work in all cases, same as if, ! does not.
-      .replaceAll(/\b(unless|not|and|is|isnt|then)\b/mg, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
-      // Every assignment needs a var/const/let or a (nonexisting) prefix object.
-      // This transform is rare for fake line coffee_in_js (object half line with
-      // open brace, or open string), but highly frequent in normal cs->js
-      .replaceAll(/^[\t ]*[a-zA-Z0-9_$]+[\t ]*=([^=]|$)/mg, (line) => `let ${line}`)
-      // no use case but seems sane
-      .replace(/(^|[^\n#])###($|[^\n#])/mg, (_, a, b) => `${a}/*${b}`)
-      // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
-      .replaceAll(' #', '//')
+    .replaceAll('@', 'this.')
+    // Callback parens insertion: In callbacks, the variable type can not be inferred:
+    // JS does not understand that this is a function (because of the missing parens).
+    // E.g. `x (a) => a.` becomes `x((a) => a.`
+    .replaceAll(/ (\(.+)$/mg, '($1   )') // the "   " is to avoid wrong mappings
+    // Same principle for function invocation insertion, e.g. `a b` becomes `a(b`
+    .replaceAll(/^(.*)([a-zA-Z0-9_$\])]) ([a-zA-Z0-9_$@[{"'].*$)/mg, (match, a, b, c) => {
+      if(match.startsWith('import ') || match.includes('require('))
+        return match
+      return `${a}${b}(${c}   )`
+    })
+    // Same principle for inline objects: e.g. `x(a: b` becomes `x({a:b`.
+    // General object braces insertion requires iterating all lines
+    // based on indentation etc so I skipped that
+    .replaceAll(/([^\s{][ (])([a-zA-Z_$][a-zA-Z0-9_$]* ?:) /mg, '$1{$2')
+    // More special words that JS does not understand *so bad*, it cannot give suggestions
+    // anymore. && Seems to work in all cases, same as if, ! does not.
+    .replaceAll(/\b(unless|not|and|is|isnt|then)\b/mg, (keyword) => '&&' + ' '.repeat(keyword.length - '&&'.length))
+    // Every assignment needs a var/const/let or a (nonexisting) prefix object.
+    // This transform is rare for fake line coffee_in_js (object half line with
+    // open brace, or open string), but highly frequent in normal cs->js
+    .replaceAll(/^[\t ]*[a-zA-Z0-9_$]+[\t ]*=([^=]|$)/mg, (line) => `let ${line}`)
+    // no use case but seems sane
+    .replace(/(^|[^\n#])###($|[^\n#])/mg, (_, a, b) => `${a}/*${b}`)
+    .split('\n')
+    .map((line) => {
+      if(!line.match(/^\s*(import|require)/)) {
+        // template literals
+        line = line
+          .replaceAll('"', '`')
+          .replaceAll('#{', '${')
+      }
+      return line
+    })
+    .join('\n')
+    // `x.| # comment` sometimes (??) fails because ts thinks we try to define a class prop
+    .replaceAll(' #', '//')
 }
 
 const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult => {

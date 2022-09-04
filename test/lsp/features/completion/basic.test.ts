@@ -339,4 +339,8 @@ describe('Should autocomplete', () => {
 	it('completes after dot after closing brace', async () => {
 		await testCompletion({ doc_uri: getDocUri('completion/dot-after-closing-brace.coffee'), position: position(1, 14), expected_items: ['splice'], allow_unspecified: true })
 	})
+
+	it('completes inside "#{template.literals}"', async () => {
+		await testCompletion({ doc_uri: getDocUri('completion/template-literal.coffee'), position: position(0, 8), expected_items: ['splice'], allow_unspecified: true })
+	})
 })
