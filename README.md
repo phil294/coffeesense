@@ -119,6 +119,12 @@ If you'd like to contribute or simply wonder how this works, check out [CONTRIBU
 </details>
 </div>
 
+#### 1.13.0
+##### 2022-09-04
+- [`d5418245`](https://github.com/phil294/coffeesense/commit/d5418245) Add completion inside `"#{template.literals}"`
+- [`b170b9fd`](https://github.com/phil294/coffeesense/commit/b170b9fd) Remove document symbols. They were not in a usable state, and with next update, no symbols (outline) is better than broken outline, so sticky scroll still works [fine](https://github.com/microsoft/vscode/issues/157165)
+- [`327deae6`](https://github.com/phil294/coffeesense/commit/327deae6) Fix / work around `strictNullChecks: true` (when active) inside comprehensions over arrays, e.g. `x.prop for x in y` gave errors, because this becomes a for-loop, and `x` is in the next line defined as `y[i]`, which a strict TS may not like. This change adds a type guard for `x` before continuing.
+
 #### 1.12.0
 ##### 2022-05-27
 - [`d2ee9b05`](https://github.com/phil294/coffeesense/commit/d2ee9b05) Fix server crash in case of jsdoc-only/-intern errors
