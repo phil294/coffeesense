@@ -9,7 +9,7 @@ compiler_success_var = '123'
 
 compiler_success_var2 = {
     c: 1
-    b
+    compiler_success_var
 }
 
 compiler_success_var3 = "a

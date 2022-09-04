@@ -10,6 +10,8 @@ export async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: v
 
   const result = await getDiagnosticsAndTimeout(docUri);
 
+  assert.equal(expectedDiagnostics.length, result.length);
+  
   expectedDiagnostics.forEach(ed => {
     assert.ok(
       result.some(d => {

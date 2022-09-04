@@ -3,7 +3,7 @@ diagnostics_ts = 1
 diagnostics_ts = '1'
 
 # JSDoc integration
-ts_check_func = (###* @type {string} ### param1) =>
+ts_check_func = (###* @type {string} ### param1) => param1
 ts_check_func 123
 
 
