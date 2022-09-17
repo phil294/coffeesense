@@ -91,6 +91,8 @@ Overall, this implementation works, but is not optimal. It is eagerly waiting to
 There is lot of hacky code to get this all to work. One thing to keep in mind is that the generated JS code that tsserver gets to provide compilation/type errors for differs from normal CS compilation output. You can inspect the generated JS code for the active file using the command `CoffeeSense: Show generated JavaScript for current file`.
 
 #### Known problems
+- Compilation:
+  - Sometimes ranges fail to compile properly ([reason](https://github.com/jashkenas/coffeescript/pull/5395#issuecomment-1243036327). This will be fixed at some point.
 - Types:
   - Annotating constructor `@parameters` with JSDoc can not provide type hints when you use a variable with the same name outside ([issue](https://github.com/phil294/coffeesense/issues/5)). This will be fixed at some point.
 - General:
