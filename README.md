@@ -29,7 +29,7 @@ You also might want to check out [Civet](https://civet.dev/), a more modern alte
 
 ### How
 
-You can **install the extension in VSCode from [HERE](https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense)** or for VSCodium from [Open VSX Registry](https://open-vsx.org/extension/phil294/coffeesense) or use it as a standalone lsp server if you want that (see [server](server/README.md)).
+You can **install the extension in VSCode from [HERE](https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense)** or for VSCodium from [Open VSX Registry](https://open-vsx.org/extension/phil294/coffeesense) or use it as a standalone lsp server if you want that (see [server](server/README.md)). Neovim users might find a working solution [here](https://github.com/neovim/nvim-lspconfig/pull/2376).
 
 ### Features
 
