@@ -9,6 +9,14 @@
 </details>
 </div>
 
+#### 1.14.0
+
+##### 2023-08-06
+- [`cad51513`](https://github.com/phil294/coffeesense/commit/cad51513) Fix positioning of comment blocks: Now no more double backtick or leading single line `#` is necessary, because the extension does this internally for you now - everything should be positioned where it belongs in output JS. (#1)
+- [`62bc20f6`](https://github.com/phil294/coffeesense/commit/62bc20f6) Link [Civet](https://civet.dev/)
+- [`1c4cf003`](https://github.com/phil294/coffeesense/commit/1c4cf003) Upgrade TypeScript from ^4.7.1-rc to 5.1.6. Note that you can always use your own by setting `{ useWorkspaceDependencies: true }`.
+- [`b906017f`](https://github.com/phil294/coffeesense/commit/b906017f) Fix badges
+
 #### 1.13.0
 ##### 2022-09-04
 - [`d5418245`](https://github.com/phil294/coffeesense/commit/d5418245) Add completion inside `"#{template.literals}"`
