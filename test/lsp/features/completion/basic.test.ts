@@ -54,10 +54,10 @@ describe('Should autocomplete', () => {
 	})
 
 	it('completes open string as inline object param', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/open-string-as-inline-object-param.coffee'), position: position(0, 28), expected_items: ['smooth'] })
+		await testCompletion({ doc_uri: getDocUri('completion/open-string-as-inline-object-param.coffee'), position: position(0, 28), expected_items: ['smooth', 'instant'] })
 	})
 	it('completes empty open string as inline object param', async () => {
-		await testCompletion({ doc_uri: getDocUri('completion/open-empty-string-as-inline-object-param.coffee'), position: position(0, 27), expected_items: ['smooth', 'auto'] })
+		await testCompletion({ doc_uri: getDocUri('completion/open-empty-string-as-inline-object-param.coffee'), position: position(0, 27), expected_items: ['smooth', 'auto', 'instant'] })
 	})
 
 	it('completes open string as function param, indented', async () => {

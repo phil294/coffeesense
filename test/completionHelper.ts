@@ -57,10 +57,10 @@ export async function testCompletion({ doc_uri, position, expected_items: expect
     let match_index = -1
     if (typeof ei === 'string') {
       match_index = result.items.findIndex(i => {
-          return i.label === ei &&
+          return i.label === ei && i.kind &&
             // Omit standard matches like variable as these primarily yield false positives.
             // If these are really required, they can be passed separately.
-            [CompletionItemKind.Function, CompletionItemKind.Property, CompletionItemKind.Field].includes(i.kind || -1)
+            [CompletionItemKind.Function, CompletionItemKind.Property, CompletionItemKind.Field].includes(i.kind)
         })
       assert.ok(match_index > -1,
         `Can't find matching item for\n${JSON.stringify(ei, null, 2)}\nSeen items:\n${JSON.stringify(

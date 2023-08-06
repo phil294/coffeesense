@@ -22,6 +22,7 @@ import { isVCancellationRequested, VCancellationToken } from '../../utils/cancel
 import { getFileFsPath, getFilePath } from '../../utils/paths';
 import { NULL_SIGNATURE } from '../nullMode';
 import * as Previewer from './previewer';
+import { HighlightSpanKind } from 'typescript';
 
 
 
@@ -147,9 +148,9 @@ export async function getJavascriptMode(
             // Position of errors shown at variable declaration are most often useless, it would
             // be better to show them at their (first) usage instead which implies declaration
             // in CS. Luckily, this is possible using highlight querying:
-            const occurrence = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(range.start))?.[1]
+            const occurrence = service.getDocumentHighlights(fileFsPath, js_doc.offsetAt(range.start), [fileFsPath])?.[0]?.highlightSpans[1]
             if(occurrence)
-              range = convertRange(js_doc, occurrence.textSpan)
+              range = convertRange(js_doc, occurrence. textSpan)
         }
 
         if(transpilation.source_map) {
@@ -697,7 +698,7 @@ export async function getJavascriptMode(
 
       position = transpile_service.position_coffee_to_js(transpilation, position, coffee_doc) || position
 
-      const occurrences = service.getOccurrencesAtPosition(fileFsPath, js_doc.offsetAt(position));
+      const occurrences = service.getDocumentHighlights(fileFsPath, js_doc.offsetAt(position), [fileFsPath])?.[0]?.highlightSpans;
       if (occurrences) {
         return occurrences
           .map(entry => ({
@@ -714,7 +715,7 @@ export async function getJavascriptMode(
             }
             return {
               range,
-              kind: entry.isWriteAccess ? DocumentHighlightKind.Write : DocumentHighlightKind.Text
+              kind: entry.kind === HighlightSpanKind.writtenReference ?DocumentHighlightKind.Write : DocumentHighlightKind.Text
             };
           });
       }
