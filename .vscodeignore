@@ -16,6 +16,9 @@ server/node_modules/typescript/lib/tsserver.js
 server/node_modules/typescript/lib/tsserverlibrary.js
 server/node_modules/typescript/lib/typescriptServices.js
 
+server/node_modules/coffeescript/{docs,documentation,.github,test,src}
+server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
+
 .**
 
 **/*.map
@@ -27,7 +30,7 @@ server/node_modules/typescript/lib/typescriptServices.js
 .vsix
 scripts
 
-node_modules/.cache/
+**/node_modules/.cache/
 
 images
 

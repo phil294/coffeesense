@@ -20,9 +20,9 @@ yarn upgrade
 cd ../test/lsp/fixture
 yarn upgrade
 cd ../../..
-rm -rf server/node_modules/.cache
-rm -rf server/node_modules/coffeescript/{docs,documentation,.github,test,src}
-rm -rf server/node_modules/coffeescript/lib/{coffeescript,coffeescript-browser-compiler-legacy}
+pause
+
+echo 'update typescript?'
 pause
 
 git fetch
@@ -50,14 +50,14 @@ npm publish
 cd ..
 yarn prepare-publish
 
-yarn vsce package
+vsce package
 
 echo 'Check VSIX'
 pause
 
 yarn
 
-yarn vsce publish
+vsce publish
 
 npx ovsx publish "$(ls -tr coffeesense-*.vsix* |tail -1)" -p "$(cat ~/.open-vsx-access-token)"
 
