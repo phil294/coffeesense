@@ -25,6 +25,8 @@ CoffeeSense gives you IntelliSense (autocompletion, go to implementation, etc.) 
 
 Source code derived from the great [Vetur](https://github.com/vuejs/vetur) project (but CoffeeSense has nothing to do with Vue.js otherwise).
 
+You also might want to check out [Civet](https://civet.dev/), a more modern alternative to CoffeeScript.
+
 ### How
 
 You can **install the extension in VSCode from [HERE](https://marketplace.visualstudio.com/items?itemName=phil294.coffeesense)** or for VSCodium from [Open VSX Registry](https://open-vsx.org/extension/phil294/coffeesense) or use it as a standalone lsp server if you want that (see [server](server/README.md)).
