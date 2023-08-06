@@ -20,11 +20,11 @@ you cannot pass special file contents to the service (`getSignatureHelpItems(alt
 Code specific to this repository follows `underscore_variable` naming. This greatly helps to differentiate it from Vetur/dependencies code. Also omit semicolons.
 Remaining formatting standards remain untouched to upstream.
 
-### Tests
-
-There are only integration tests which spin up an entire VSCode instance and emulate user interaction. This is simply adopted from Vetur. This should theoretically also be possible with unit tests (much faster), but setting up the architecture including tsserver for this is probably considerable work. Finally, some tests do not rely on TS (compilation tests only) and could therefore be entirely decoupled.
-
 ### Build
 
 First, install modules using `yarn`, then in VSCode, run the task `npm watch`, then run `all`. This launches both the ide client and the lsp server.
 In the alternative client VSCodium, the tests always fail for some reason, here you need to run them via cli.
+
+### Tests
+
+There are only integration tests which spin up an entire VSCode instance and emulate user interaction. This is simply adopted from Vetur. This should theoretically also be possible with unit tests (much faster), but setting up the architecture including tsserver for this is probably considerable work. Finally, some tests do not rely on TS (compilation tests only) and could therefore be entirely decoupled.
