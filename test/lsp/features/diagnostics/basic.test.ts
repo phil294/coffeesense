@@ -3,6 +3,8 @@ import { testDiagnostics } from '../../../diagnosticHelper'
 import { sameLineRange } from '../../../util'
 import { getDocUri } from '../../path'
 
+const string_to_number_error = "Type 'string' is not assignable to type 'number'."
+
 describe('Should find diagnostics', () => {
 
 	it('shows diagnostic errors for coffeescript compilation errors', async () => {
@@ -23,7 +25,7 @@ describe('Should find diagnostics', () => {
 				range: sameLineRange(2, 0, 14),
 				severity: vscode.DiagnosticSeverity.Error,
 				// This also tests basic "pushes down variable declaration to assignment" logic, as the type is fixed number, not number|string as it would be with classical cs compiler (declaration at file head)
-				message: "Type 'string' is not assignable to type 'number'."
+				message: string_to_number_error
 			},
 			{
 				range: sameLineRange(6, 14, 17),
@@ -54,32 +56,31 @@ describe('Should find diagnostics', () => {
 			{
 				range: sameLineRange(7, 0, 20),
 				severity: vscode.DiagnosticSeverity.Error,
-				message: "Type 'string' is not assignable to type 'number'."
+				message: string_to_number_error
 			}
 		])
 	})
 
-	// TODO: go back to new CS branch, https://github.com/jashkenas/coffeescript/issues/5366#issuecomment-1021366654
+	// TODO: go back to new CS branch, https://github.com/jashkenas/coffeescript/issues/5366#issuecomment-1021366654 < outdated?
 	it('pushes down variable declaration to assignment even with comment block before it', async () => {
 		const docUri = getDocUri('diagnostics/declaration-with-commentblock.coffee')
 		await testDiagnostics(docUri, [
-			{
-				range: sameLineRange(3, 0, 15),
-				severity: vscode.DiagnosticSeverity.Error,
-				message: "Type 'string' is not assignable to type 'number'."
-			}
-		])
-	})
-
-	// TODO: issue #1, need another `#` before comment blocks
-	xit('positions multiple comment blocks before each var assignment, not declaration', async () => {
-		const docUri = getDocUri('diagnostics/declaration-with-commentblock.coffee')
-		await testDiagnostics(docUri, [
-			{
-				range: sameLineRange(1, 0, 28),
-				severity: vscode.DiagnosticSeverity.Error,
-				message: "Type 'string' is not assignable to type 'number'."
-			}
-		])
+			[3, 0, 15],
+			[6, 0, 28],
+			[11, 1, 31],
+			[12, 1, 2],
+			[17, 2, 5],
+			[19, 1, 31],
+			[23, 1, 31],
+			[28, 1, 31],
+			[32, 1, 31],
+			[34, 1, 31],
+			[41, 1, 31],
+			[44, 0, 30]
+		].map(x => ({
+			range: sameLineRange(x[0], x[1], x[2]),
+			severity: vscode.DiagnosticSeverity.Error,
+			message: string_to_number_error
+		})), true)
 	})
 })

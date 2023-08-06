@@ -78,7 +78,7 @@ const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(18
 /** The resulting coffee must still always be valid and parsable by the compiler,
     and should not shift characters around much (otherwise source maps would need changes too) */
 function preprocess_coffee(coffee_doc: TextDocument) {
-  const tmp = coffee_doc.getText()
+  const tmp = (coffee_doc.getText() as string)
     // Enable autocomplete at `@|`. Replace with magic snippet that allows for both @|
     // and standalone @ sign. Cursor needs to be adjusted properly in doComplete().
     // .____CoffeeSenseAtSign is replaced with (this.valueOf(),this) in postprocess_js.
@@ -115,7 +115,32 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       logger.logDebug(`replace trailing comma inside { } with ↯ ${coffee_doc.uri}`)
       return `,↯${ws}}`
     })
+
   const tmp_lines = tmp.split('\n')
+
+  const starts_with_block_comment_lines = tmp_lines.map((line) =>
+    line.match(/^\s*###([^#]|$)/mg)
+  ).map((match, line_i) =>
+    match ? line_i : -1
+  ).filter(line_i =>
+    line_i > -1
+  ).map((line_i, i) =>
+    // Eg. if block comment lines were detected and prefixed with a single # line
+    // at i=2 and i=4, the array will contain [2,5] so we can iterate and modify
+    // arrays from the beginning here and in postprocess_js.
+    line_i + i)
+
+  for(const line_i of starts_with_block_comment_lines) {
+    // Arrange for block comments to be placed directly before their below line in JS (#1)
+    // Inserts extra lines that need to be tracked so the source maps can be adjusted. That's
+    // also why this needs to happen before object_tweak_coffee_lines.
+    // Couldn't find a solution that does not insert extra lines:
+    // - prefix all ### with another "# " -> long block comment sections become code
+    // - prefix with backticks: ### -> ``### -> fails inside objects or multiline assignments
+    logger.logDebug(`replace: prefix ### with single # line ${coffee_doc.uri}`)
+    tmp_lines.splice(line_i, 0, '#')
+  }
+
   const object_tweak_coffee_lines: number[] = []
   tmp_lines.forEach((line, line_i) => {
     // Enable autocomplete on empty lines inside object properties.
@@ -137,12 +162,14 @@ function preprocess_coffee(coffee_doc: TextDocument) {
         if(next_textual_line_indentation > empty_line_indentation.length)
           return
       }
+      logger.logDebug(`replace append empty line with 𒐛:𒐛 ${coffee_doc.uri}`)
       tmp_lines[line_i] = empty_line_indentation + '𒐛:𒐛'
       object_tweak_coffee_lines.push(line_i)
     }
   })
   const coffee = tmp_lines.join('\n')
-  return { coffee, object_tweak_coffee_lines }
+  const inserted_coffee_lines = starts_with_block_comment_lines
+  return { coffee, inserted_coffee_lines, object_tweak_coffee_lines }
 }
 
 /** further transforms that *can break* cs compilation, to be used if compilation could not succeed without it anyway */
@@ -263,7 +290,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
   } else {
     fake_line_mechanism = 'coffee_in_js'
     normal_compilation_diagnostics = result.diagnostics
-  
+
     coffee_error_line_no = result.diagnostics![0]!.range.start.line
     coffee_error_offset = coffee_doc.offsetAt(Position.create(coffee_error_line_no, 0))
     const coffee_error_next_newline_position = coffee.slice(coffee_error_offset).indexOf('\n')
@@ -410,7 +437,7 @@ const try_translate_coffee = (coffee_doc: TextDocument): ITranspilationResult =>
  * Applies some transformations to the JS in result and updates source_map accordingly.
  * These transforms do not depend on any previous information.
  */
-function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[]) {
+function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines: number[], inserted_coffee_lines: number[]) {
   if(!result.js || !result.source_map)
     return
 
@@ -442,8 +469,22 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
           source_map_entry.column = 0
         }
       }
+
+      let skip_lines_count = inserted_coffee_lines.findIndex(inserted_line_i =>
+        source_map_entry.sourceLine < inserted_line_i)
+      if(skip_lines_count < 0)
+        skip_lines_count = inserted_coffee_lines.length
+      source_map_entry.sourceLine -= skip_lines_count
     })
   })
+
+  if(result.fake_line) {
+    let fake_line_skip_lines_count = inserted_coffee_lines.findIndex(inserted_line_i =>
+      result.fake_line! < inserted_line_i)
+    if(fake_line_skip_lines_count < 0)
+      fake_line_skip_lines_count = inserted_coffee_lines.length
+    result.fake_line -= fake_line_skip_lines_count
+  }
 
   // console.time('var-decl-fix')
   //////////////////////////////////////
@@ -461,7 +502,7 @@ function postprocess_js(result: ITranspilationResult, object_tweak_coffee_lines:
   // var a;
   // a = 1;
   // a = 'one';
-  /////// and now `a` is of type `number | string` (https://github.com/microsoft/TypeScript/issues/45369). 
+  /////// and now `a` is of type `number | string` (https://github.com/microsoft/TypeScript/issues/45369).
   // Below is a hacky workaround that should fix these issues in most cases. It moves the
   // declaration part (`var`) down to the variable's first implementation position.
   // This works only with easy implementations and single-variable array destructuring:
@@ -592,7 +633,7 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const { coffee: preprocessed_coffee, object_tweak_coffee_lines } = preprocess_coffee(orig_coffee_doc)
+    const { coffee: preprocessed_coffee, object_tweak_coffee_lines, inserted_coffee_lines } = preprocess_coffee(orig_coffee_doc)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     let mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, preprocessed_coffee)
@@ -605,7 +646,7 @@ const transpile_service: ITranspileService = {
     }
 
     if(result.js && result.source_map) {
-      postprocess_js(result, object_tweak_coffee_lines)
+      postprocess_js(result, object_tweak_coffee_lines, inserted_coffee_lines)
     } else {
       // Nothing worked at all. As a last resort, just pass the coffee to tsserver,
       // with minimal transforms:
@@ -657,7 +698,7 @@ const transpile_service: ITranspileService = {
         line_i++
       }
     }
-    
+
     if(mapped)
       coffee_pos = Position.create(mapped.sourceLine, mapped.sourceColumn)
     else
@@ -714,7 +755,7 @@ const transpile_service: ITranspileService = {
         }
       }
     }
-    
+
     // TODO: revise this function, maybe this should be always all line matches by default instead
     const get_fitting_js_matches = () => {
       const js_matches_by_line = result.source_map!
@@ -805,7 +846,7 @@ const transpile_service: ITranspileService = {
       return abcdefg(js_matches)
     }
     const js_match = choose_js_match()
-    
+
     let line = js_match?.line
     let column = js_match?.column
     if(js_match && line != null && result.fake_line == coffee_position.line && result.fake_line_mechanism === 'coffee_in_js') {

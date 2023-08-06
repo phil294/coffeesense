@@ -19,7 +19,7 @@ comprehension_6 = v * 2 for v in comprehension_5
 item_1
 item_2
 
-``###*
+###*
 # @typedef {any} DefJSDoc1
 ###
 ###* @typedef {any} DefJSDoc2 ###

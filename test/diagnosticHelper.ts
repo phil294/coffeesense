@@ -5,12 +5,13 @@ import { sleep } from './util';
 import { showFile } from './editorHelper';
 import { performance } from 'perf_hooks';
 
-export async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.Diagnostic[]) {
+export async function testDiagnostics(docUri: vscode.Uri, expectedDiagnostics: vscode.Diagnostic[], allow_unspecified = false) {
   await showFile(docUri);
 
   const result = await getDiagnosticsAndTimeout(docUri);
 
-  assert.equal(expectedDiagnostics.length, result.length);
+  if(!allow_unspecified)
+    assert.equal(expectedDiagnostics.length, result.length);
   
   expectedDiagnostics.forEach(ed => {
     assert.ok(
