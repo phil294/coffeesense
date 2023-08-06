@@ -25,17 +25,17 @@ item_2
 ###* @typedef {any} DefJSDoc2 ###
 ###* @typedef {any} DefJSDoc3 ###
 
-``###*
+###*
 # @type {DefJSDoc1}
 ###
 a1 = []
 do (###* @type {DefJSDoc2} ### a1) =>
 
 do =>
-    ``###*
+    ###*
     * @type {DefJSDoc3}
     ###
     a3 = []
 
-``###* @type {import('./item-def-3').DefJSDoc4} ###
+###* @type {import('./item-def-3').DefJSDoc4} ###
 a4 = []

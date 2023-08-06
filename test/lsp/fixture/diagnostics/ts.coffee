@@ -7,7 +7,7 @@ ts_check_func = (###* @type {string} ### param1) => param1
 ts_check_func 123
 
 
-``###*
+###*
 # @type {ThisTypeDoesNotExist}
 ###
 ts_type_does_not_exist_var = 123

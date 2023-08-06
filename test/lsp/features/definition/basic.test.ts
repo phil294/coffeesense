@@ -55,6 +55,6 @@ describe('Should find definition', () => {
 	it('finds definition in jsdoc from other file', async () => {
 		const definition_uri = getDocUri('definition/item-def-3.coffee')
 		await showFile(definition_uri) // Bug workaround see definitionTargetDoc_coffee in javascript.ts
-		await testDefinition(basic_uri, position(39, 45), sameLineLocation(definition_uri, 3, 20, 29))
+		await testDefinition(basic_uri, position(39, 43), sameLineLocation(definition_uri, 3, 20, 29))
 	})
 })

@@ -1,5 +1,5 @@
 
-``###* @param val {'abc' | 'def'} ###
+###* @param val {'abc' | 'def'} ###
 open_empty_string_as_function_param = (val) =>
 
 do =>

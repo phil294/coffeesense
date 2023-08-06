@@ -27,11 +27,11 @@ do =>
 	# @type {number}
 	###
 	diagnostics_should_be_number_i = '1'
-	``###*
+	###*
 	# @type {number}
 	###
 	diagnostics_should_be_number_j = '1'
-	``###* @type {number} ###
+	###* @type {number} ###
 	diagnostics_should_be_number_k = '1'
 	###
 	some.comment
