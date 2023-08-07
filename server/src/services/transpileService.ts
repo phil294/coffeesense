@@ -711,8 +711,13 @@ const transpile_service: ITranspileService = {
   range_js_to_coffee(result, js_range, coffee_doc) {
     const start = this.position_js_to_coffee(result, js_range.start, coffee_doc)
     const end = this.position_js_to_coffee(result, js_range.end, coffee_doc)
-    if(start && end && start.line > -1 && end.line > -1)
-      return Range.create(start, end)
+    if(start && end && start.line > -1 && end.line > -1 && start.character > -1 && end.character > -1) {
+      try {
+        return Range.create(start, end)
+      } catch(e) {
+        logger.logDebug(`failed range_js_to_coffee for ${coffee_doc.uri}, ${JSON.stringify(js_range)} -> ${JSON.stringify({ start, end })}`)
+      }
+    }
     return undefined
   },
 
@@ -889,6 +894,13 @@ const transpile_service: ITranspileService = {
     const end = this.position_coffee_to_js(result, coffee_range.end, coffee_doc)
     if(start && end)
       return Range.create(start, end)
+    if(start && end && start.line > -1 && end.line > -1 && start.character > -1 && end.character > -1) {
+      try {
+        return Range.create(start, end)
+      } catch(e) {
+        logger.logDebug(`failed range_coffee_to_js for ${coffee_doc.uri}, ${JSON.stringify(coffee_range)} -> ${JSON.stringify({ start, end })}`)
+      }
+    }
     return undefined
   },
 }
