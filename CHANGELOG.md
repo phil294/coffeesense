@@ -9,8 +9,12 @@
 </details>
 </div>
 
-#### 1.14.0
+#### 1.15.0
+##### 2023-08-08
+- [`68c0c304`](https://github.com/phil294/coffeesense/commit/68c0c304) Add Vue file support: If you change the type of your `.vue` files to coffeescript (`"files.associations": { "*.vue": "coffeescript" }`) and your `.vue` file contains a `<script lang="coffee">` section, it will work as expected. This feature disables any other Vue extensions like Vetur/Volar though, so activate with caution. Only one can be active at the same time. For current status on integrating both together, follow https://github.com/vuejs/language-tools/issues/3200
+- [`be4f4691`](https://github.com/phil294/coffeesense/commit/be4f4691) Fix rare server crashes with broken files
 
+#### 1.14.0
 ##### 2023-08-06
 - [`cad51513`](https://github.com/phil294/coffeesense/commit/cad51513) Fix positioning of comment blocks: Now no more double backtick or leading single line `#` is necessary, because the extension does this internally for you now - everything should be positioned where it belongs in output JS. (#1)
 - [`62bc20f6`](https://github.com/phil294/coffeesense/commit/62bc20f6) Link [Civet](https://civet.dev/)
