@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "*.something-else-than-coffee": "coffeescript"
+        "*.something-else-than-coffee": "coffeescript",
+        "*.vue": "coffeescript"
     },
     "coffeesense.dev.logLevel": "DEBUG"
 }

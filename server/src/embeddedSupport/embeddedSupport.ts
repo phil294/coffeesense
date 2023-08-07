@@ -95,7 +95,7 @@ export function getSingleTypeDocument(
   const oldContent = document.getText();
   let newContent = oldContent
     .split('\n')
-    .map(line => ' '.repeat(line.length))
+    .map(line => line.length > 0 ? '#' + ' '.repeat(line.length - 1) : '')
     .join('\n');
 
   let langId = defaultLanguageIdForBlockTypes[type];
@@ -109,7 +109,7 @@ export function getSingleTypeDocument(
   // newContent is coffee
 
   try {
-    newContent = transpile_service.transpile(document).js || (()=>{throw new Error(`no js set for ${document.uri}`)})()
+    newContent = transpile_service.transpile(document, newContent).js || (()=>{throw new Error(`no js set for ${document.uri}`)})()
   } catch(e: any) {
     logger.logInfo('TRANSPILATION FAILED ' + document.uri + ' ' + JSON.stringify(e) + e.stack)
   }

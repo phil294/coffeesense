@@ -65,7 +65,7 @@ interface ITranspilationResult {
 
 interface ITranspileService {
   result_by_uri: Map<string, ITranspilationResult>,
-  transpile(coffee_doc: TextDocument): ITranspilationResult,
+  transpile(coffee_doc: TextDocument, coffee: string): ITranspilationResult,
   position_js_to_coffee(result: ITranspilationResult, js_position: Position, coffee_doc: TextDocument): Position | undefined,
   range_js_to_coffee(result: ITranspilationResult, js_range: Range, coffee_doc: TextDocument): Range | undefined,
   position_coffee_to_js(result: ITranspilationResult, coffee_position: Position, coffee_doc: TextDocument): Position | undefined,
@@ -77,8 +77,8 @@ const transpilation_cache: Map<string,ITranspilationResult> = new VolatileMap(18
 
 /** The resulting coffee must still always be valid and parsable by the compiler,
     and should not shift characters around much (otherwise source maps would need changes too) */
-function preprocess_coffee(coffee_doc: TextDocument) {
-  const tmp = (coffee_doc.getText() as string)
+function preprocess_coffee(coffee_doc: TextDocument, old_coffee: string) {
+  const tmp = old_coffee
     // Enable autocomplete at `@|`. Replace with magic snippet that allows for both @|
     // and standalone @ sign. Cursor needs to be adjusted properly in doComplete().
     // .____CoffeeSenseAtSign is replaced with (this.valueOf(),this) in postprocess_js.
@@ -167,9 +167,9 @@ function preprocess_coffee(coffee_doc: TextDocument) {
       object_tweak_coffee_lines.push(line_i)
     }
   })
-  const coffee = tmp_lines.join('\n')
+  const new_coffee = tmp_lines.join('\n')
   const inserted_coffee_lines = starts_with_block_comment_lines
-  return { coffee, inserted_coffee_lines, object_tweak_coffee_lines }
+  return { coffee: new_coffee, inserted_coffee_lines, object_tweak_coffee_lines }
 }
 
 /** further transforms that *can break* cs compilation, to be used if compilation could not succeed without it anyway */
@@ -624,8 +624,8 @@ const transpile_service: ITranspileService = {
 
   result_by_uri: new Map(),
 
-  transpile(orig_coffee_doc) {
-    const hash = MD5.hex(orig_coffee_doc.getText())
+  transpile(orig_coffee_doc, coffee) {
+    const hash = MD5.hex(coffee)
     const cached = transpilation_cache.get(hash)
     if (cached) {
       logger.logDebug(`found cached compilation for contents of ${orig_coffee_doc.uri}`)
@@ -633,7 +633,7 @@ const transpile_service: ITranspileService = {
       return cached
     }
 
-    const { coffee: preprocessed_coffee, object_tweak_coffee_lines, inserted_coffee_lines } = preprocess_coffee(orig_coffee_doc)
+    const { coffee: preprocessed_coffee, object_tweak_coffee_lines, inserted_coffee_lines } = preprocess_coffee(orig_coffee_doc, coffee)
     // As coffee was modified, offsets and positions are changed and for these purposes,
     // we need to construct a new doc
     let mod_coffee_doc = TextDocument.create(orig_coffee_doc.uri, 'coffeescript', 1, preprocessed_coffee)
@@ -650,7 +650,7 @@ const transpile_service: ITranspileService = {
     } else {
       // Nothing worked at all. As a last resort, just pass the coffee to tsserver,
       // with minimal transforms:
-      result.js = pseudo_compile_coffee(orig_coffee_doc.getText())
+      result.js = pseudo_compile_coffee(coffee)
     }
 
     transpilation_cache.set(hash, result)

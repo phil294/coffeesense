@@ -83,4 +83,17 @@ describe('Should find diagnostics', () => {
 			message: string_to_number_error
 		})), true)
 	})
+
+	it('can work with Vue files', async () => {
+		// see test/lsp/fixture/.vscode/settings.json
+		const docUri = getDocUri('diagnostics/vue-file.vue')
+		// vue parsing demonstrated by returning ts error
+		await testDiagnostics(docUri, [
+			{
+				range: sameLineRange(14, 0, 15),
+				severity: vscode.DiagnosticSeverity.Error,
+				message: string_to_number_error
+			}
+		])
+	})
 })

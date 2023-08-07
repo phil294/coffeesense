@@ -55,6 +55,8 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - [ ] *missing* Rename file
 - [ ] *missing* Syntactic folding ranges
 
+If you're using *Vue.js*, you can  You can also get coffee language support inside `.vue` single file component files by adding this to your settings: `"files.associations": { "*.vue": "coffeescript" }`. If your file contains a `<script lang="coffee">` section, it will work as expected. This feature disables any other Vue extensions like Vetur/Volar though, so activate with caution.
+
 ### Setup
 
 The following VSCode extension options are available. The default values are set.
