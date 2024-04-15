@@ -18,6 +18,7 @@ yarn upgrade
 cd server
 yarn upgrade
 cd ../test/lsp/fixture
+yarn
 yarn upgrade
 cd ../../..
 pause
@@ -50,14 +51,14 @@ npm publish
 cd ..
 yarn prepare-publish
 
-vsce package
+npx vsce package
 
 echo 'Check VSIX'
 pause
 
 yarn
 
-vsce publish
+npx vsce publish
 
 npx ovsx publish "$(ls -tr coffeesense-*.vsix* |tail -1)" -p "$(cat ~/.open-vsx-access-token)"
 
