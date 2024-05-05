@@ -520,9 +520,10 @@ chalk@^4.0.0:
     ansi-styles "^4.1.0"
     supports-color "^7.1.0"
 
-"coffeescript@github:edemaine/coffeescript#var-assign":
-  version "2.6.1"
-  resolved "https://codeload.github.com/edemaine/coffeescript/tar.gz/939327e9fd2be0f5fc2af688bb6a0d63e5d4b3cb"
+coffeescript@^2.7.0:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/coffeescript/-/coffeescript-2.7.0.tgz#a43ec03be6885d6d1454850ea70b9409c391279c"
+  integrity sha512-hzWp6TUE2d/jCcN67LrW1eh5b/rSDKQK6oD6VMLlggYVUUFexgTH9z3dNYihzX4RMhze5FTUsUmOXViJKFQR/A==
 
 color-convert@^1.9.0:
   version "1.9.3"
