@@ -11,7 +11,8 @@ import {
   Position,
   CodeActionContext,
   CodeAction,
-  TextDocumentEdit
+  TextDocumentEdit,
+  DocumentSymbol
 } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -50,6 +51,7 @@ export interface LanguageMode {
   findDocumentHighlight?(document: TextDocument, position: Position): DocumentHighlight[];
   findDefinition?(document: TextDocument, position: Position): Definition;
   findReferences?(document: TextDocument, position: Position): Location[];
+  findDocumentSymbols?(document: TextDocument): DocumentSymbol[];
 
   onDocumentChanged?(filePath: string): void;
   onDocumentRemoved(document: TextDocument): void;

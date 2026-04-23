@@ -12,6 +12,7 @@ import {
   FileChangeType,
   Connection,
   TextDocumentPositionParams,
+  DocumentSymbolParams,
   InitializeParams,
   ServerCapabilities,
   TextDocumentSyncKind,
@@ -30,7 +31,8 @@ import {
   SignatureHelp,
   DocumentUri,
   CodeAction,
-  CodeActionKind
+  CodeActionKind,
+  DocumentSymbol
 } from 'vscode-languageserver-types';
 import type { TextDocument } from 'vscode-languageserver-textdocument';
 
@@ -356,6 +358,7 @@ export class LSP {
 
     this.lspConnection.onDefinition(this.onDefinition.bind(this));
     this.lspConnection.onDocumentHighlight(this.onDocumentHighlight.bind(this));
+    this.lspConnection.onDocumentSymbol(this.onDocumentSymbols.bind(this));
     this.lspConnection.onHover(this.onHover.bind(this));
     this.lspConnection.onReferences(this.onReferences.bind(this));
     this.lspConnection.onSignatureHelp(this.onSignatureHelp.bind(this));
@@ -472,6 +475,12 @@ export class LSP {
     return project?.onDocumentHighlight(params) ?? [];
   }
 
+  async onDocumentSymbols(params: DocumentSymbolParams): Promise<DocumentSymbol[]> {
+    const project = await this.getProjectService(params.textDocument.uri);
+
+    return project?.onDocumentSymbols(params) ?? [];
+  }
+
   async onDefinition(params: TextDocumentPositionParams): Promise<Definition> {
     const project = await this.getProjectService(params.textDocument.uri);
 
@@ -575,6 +584,7 @@ export class LSP {
       documentFormattingProvider: false,
       hoverProvider: true,
       documentHighlightProvider: true,
+      documentSymbolProvider: true,
       definitionProvider: true,
       referencesProvider: true,
       codeActionProvider: {

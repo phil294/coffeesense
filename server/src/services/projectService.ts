@@ -14,6 +14,7 @@ import {
   TextDocumentPositionParams
 } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { DocumentSymbol } from 'vscode-languageserver-types';
 import { LanguageId } from '../embeddedSupport/embeddedSupport';
 import { LanguageModes } from '../embeddedSupport/languageModes';
 import { NULL_COMPLETION, NULL_HOVER, NULL_SIGNATURE } from '../modes/nullMode';
@@ -31,6 +32,7 @@ export interface ProjectService {
   onCompletionResolve(item: CompletionItem): Promise<CompletionItem>;
   onHover(params: TextDocumentPositionParams): Promise<Hover>;
   onDocumentHighlight(params: TextDocumentPositionParams): Promise<DocumentHighlight[]>;
+  onDocumentSymbols(params: { textDocument: { uri: string } }): Promise<DocumentSymbol[]>;
   onDefinition(params: TextDocumentPositionParams): Promise<Definition>;
   onReferences(params: TextDocumentPositionParams): Promise<Location[]>;
   onSignatureHelp(params: TextDocumentPositionParams): Promise<SignatureHelp | null>;
@@ -96,6 +98,77 @@ export async function createProjectService(
       }
       return [];
     },
+    async onDocumentSymbols({ textDocument }: { textDocument: { uri: string } }) {
+      const doc = documentService.getDocument(textDocument.uri)!;
+      const result: DocumentSymbol[] = [];
+      if (doc && doc.languageId === LANGUAGE_ID) {
+        for (const lmr of languageModes.getAllLanguageModeRangesInDocument(doc)) {
+          const mode = lmr.mode;
+          if (mode && mode.findDocumentSymbols) {
+            const symbols = mode.findDocumentSymbols(doc);
+            if (symbols && symbols.length) {
+              result.push(...symbols);
+            }
+          }
+        }
+      }
+
+      // Respect outline sort order if provided via workspace settings (e.g., VS Code's Outline view)
+      try {
+        const cfg = env.getConfig() as any;
+        let sortOrder: string | undefined = undefined;
+        // common locations for the setting
+        if (cfg && cfg.outline && (cfg.outline.sortOrder || cfg.outline.sortBy)) {
+          sortOrder = cfg.outline.sortOrder || cfg.outline.sortBy;
+        }
+        if (!sortOrder) sortOrder = cfg['outline.sortOrder'] || cfg['outline.sortBy'] || cfg['editor.outline.sortOrder'];
+
+        const compareByPosition = (a: DocumentSymbol, b: DocumentSymbol) => {
+          const as = doc.offsetAt(a.range.start);
+          const bs = doc.offsetAt(b.range.start);
+          return as - bs;
+        };
+        const compareByName = (a: DocumentSymbol, b: DocumentSymbol) =>
+          (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase());
+        const kindOrder = (k: number) => k || 0;
+        const compareByCategory = (a: DocumentSymbol, b: DocumentSymbol) => {
+          const ka = kindOrder(a.kind as number);
+          const kb = kindOrder(b.kind as number);
+          if (ka !== kb) return ka - kb;
+          return compareByName(a, b);
+        };
+
+        const sorter = (order?: string) => {
+          switch ((order || 'position').toString().toLowerCase()) {
+            case 'name':
+              return compareByName;
+            case 'category':
+            case 'kind':
+              return compareByCategory;
+            case 'position':
+            default:
+              return compareByPosition;
+          }
+        };
+
+        const sortRec = (arr: DocumentSymbol[]) => {
+          if (!arr || !arr.length) return;
+          const cmp = sorter(sortOrder);
+          arr.sort(cmp as any);
+          for (const s of arr) {
+            if (s.children) sortRec(s.children);
+          }
+        };
+
+        sortRec(result);
+      } catch (e) {
+        // ignore sorting errors
+      }
+
+      return result;
+    },
+
+
     async onDefinition({ textDocument, position }) {
       const doc = documentService.getDocument(textDocument.uri)!;
       const mode = languageModes.getModeAtPosition(doc, position);

@@ -45,7 +45,7 @@ You can **install the extension in VSCode from [HERE](https://marketplace.visual
 - [x] **Hover information**
 - [x] **Signature type hints** Trigger characters are both `(` and ` `  (space)
 - [x] **Document highlight**
-- [ ] *missing* Document symbols ("Outline"): Removed again, as they mainly led to problems. If you want symbols, additionally install [Yorkxin's extension](https://github.com/yorkxin/vscode-coffeescript-support). It's marked as deprecated but can provide this feature well.
+- [x] Document symbols ("Outline")
 - [x] **Find definition**
 - [x] **Find references**
 - **Code actions**: Organize imports only. Probably only rarely works as you intend it to. Auto imports: Not implemented as code actions, but works while autocompleting.
